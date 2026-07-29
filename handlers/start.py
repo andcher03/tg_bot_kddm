@@ -20,10 +20,15 @@ async def start(message: Message, state: FSMContext):
 
         return
 
-    await message.answer(
+    from services.message_manager import send_step
+
+    await state.set_state(RegistrationState.full_name)
+
+    await send_step(
+        message,
+        state,
         "Здравствуйте!\n\n"
         "Для использования бота необходимо пройти регистрацию.\n\n"
         "Введите ваше ФИО:"
     )
-
-    await state.set_state(RegistrationState.full_name)
+    

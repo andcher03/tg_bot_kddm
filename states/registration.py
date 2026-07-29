@@ -5,3 +5,9 @@ class RegistrationState(StatesGroup):
     full_name = State()
     birth_date = State()
     education = State()
+
+class RegistrationState(StatesGroup):
+    full_name = State()
+    birth_date = State()
+    education = State()
+    confirm = State()

@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from services.user_service import UserService
 from states.registration import RegistrationState
+from services.menu_service import show_main_menu
 
 router = Router()
 
@@ -15,9 +16,7 @@ users = UserService()
 async def start(message: Message, state: FSMContext):
 
     if users.is_registered(message.from_user.id):
-
-        await message.answer("Добро пожаловать!")
-
+        await show_main_menu(message)
         return
 
     from services.message_manager import send_step

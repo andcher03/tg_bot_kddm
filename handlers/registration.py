@@ -2,6 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
+from services.menu_service import show_main_menu
 from states.registration import RegistrationState
 from services.user_service import UserService
 from services.validators import (
@@ -118,6 +119,9 @@ async def confirm_registration(
 
     data = await state.get_data()
 
+    from keyboards.admin_menu import admin_menu
+    from keyboards.user_menu import user_menu
+
     users.register_user(
         telegram_id=callback.from_user.id,
         username=callback.from_user.username,
@@ -128,9 +132,13 @@ async def confirm_registration(
 
     await state.clear()
 
-    await callback.message.edit_text(
-        "✅ Регистрация успешно завершена!"
+    await callback.message.answer(
+        "✅ Регистрация успешно завершена!",
     )
+    
+    await show_main_menu(callback.message)
+
+    await callback.answer()
 
     await callback.answer()
     

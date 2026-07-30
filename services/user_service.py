@@ -43,3 +43,25 @@ class UserService:
             "user",
             datetime.now().strftime("%d.%m.%Y %H:%M")
         ])
+    
+    
+    def get_user(self, telegram_id: int):
+        users = google.get_all_users()
+
+        for user in users:
+            if str(user["telegram_id"]) == str(telegram_id):
+                return user
+
+        return None
+
+    def is_admin(self, telegram_id: int):
+        user = self.get_user(telegram_id)
+
+        if not user:
+            return False
+
+        return user["role"] in (
+            "admin",
+            "moderator",
+            "superadmin",
+        )

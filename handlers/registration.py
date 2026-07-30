@@ -27,6 +27,7 @@ UNIVERSITIES = {
     "uni_kgmu": "КазГМУ",
     "uni_tisbi": "Университет управления ТИСБИ",
     "uni_other": "Другой ВУЗ",
+    "uni_none": "Я не студент"
 }
 
 from services.message_manager import send_step
@@ -67,7 +68,7 @@ async def birth_date(message: Message, state: FSMContext):
     await send_step(
     message,
     state,
-    "🎓 Выберите учебное заведение",
+    "🎓 Выберите высшее учебное заведение",
     reply_markup=university_keyboard(),
 )
 

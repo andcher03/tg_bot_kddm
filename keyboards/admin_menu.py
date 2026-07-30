@@ -10,10 +10,6 @@ def admin_menu():
             ],
             [
                 KeyboardButton(text="📊 Статистика"),
-                KeyboardButton(text="📅 Мероприятия"),
-            ],
-            [
-                KeyboardButton(text="📰 Новости"),
                 KeyboardButton(text="⚙️ Настройки"),
             ],
         ],

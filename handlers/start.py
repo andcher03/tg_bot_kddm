@@ -7,6 +7,7 @@ from services.user_service import UserService
 from states.registration import RegistrationState
 from services.menu_service import show_main_menu
 
+
 router = Router()
 
 users = UserService()
@@ -16,7 +17,12 @@ users = UserService()
 async def start(message: Message, state: FSMContext):
 
     if users.is_registered(message.from_user.id):
-        await show_main_menu(message)
+
+        await show_main_menu(
+            message.bot,
+            message.from_user.id
+        )
+
         return
 
     from services.message_manager import send_step
@@ -30,4 +36,3 @@ async def start(message: Message, state: FSMContext):
         "Для использования бота необходимо пройти регистрацию.\n\n"
         "Введите ваше ФИО:"
     )
-    

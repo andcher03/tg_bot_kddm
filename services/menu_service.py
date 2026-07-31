@@ -7,14 +7,21 @@ from keyboards.user_menu import user_menu
 users = UserService()
 
 
-async def show_main_menu(message: Message):
-    if users.is_admin(message.from_user.id):
-        await message.answer(
-            "Добро пожаловать!",
+
+async def show_main_menu(bot, user_id):
+    
+    if users.is_admin(user_id):
+
+        await bot.send_message(
+            user_id,
+            "🔐 Панель администратора",
             reply_markup=admin_menu(),
         )
+
     else:
-        await message.answer(
-            "Добро пожаловать!",
+
+        await bot.send_message(
+            user_id,
+            "🏠 Главное меню",
             reply_markup=user_menu(),
         )

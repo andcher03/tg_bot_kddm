@@ -5,15 +5,17 @@ def user_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="📅 Мероприятия"),
+                KeyboardButton(text="📍 Прописка"),
+            ],
+            [
                 KeyboardButton(text="📰 Новости"),
             ],
             [
                 KeyboardButton(text="👤 Мой профиль"),
-                KeyboardButton(text="📞 Контакты"),
+                
             ],
             [
-                KeyboardButton(text="❓ Помощь"),
+                KeyboardButton(text="📞 Контакты"),
             ],
         ],
         resize_keyboard=True,

@@ -9,6 +9,8 @@ from handlers.start import router as start_router
 from handlers.registration import router as registration_router
 from handlers.admin import router as admin_router
 
+from handlers.residence.main import router as residence_main_router
+
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -17,7 +19,7 @@ dp = Dispatcher()
 dp.include_router(start_router)
 dp.include_router(registration_router)
 dp.include_router(admin_router)
-
+dp.include_router(residence_main_router)
 
 async def main():
     await set_default_commands(bot)

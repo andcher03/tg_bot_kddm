@@ -1,42 +1,33 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def volunteer_menu():
+def profile_menu():
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
-
             [
                 InlineKeyboardButton(
-                    text="🌐 Социальные сети",
-                    callback_data="volunteer_social"
+                    text="✏️ Изменить данные",
+                    callback_data="edit_profile"
                 )
             ],
-
             [
                 InlineKeyboardButton(
-                    text="❤️ Добро.рф",
-                    callback_data="volunteer_dobro"
+                    text="📄 Мои мероприятия",
+                    callback_data="my_events"
                 )
             ],
-
             [
                 InlineKeyboardButton(
-                    text="📞 Координаторы",
-                    callback_data="volunteer_contacts"
+                    text="🏆 Мои достижения",
+                    callback_data="my_rewards"
                 )
             ],
-
             [
-                InlineKeyboardButton(
-                    text="⬅️ Назад",
-                    callback_data="back_residence"
-                ),
                 InlineKeyboardButton(
                     text="🏠 Главное меню",
                     callback_data="main_menu"
                 )
             ]
-
         ]
     )

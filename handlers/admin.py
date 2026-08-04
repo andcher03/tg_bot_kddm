@@ -1,7 +1,20 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
+from keyboards.residence.main import residence_menu
 
 router = Router()
+
+@router.message(F.text == "👀 Просмотр проекта «Прописка»")
+async def preview_residence(message: Message):
+    await message.answer(
+        "📍 Проект «Прописка»",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    
+    await message.answer(
+        "Выберите интересующий раздел:",
+        reply_markup=residence_menu()
+    )
 
 
 @router.message(F.text == "👥 Пользователи")
@@ -19,7 +32,7 @@ async def events(message: Message):
     await message.answer("📅 Управление мероприятиями")
 
 
-@router.message(F.text == "📰 Новости")
+@router.message(F.text == "🛠 Управление новостями")
 async def news(message: Message):
     await message.answer("📰 Управление новостями")
 

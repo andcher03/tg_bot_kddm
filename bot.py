@@ -8,10 +8,10 @@ from services.commands import set_default_commands
 from handlers.start import router as start_router
 from handlers.registration import router as registration_router
 from handlers.admin import router as admin_router
-
 from handlers.residence.main import router as residence_main_router
 from handlers.residence.volunteer import router as volunteer_router
 from handlers.user import router as user_router
+from handlers.channel import router as channel_router
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -23,6 +23,7 @@ dp.include_router(admin_router)
 dp.include_router(residence_main_router)
 dp.include_router(volunteer_router)
 dp.include_router(user_router)
+dp.include_router(channel_router)
 
 
 async def main():

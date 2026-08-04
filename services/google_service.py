@@ -18,9 +18,28 @@ client = gspread.authorize(credentials)
 class GoogleService:
     def __init__(self):
         self.sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+        self.settings = client.open_by_key(SPREADSHEET_ID).worksheet("Settings")
 
     def get_all_users(self):
         return self.sheet.get_all_records()
 
     def append_user(self, data):
         self.sheet.append_row(data)
+
+    def get_setting(self, key):
+
+        records = self.settings.get_all_records()
+
+        for row in records:
+            if row["key"] == key:
+                return row["value"]
+
+        return None
+
+
+    def set_setting(self, key, value):
+
+        cell = self.settings.find(key)
+
+        if cell:
+            self.settings.update_cell(cell.row, 2, value)

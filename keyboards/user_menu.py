@@ -15,6 +15,10 @@ def user_menu():
                 
             ],
             [
+                KeyboardButton(text="✅ Регистрация на мероприятие"),
+                
+            ],
+            [
                 KeyboardButton(text="📞 Контакты"),
             ],
         ],

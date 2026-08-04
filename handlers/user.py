@@ -6,8 +6,10 @@ from services.user_service import UserService
 from keyboards.profile_menu import profile_menu
 from handlers.channel import LAST_POST_ID
 from services.google_service import GoogleService
+from services.logger_service import LoggerService
 
 router = Router()
+logger = LoggerService()
 google = GoogleService()
 users = UserService()
 

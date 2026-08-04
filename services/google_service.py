@@ -16,9 +16,13 @@ client = gspread.authorize(credentials)
 
 
 class GoogleService:
+
     def __init__(self):
-        self.sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-        self.settings = client.open_by_key(SPREADSHEET_ID).worksheet("Settings")
+
+        spreadsheet = client.open_by_key(SPREADSHEET_ID)
+        self.sheet = spreadsheet.worksheet("Users")
+        self.settings = spreadsheet.worksheet("Settings")
+        self.logs = spreadsheet.worksheet("Logs")
 
     def get_all_users(self):
         return self.sheet.get_all_records()

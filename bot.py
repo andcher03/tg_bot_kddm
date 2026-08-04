@@ -12,6 +12,7 @@ from handlers.residence.main import router as residence_main_router
 from handlers.residence.volunteer import router as volunteer_router
 from handlers.user import router as user_router
 from handlers.channel import router as channel_router
+from middlewares.logger import LoggerMiddleware
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -24,7 +25,14 @@ dp.include_router(residence_main_router)
 dp.include_router(volunteer_router)
 dp.include_router(user_router)
 dp.include_router(channel_router)
+dp.message.middleware(LoggerMiddleware())
+dp.callback_query.middleware(LoggerMiddleware())
 
+
+#Логгирование
+# dp.update.middleware(LoggerMiddleware())
+# dp.message.middleware(LoggerMiddleware())
+# dp.callback_query.middleware(LoggerMiddleware())
 
 async def main():
     await set_default_commands(bot)

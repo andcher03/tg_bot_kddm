@@ -15,6 +15,7 @@ async def set_default_commands(bot: Bot):
             ),
         ],
         scope=BotCommandScopeDefault(),
+        
     )
 
 

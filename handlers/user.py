@@ -63,24 +63,24 @@ async def news(message: Message):
     )
 
 
-@router.message(F.text == "👤 Мой профиль")
-async def profile(message: Message):
+# @router.message(F.text == "👤 Мой профиль")
+# async def profile(message: Message):
 
-    user = users.get_user(message.from_user.id)
-    text = (
-        "👤 Мой профиль\n\n"
-        f"👤 ФИО: {user['full_name']}\n"
-        f"🎂 Дата рождения: {user['birth_date']}\n"
-        f"🎓 Образование: {user['education']}\n"
-        f"\n"
-        f"📅 Дата регистрации: {user['registered_at']}\n"
-        f"🆔 Код участника: {user['user_id']}\n"
-    )
+#     user = users.get_user(message.from_user.id)
+#     text = (
+#         "👤 Мой профиль\n\n"
+#         f"👤 ФИО: {user['full_name']}\n"
+#         f"🎂 Дата рождения: {user['birth_date']}\n"
+#         f"🎓 Образование: {user['education']}\n"
+#         f"\n"
+#         f"📅 Дата регистрации: {user['registered_at']}\n"
+#         f"🆔 Код участника: {user['user_id']}\n"
+#     )
 
-    await message.answer(
-        text,
-        reply_markup=profile_menu()
-    )
+#     await message.answer(
+#         text,
+#         reply_markup=profile_menu()
+#     )
 
 @router.message(F.text == "📰 Новости")
 async def news(message: Message):

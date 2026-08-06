@@ -65,3 +65,16 @@ class UserService:
             "moderator",
             "superadmin",
         )
+    
+    def update_user_field(
+        self,
+        telegram_id,
+        field,
+        value
+    ):
+
+        return google.update_user_field(
+            telegram_id,
+            field,
+            value
+        )

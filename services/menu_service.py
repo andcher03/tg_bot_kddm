@@ -22,6 +22,7 @@ async def show_main_menu(bot, user_id):
 
         await bot.send_message(
             user_id,
-            "🏠 Главное меню",
+            "👋 Добро пожаловать в главное меню бота Молодёжи Казани!\n\n"
+            "Выберите интересующий вас раздел:",
             reply_markup=user_menu(),
         )

@@ -14,6 +14,7 @@ from handlers.user import router as user_router
 from handlers.channel import router as channel_router
 from middlewares.logger import LoggerMiddleware
 from handlers.profile import router as profile_router
+from handlers.events import router as events_router
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -29,6 +30,7 @@ dp.include_router(channel_router)
 dp.message.middleware(LoggerMiddleware())
 dp.callback_query.middleware(LoggerMiddleware())
 dp.include_router(profile_router)
+dp.include_router(events_router)
 
 
 

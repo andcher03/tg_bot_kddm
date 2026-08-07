@@ -12,6 +12,8 @@ from states.profile import ProfileState
 from keyboards.profile import profile_menu, edit_profile_menu
 
 from services.event_service import EventService
+from services.validators import validate_birth_date
+from services.menu_service import show_main_menu
 
 router = Router()
 
@@ -146,35 +148,10 @@ async def save_birth_date(
 
     birth_date = message.text
 
-    users.update_user_field(
-        message.from_user.id,
-        "birth_date",
-        birth_date
-    )
-
-    await state.clear()
-
-    await message.answer(
-        "✅ Дата рождения успешно изменена!",
-        reply_markup=profile_menu()
-    )
-
-@router.message(ProfileState.edit_birth_date)
-async def save_birth_date(
-    message: Message,
-    state: FSMContext
-):
-
-    birth_date = message.text
-
-    if not validate_birth_date(birth_date):
-        await message.answer(
-            "❌ Неверный формат даты.\n\n"
-            "Введите дату в формате:\n"
-            "ДД.ММ.ГГГГ"
-        )
+    valid, error = validate_birth_date(birth_date)
+    if not valid:
+        await message.answer(error)
         return
-
 
     users.update_user_field(
         message.from_user.id,
@@ -192,28 +169,21 @@ async def save_birth_date(
 
 @router.message(F.text == "📄 Мои мероприятия")
 async def my_events(message: Message):
+    await message.answer(
+        "📄 Вы пока не записаны ни на одно мероприятие."
+    )
 
-    events = event_service.get_active_events()
+@router.message(F.text == "🏠 Главное меню")
+async def back_to_main_menu(message: Message):
+    await show_main_menu(
+        message.bot,
+        message.from_user.id
+    )
 
-    if not events:
-        await message.answer(
-            "📄 Мероприятий пока нет."
-        )
-        return
-
-
-    text = "📄 <b>Доступные мероприятия:</b>\n\n"
-
-    for event in events:
-
-        text += (
-            f"🎯 {event['title']}\n"
-            f"📅 {event['date']}\n"
-            f"📍 {event['place']}\n\n"
-        )
-
+@router.message(F.text == "⬅️ Назад")
+async def back_to_profile(message: Message):
 
     await message.answer(
-        text,
-        parse_mode="HTML"
+        "👤 Мой профиль",
+        reply_markup=profile_menu()
     )

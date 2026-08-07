@@ -119,9 +119,6 @@ async def confirm_registration(
 
     data = await state.get_data()
 
-    from keyboards.admin_menu import admin_menu
-    from keyboards.user_menu import user_menu
-
     users.register_user(
         telegram_id=callback.from_user.id,
         username=callback.from_user.username,
@@ -136,9 +133,7 @@ async def confirm_registration(
         "✅ Регистрация успешно завершена!",
     )
     
-    await show_main_menu(callback.message)
-
-    await callback.answer()
+    await show_main_menu(callback.bot, callback.from_user.id)
 
     await callback.answer()
     

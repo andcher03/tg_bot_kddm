@@ -52,13 +52,7 @@ def residence_menu():
                     text="⭐ Оценить мероприятие",
                     callback_data="residence_feedback"
                 )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🏠 Главное меню",
-                    callback_data="main_menu"
-                )
-            ],
+            ]
         ]
     )
 

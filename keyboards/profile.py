@@ -7,7 +7,6 @@ def profile_menu():
             [KeyboardButton(text="✏️ Изменить данные")],
             [KeyboardButton(text="📄 Мои мероприятия")],
             [KeyboardButton(text="🏆 Мои достижения")],
-            [KeyboardButton(text="⚙️ Настройки")],
             [KeyboardButton(text="🏠 Главное меню")],
         ],
         resize_keyboard=True

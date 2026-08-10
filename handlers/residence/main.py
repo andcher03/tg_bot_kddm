@@ -8,7 +8,7 @@ from keyboards.common import main_back_menu
 router = Router()
 
 
-@router.message(F.text == "📍 Прописка")
+@router.message(F.text == "📍 Проходка")
 async def residence_start(message: Message):
 
     
@@ -19,7 +19,7 @@ async def residence_start(message: Message):
     )
 
     await message.answer(
-        "📍 Раздел «Прописка»\n\n"
+        "📍 Раздел «Проходка»\n\n"
         "Выберите интересующий раздел:",
         reply_markup=residence_menu()
     )
@@ -34,7 +34,7 @@ from keyboards.residence.main import residence_menu
 async def back_residence(callback: CallbackQuery):
 
     await callback.message.edit_text(
-        "📍 Раздел «Прописка»\n\n"
+        "📍 Раздел «Проходка»\n\n"
         "Выберите интересующий раздел:",
         reply_markup=residence_menu()
     )

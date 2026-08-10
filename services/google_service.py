@@ -76,3 +76,4 @@ class GoogleService:
     
     def get_events(self):
         return self.events.get_all_records()
+    

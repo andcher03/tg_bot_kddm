@@ -33,12 +33,6 @@ dp.include_router(profile_router)
 dp.include_router(events_router)
 
 
-
-#Логгирование
-# dp.update.middleware(LoggerMiddleware())
-# dp.message.middleware(LoggerMiddleware())
-# dp.callback_query.middleware(LoggerMiddleware())
-
 async def main():
     await set_default_commands(bot)
 

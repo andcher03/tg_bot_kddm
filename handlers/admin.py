@@ -4,10 +4,10 @@ from keyboards.residence.main import residence_menu
 
 router = Router()
 
-@router.message(F.text == "👀 Просмотр проекта «Прописка»")
+@router.message(F.text == "👀 Просмотр проекта «Проходка»")
 async def preview_residence(message: Message):
     await message.answer(
-        "📍 Проект «Прописка»",
+        "📍 Проект «Проходка»",
         reply_markup=ReplyKeyboardRemove()
     )
     

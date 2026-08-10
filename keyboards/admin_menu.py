@@ -7,7 +7,7 @@ def admin_menu():
             [
                 KeyboardButton(text="👥 Пользователи"),
                 KeyboardButton(text="🛠 Управление новостями"),
-                KeyboardButton(text="📍 Проект «Прописка»")
+                KeyboardButton(text="📍 Проект «Проходка»")
             ],
             [
                 KeyboardButton(text="📊 Статистика"),

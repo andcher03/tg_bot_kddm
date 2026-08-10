@@ -5,7 +5,7 @@ def user_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="📍 Прописка"),
+                KeyboardButton(text="📍 Проходка"),
             ],
             [
                 KeyboardButton(text="📰 Новости"),

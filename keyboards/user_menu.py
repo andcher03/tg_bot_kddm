@@ -1,27 +1,46 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+)
 
 
 def user_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="📍 Проходка"),
+                KeyboardButton(
+                    text="👤 Мой профиль"
+                ),
+                KeyboardButton(
+                    text="🎭 Афиша"
+                ),
             ],
             [
-                KeyboardButton(text="📰 Новости"),
+                KeyboardButton(
+                    text="🗺 Молодёжная карта Казани"
+                ),
             ],
             [
-                KeyboardButton(text="👤 Мой профиль"),
-                
+                KeyboardButton(
+                    text="🏙 Переехавшим в Казань"
+                ),
             ],
             [
-                KeyboardButton(text="✅ Регистрация на мероприятие"),
-                
+                KeyboardButton(
+                    text="👥 Чем занимается молодёжь в Казани"
+                ),
             ],
             [
-                KeyboardButton(text="📞 Контакты"),
+                KeyboardButton(
+                    text="🎓 Поддержка и льготы"
+                ),
+            ],
+            [
+                KeyboardButton(
+                    text="🏆 Гранты и конкурсы для студентов"
+                ),
             ],
         ],
         resize_keyboard=True,
-        input_field_placeholder="Выберите раздел",
+        input_field_placeholder="Выберите раздел"
     )

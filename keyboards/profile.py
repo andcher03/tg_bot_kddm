@@ -1,34 +1,77 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from services.validators import validate_birth_date
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 def profile_menu():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="✏️ Изменить данные")],
-            [KeyboardButton(text="📅 Мои мероприятия")],
-            [KeyboardButton(text="🏆 Мои достижения")],
-            [KeyboardButton(text="🏠 Главное меню")],
-        ],
-        resize_keyboard=True
-    )
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📅 Мои события",
+                    callback_data="profile_my_events"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏆 Мои конкурсы",
+                    callback_data="profile_my_contests"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📨 Мои рассылки",
+                    callback_data="profile_my_mailings"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="💬 Мои отзывы",
+                    callback_data="profile_my_reviews"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⭐ Оценить событие",
+                    callback_data="profile_rate_event"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="✏️ Изменить данные",
+                    callback_data="profile_edit"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏠 Главное меню",
+                    callback_data="profile_main_menu"
+                )
+            ]
+        ]
+    )
 
 
 def edit_profile_menu():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text="👤 ФИО"),
-                KeyboardButton(text="🎂 Дата рождения")
-            ],
-            [
-                KeyboardButton(text="🎓 Образование")
-            ],
-            [
-                KeyboardButton(text="⬅️ Назад")
-            ]
-        ],
-        resize_keyboard=True
-    )
 
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="👤 ФИО",
+                    callback_data="profile_edit_name"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎓 Университет",
+                    callback_data="profile_edit_university"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ Назад",
+                    callback_data="profile_back"
+                )
+            ]
+        ]
+    )

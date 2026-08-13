@@ -46,6 +46,14 @@ async def education(
         )
         return
 
+    # Сохраняем информацию,
+    # откуда пользователь пришёл
+    state_data = await state.get_data()
+
+    after_registration = state_data.get(
+        "after_registration"
+    )
+
     telegram_id = callback.from_user.id
     username = callback.from_user.username or ""
     full_name = callback.from_user.full_name or ""
@@ -59,24 +67,61 @@ async def education(
 
     await state.clear()
 
+    # Если пользователь каким-то образом
+    # уже зарегистрирован
     if not user:
-        await callback.message.edit_text(
-            "ℹ️ Вы уже зарегистрированы."
+
+        user = await users.get_user(
+            telegram_id
         )
 
-        await show_main_menu(
-            callback.bot,
-            telegram_id
+    await callback.message.edit_text(
+        "✅ <b>Регистрация завершена!</b>\n\n"
+        f"🎓 Университет: {university}\n"
+        f"🆔 Ваш ID: "
+        f"<code>{user.user_code}</code>",
+        parse_mode="HTML"
+    )
+
+    # Пользователь пришёл из "Мой профиль"
+    if after_registration == "profile":
+
+        created_at = ""
+
+        if user.created_at:
+            created_at = user.created_at.strftime(
+                "%d.%m.%Y %H:%M"
+            )
+
+        username_text = (
+            f"@{user.username.lstrip('@')}"
+            if user.username
+            else "не указан"
+        )
+
+        text = (
+            "👤 <b>Мой профиль</b>\n\n"
+            f"👤 Имя: {user.full_name}\n"
+            f"🔗 Username: {username_text}\n"
+            f"🎓 Университет: "
+            f"{user.university or 'не указан'}\n\n"
+            f"📅 Дата регистрации: {created_at}\n"
+            f"🆔 ID участника: "
+            f"<code>{user.user_code or ''}</code>"
+        )
+
+        from keyboards.profile import profile_menu
+
+        await callback.message.answer(
+            text,
+            parse_mode="HTML",
+            reply_markup=profile_menu()
         )
 
         return
 
-    await callback.message.edit_text(
-        "✅ Регистрация успешно завершена!\n\n"
-        f"🎓 Университет: {university}\n\n"
-        "Добро пожаловать в Молодёжь Казани!"
-    )
-
+    # Если регистрация была запущена
+    # откуда-то ещё
     await show_main_menu(
         callback.bot,
         telegram_id

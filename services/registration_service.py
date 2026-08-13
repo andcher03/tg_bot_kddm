@@ -1,60 +1,199 @@
-from datetime import datetime
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
-from services.google_service import GoogleService
+from services.database import SessionLocal
+from services.models import User, Event, Registration
 
 
 class RegistrationService:
 
-    def __init__(self):
-        self.google = GoogleService()
+    async def is_registered(
+        self,
+        user_id: int,
+        event_id: str
+    ) -> bool:
 
-    def get_registrations(self):
-        return self.google.get_registrations()
+        async with SessionLocal() as session:
 
-    def is_registered(self, user_id, event_id):
+            # Ищем пользователя по Telegram ID
+            user_result = await session.execute(
+                select(User).where(
+                    User.telegram_id == user_id
+                )
+            )
 
-        registrations = self.get_registrations()
+            user = user_result.scalar_one_or_none()
 
-        for registration in registrations:
-            if (
-                str(registration["user_id"]) == str(user_id)
-                and str(registration["event_id"]) == str(event_id)
-                and registration["status"] != "cancelled"
-            ):
-                return True
+            if not user:
+                return False
 
-        return False
+            # Ищем мероприятие по EVENT-...
+            event_result = await session.execute(
+                select(Event).where(
+                    Event.event_code == str(event_id)
+                )
+            )
 
-    def create_registration(self, user_id, event_id):
+            event = event_result.scalar_one_or_none()
 
-        if self.is_registered(user_id, event_id):
-            return False
+            if not event:
+                return False
 
-        registrations = self.get_registrations()
+            # Проверяем существующую регистрацию
+            registration_result = await session.execute(
+                select(Registration).where(
+                    Registration.user_id == user.id,
+                    Registration.event_id == event.id,
+                    Registration.status != "cancelled"
+                )
+            )
 
-        registration_id = f"REG-{len(registrations) + 1:06d}"
+            registration = (
+                registration_result.scalar_one_or_none()
+            )
 
-        registration = {
-            "id": registration_id,
-            "user_id": str(user_id),
-            "event_id": str(event_id),
-            "registration_date": datetime.now().strftime(
-                "%d.%m.%Y %H:%M:%S"
-            ),
-            "status": "registered",
-        }
+            return registration is not None
 
-        self.google.add_registration(registration)
+    async def create_registration(
+        self,
+        user_id: int,
+        event_id: str
+    ):
 
-        return True
+        async with SessionLocal() as session:
 
-    def get_user_registrations(self, user_id):
+            # -------------------------
+            # Пользователь
+            # -------------------------
 
-        registrations = self.get_registrations()
+            user_result = await session.execute(
+                select(User).where(
+                    User.telegram_id == user_id
+                )
+            )
 
-        return [
-            registration
-            for registration in registrations
-            if str(registration["user_id"]) == str(user_id)
-            and registration["status"] != "cancelled"
-        ]
+            user = user_result.scalar_one_or_none()
+
+            if not user:
+                return False
+
+            # -------------------------
+            # Мероприятие
+            # -------------------------
+
+            event_result = await session.execute(
+                select(Event).where(
+                    Event.event_code == str(event_id)
+                )
+            )
+
+            event = event_result.scalar_one_or_none()
+
+            if not event:
+                return False
+
+            # -------------------------
+            # Проверяем дубль
+            # -------------------------
+
+            registration_result = await session.execute(
+                select(Registration).where(
+                    Registration.user_id == user.id,
+                    Registration.event_id == event.id,
+                    Registration.status != "cancelled"
+                )
+            )
+
+            existing_registration = (
+                registration_result.scalar_one_or_none()
+            )
+
+            if existing_registration:
+                return False
+
+            # -------------------------
+            # Создаём регистрацию
+            # -------------------------
+
+            registration = Registration(
+                user_id=user.id,
+                event_id=event.id,
+                status="registered",
+            )
+
+            session.add(registration)
+
+            # Получаем PostgreSQL SERIAL id
+            await session.flush()
+
+            registration.registration_code = (
+                f"REG-{registration.id:06d}"
+            )
+
+            try:
+                await session.commit()
+
+            except IntegrityError:
+                await session.rollback()
+                return False
+
+            return True
+
+    async def get_user_registrations(
+        self,
+        user_id: int
+    ):
+
+        async with SessionLocal() as session:
+
+            # user_id здесь — Telegram ID
+            user_result = await session.execute(
+                select(User).where(
+                    User.telegram_id == user_id
+                )
+            )
+
+            user = user_result.scalar_one_or_none()
+
+            if not user:
+                return []
+
+            result = await session.execute(
+                select(
+                    Registration,
+                    Event
+                )
+                .join(
+                    Event,
+                    Registration.event_id == Event.id
+                )
+                .where(
+                    Registration.user_id == user.id,
+                    Registration.status != "cancelled"
+                )
+                .order_by(
+                    Registration.registration_date.desc()
+                )
+            )
+
+            rows = result.all()
+
+            registrations = []
+
+            for registration, event in rows:
+
+                registrations.append({
+                    "id": registration.registration_code,
+                    "user_id": str(user.telegram_id),
+                    "event_id": event.event_code,
+                    "registration_date": (
+                        registration.registration_date.strftime(
+                            "%d.%m.%Y %H:%M:%S"
+                        )
+                        if registration.registration_date
+                        else ""
+                    ),
+                    "status": registration.status,
+                })
+
+            return registrations

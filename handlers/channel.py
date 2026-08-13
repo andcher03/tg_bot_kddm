@@ -1,10 +1,12 @@
 from aiogram import Router
 from aiogram.types import Message
-from services.google_service import google_service
 
-google = google_service
+from services.settings_service import SettingsService
+
 
 router = Router()
+
+settings = SettingsService()
 
 LAST_POST_ID = None
 
@@ -13,12 +15,13 @@ LAST_POST_ID = None
 async def new_post(message: Message):
 
     global LAST_POST_ID
+
     LAST_POST_ID = message.message_id
 
     print("ID канала:", message.chat.id)
     print("ID сообщения:", message.message_id)
 
-    google.set_setting(
+    await settings.set(
         "last_news_id",
         message.message_id
     )

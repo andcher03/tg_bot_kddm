@@ -3,14 +3,13 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from states.registration import RegistrationState
-from services.user_service import UserService
-from keyboards.registration import university_keyboard
+from services.postgres_user_service import PostgresUserService
 from services.menu_service import show_main_menu
 
 
 router = Router()
 
-users = UserService()
+users = PostgresUserService()
 
 
 UNIVERSITIES = {
@@ -26,16 +25,20 @@ UNIVERSITIES = {
 }
 
 
-@router.callback_query(F.data.startswith("uni_"))
+@router.callback_query(
+    RegistrationState.education,
+    F.data.startswith("uni_")
+)
 async def education(
     callback: CallbackQuery,
     state: FSMContext
 ):
-    print("🔥 CALLBACK ПОЛУЧЕН:", callback.data)
 
     await callback.answer()
 
-    university = UNIVERSITIES.get(callback.data)
+    university = UNIVERSITIES.get(
+        callback.data
+    )
 
     if not university:
         await callback.message.answer(
@@ -43,13 +46,11 @@ async def education(
         )
         return
 
-    print("🎓 Выбран университет:", university)
-
     telegram_id = callback.from_user.id
     username = callback.from_user.username or ""
     full_name = callback.from_user.full_name or ""
 
-    users.register_user(
+    user = await users.register_user(
         telegram_id=telegram_id,
         username=username,
         full_name=full_name,
@@ -57,6 +58,18 @@ async def education(
     )
 
     await state.clear()
+
+    if not user:
+        await callback.message.edit_text(
+            "ℹ️ Вы уже зарегистрированы."
+        )
+
+        await show_main_menu(
+            callback.bot,
+            telegram_id
+        )
+
+        return
 
     await callback.message.edit_text(
         "✅ Регистрация успешно завершена!\n\n"

@@ -2,8 +2,8 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from services.user_service import UserService
-from services.event_service import EventService
+from services.postgres_user_service import PostgresUserService
+from services.postgres_event_service import PostgresEventService
 from services.registration_service import RegistrationService
 from services.menu_service import show_main_menu
 
@@ -14,9 +14,9 @@ from states.profile import ProfileState
 
 router = Router()
 
-users = UserService()
+users = PostgresUserService()
 
-event_service = EventService()
+event_service = PostgresEventService()
 registration_service = RegistrationService()
 
 @router.message(F.text == "✏️ Изменить данные")
@@ -30,7 +30,9 @@ async def edit_profile(message: Message):
 @router.message(F.text == "👤 Мой профиль")
 async def profile(message: Message):
 
-    user = users.get_user(message.from_user.id)
+    user = await users.get_user(
+        message.from_user.id
+    )
 
     if not user:
         await message.answer(
@@ -38,13 +40,26 @@ async def profile(message: Message):
         )
         return
 
+    created_at = ""
+
+    if user.created_at:
+        created_at = user.created_at.strftime(
+            "%d.%m.%Y %H:%M"
+        )
+
+    username = (
+        f"@{user.username.lstrip('@')}"
+        if user.username
+        else "не указан"
+    )
+
     text = (
         "👤 <b>Мой профиль</b>\n\n"
-        f"👤 Имя: {user.get('full_name', '')}\n"
-        f"🔗 Username: @{user.get('username', '').lstrip('@') if user.get('username') else 'не указан'}\n"
-        f"🎓 Университет: {user.get('university', 'не указан')}\n\n"
-        f"📅 Дата регистрации: {user.get('registered_at', '')}\n"
-        f"🆔 Код участника: {user.get('user_id', '')}"
+        f"👤 Имя: {user.full_name}\n"
+        f"🔗 Username: {username}\n"
+        f"🎓 Университет: {user.university or 'не указан'}\n\n"
+        f"📅 Дата регистрации: {created_at}\n"
+        f"🆔 Код участника: {user.user_code or ''}"
     )
 
     await message.answer(
@@ -88,7 +103,7 @@ async def save_full_name(
 
     full_name = message.text
 
-    users.update_user_field(
+    await users.update_user_field(
         message.from_user.id,
         "full_name",
         full_name
@@ -100,7 +115,6 @@ async def save_full_name(
         "✅ ФИО успешно изменено!",
         reply_markup=profile_menu()
     )
-
 
 
 @router.message(F.text == "🏠 Главное меню")
@@ -123,7 +137,7 @@ async def my_events(message: Message):
 
     user_id = message.from_user.id
 
-    registrations = registration_service.get_user_registrations(
+    registrations = await registration_service.get_user_registrations(
         user_id
     )
 
@@ -137,7 +151,7 @@ async def my_events(message: Message):
 
     for registration in registrations:
 
-        event = event_service.get_event_by_id(
+        event = await event_service.get_event_by_id(
             registration["event_id"]
         )
 
@@ -193,7 +207,7 @@ async def save_university(
         await callback.answer("Не удалось определить университет", show_alert=True)
         return
 
-    users.update_user_field(
+    await users.update_user_field(
         callback.from_user.id,
         "university",
         university

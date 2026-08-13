@@ -1,16 +1,14 @@
-from aiogram.types import Message
-
-from services.user_service import UserService
+from services.postgres_user_service import PostgresUserService
 from keyboards.admin_menu import admin_menu
 from keyboards.user_menu import user_menu
 
-users = UserService()
 
+users = PostgresUserService()
 
 
 async def show_main_menu(bot, user_id):
-    
-    if users.is_admin(user_id):
+
+    if await users.is_admin(user_id):
 
         await bot.send_message(
             user_id,

@@ -3,21 +3,22 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from services.user_service import UserService
+from services.postgres_user_service import PostgresUserService
 from states.registration import RegistrationState
 from keyboards.registration import university_keyboard
 from services.menu_service import show_main_menu
 
+
 router = Router()
 
-users = UserService()
+users = PostgresUserService()
 
 
 @router.message(CommandStart())
 async def start(message: Message, state: FSMContext):
 
-    # Проверяем, зарегистрирован ли пользователь
-    if users.is_registered(message.from_user.id):
+    # Проверяем пользователя уже в PostgreSQL
+    if await users.is_registered(message.from_user.id):
 
         await show_main_menu(
             message.bot,
@@ -26,14 +27,6 @@ async def start(message: Message, state: FSMContext):
 
         return
 
-    # Сохраняем данные Telegram автоматически
-    await state.update_data(
-        telegram_id=message.from_user.id,
-        username=message.from_user.username or "",
-        full_name=message.from_user.full_name
-    )
-
-    # Единственный вопрос при регистрации
     await message.answer(
         "👋 Добро пожаловать!\n\n"
         "Для регистрации выберите университет, "
@@ -41,4 +34,6 @@ async def start(message: Message, state: FSMContext):
         reply_markup=university_keyboard()
     )
 
-    await state.set_state(RegistrationState.education)
+    await state.set_state(
+        RegistrationState.education
+    )

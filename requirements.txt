@@ -1,4 +1,5 @@
 aiogram
 python-dotenv
-gspread
-google-auth
+sqlalchemy
+asyncpg
+greenlet

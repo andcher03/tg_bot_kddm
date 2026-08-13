@@ -6,12 +6,12 @@ from aiogram.types import (
     InlineKeyboardButton,
 )
 
-from services.event_service import EventService
+from services.postgres_event_service import PostgresEventService
 from services.registration_service import RegistrationService
 
 router = Router()
 
-event_service = EventService()
+event_service = PostgresEventService()
 
 registration_service = RegistrationService()
 
@@ -23,7 +23,7 @@ registration_service = RegistrationService()
 @router.message(F.text == "✅ Регистрация на мероприятие")
 async def events(message: Message):
 
-    events = event_service.get_active_events()
+    events = await event_service.get_active_events()
 
     if not events:
         await message.answer(
@@ -67,13 +67,13 @@ async def events(message: Message):
 @router.callback_query(F.data.startswith("event_"))
 async def event_details(callback: CallbackQuery):
 
-    event_id = callback.data.replace("event_", "")
+    event_id = callback.data.replace(
+        "event_",
+        ""
+    )
 
-    events = event_service.get_active_events()
-
-    event = next(
-        (event for event in events if event["id"] == event_id),
-        None
+    event = await event_service.get_event_by_id(
+        event_id
     )
 
     if not event:
@@ -125,7 +125,7 @@ async def event_details(callback: CallbackQuery):
 @router.callback_query(F.data == "events_back")
 async def events_back(callback: CallbackQuery):
 
-    events = event_service.get_active_events()
+    events = await event_service.get_active_events()
 
     if not events:
         await callback.message.edit_text(
@@ -174,7 +174,7 @@ async def register_for_event(callback: CallbackQuery):
 
     user_id = callback.from_user.id
 
-    success = registration_service.create_registration(
+    success = await registration_service.create_registration(
         user_id=user_id,
         event_id=event_id
     )

@@ -1,9 +1,12 @@
 from datetime import datetime
 
-from services.google_service import google_service
+import logging
 
 
-google = google_service
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
 
 
 class LoggerService:
@@ -16,12 +19,11 @@ class LoggerService:
         action="",
         result="✅"
     ):
-
-        google.logs.append_row([
-            datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
+        logging.info(
+            "%s | %s | %s | %s | %s",
             user,
             role,
             section,
             action,
             result
-        ])
+        )

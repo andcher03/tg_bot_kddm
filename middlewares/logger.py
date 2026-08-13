@@ -2,15 +2,21 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 
 from services.logger_service import LoggerService
-from services.user_service import UserService
+from services.postgres_user_service import PostgresUserService
+
 
 logger = LoggerService()
-users = UserService()
+users = PostgresUserService()
 
 
 class LoggerMiddleware(BaseMiddleware):
 
-    async def __call__(self, handler, event, data):
+    async def __call__(
+        self,
+        handler,
+        event,
+        data
+    ):
 
         try:
 
@@ -19,13 +25,18 @@ class LoggerMiddleware(BaseMiddleware):
 
             if hasattr(event, "from_user"):
 
-                user = users.get_user(event.from_user.id)
+                user = await users.get_user(
+                    event.from_user.id
+                )
 
                 if user:
-                    user_name = user["full_name"]
-                    role = user["role"]
+                    user_name = user.full_name
+                    role = user.role
+
                 else:
-                    user_name = event.from_user.full_name
+                    user_name = (
+                        event.from_user.full_name
+                    )
 
             if isinstance(event, Message):
 
@@ -33,11 +44,17 @@ class LoggerMiddleware(BaseMiddleware):
                     user=user_name,
                     role=role,
                     section="Message",
-                    action=event.text or "Сообщение",
+                    action=(
+                        event.text
+                        or "Сообщение"
+                    ),
                     result="✅"
                 )
 
-            elif isinstance(event, CallbackQuery):
+            elif isinstance(
+                event,
+                CallbackQuery
+            ):
 
                 logger.write(
                     user=user_name,
@@ -48,6 +65,12 @@ class LoggerMiddleware(BaseMiddleware):
                 )
 
         except Exception as e:
-            print(f"Ошибка логирования: {e}")
 
-        return await handler(event, data)
+            print(
+                f"Ошибка логирования: {e}"
+            )
+
+        return await handler(
+            event,
+            data
+        )

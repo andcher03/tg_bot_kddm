@@ -3,12 +3,12 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 
 from services.user_service import UserService
-from services.google_service import GoogleService
+from services.google_service import google_service
 from services.logger_service import LoggerService
 
 router = Router()
 logger = LoggerService()
-google = GoogleService()
+google = google_service
 users = UserService()
 
 @router.message(F.text == "📰 Новости")

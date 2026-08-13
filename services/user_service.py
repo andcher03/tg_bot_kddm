@@ -1,22 +1,27 @@
-from services.google_service import GoogleService
 from datetime import datetime
 
-google = GoogleService()
+from services.google_service import google_service
 
 
 class UserService:
 
+    def __init__(self):
+        self.google = google_service
+
     def is_registered(self, telegram_id: int):
-        users = google.get_all_users()
+
+        users = self.google.get_all_users()
 
         for user in users:
+
             if str(user["telegram_id"]) == str(telegram_id):
                 return True
 
         return False
 
     def generate_user_code(self):
-        users = google.get_all_users()
+
+        users = self.google.get_all_users()
 
         number = len(users) + 1
 
@@ -27,45 +32,51 @@ class UserService:
         telegram_id,
         username,
         full_name,
-        birth_date,
-        education
+        university
     ):
+
+        # Проверяем, нет ли уже пользователя
+        if self.is_registered(telegram_id):
+            return False
 
         user_code = self.generate_user_code()
 
-        google.append_user([
+        self.google.append_user([
             user_code,
             telegram_id,
             username,
             full_name,
-            birth_date,
-            education,
+            university,
             "user",
             datetime.now().strftime("%d.%m.%Y %H:%M")
         ])
-    
-    
+
+        return True
+
     def get_user(self, telegram_id: int):
-        users = google.get_all_users()
+
+        users = self.google.get_all_users()
 
         for user in users:
+
             if str(user["telegram_id"]) == str(telegram_id):
                 return user
 
         return None
 
     def is_admin(self, telegram_id: int):
+
         user = self.get_user(telegram_id)
 
         if not user:
             return False
 
-        return user["role"] in (
+        return user.get("role") in (
             "admin",
             "moderator",
-            "superadmin",
+            "superadmin"
         )
-    
+
     def update_user_field(
         self,
         telegram_id,
@@ -73,7 +84,7 @@ class UserService:
         value
     ):
 
-        return google.update_user_field(
+        return self.google.update_user_field(
             telegram_id,
             field,
             value

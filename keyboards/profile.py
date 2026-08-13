@@ -5,7 +5,7 @@ def profile_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="✏️ Изменить данные")],
-            [KeyboardButton(text="📄 Мои мероприятия")],
+            [KeyboardButton(text="📅 Мои мероприятия")],
             [KeyboardButton(text="🏆 Мои достижения")],
             [KeyboardButton(text="🏠 Главное меню")],
         ],

@@ -1,6 +1,6 @@
-from services.google_service import GoogleService
+from services.google_service import google_service
 
-google = GoogleService()
+google = google_service
 
 google.append_user([
     "KZN-000001",

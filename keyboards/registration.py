@@ -14,22 +14,3 @@ def university_keyboard():
             [InlineKeyboardButton(text="📚 Другой ВУЗ", callback_data="uni_other")],
         ]
     )
-
-
-def confirm_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅ Подтверждаю",
-                    callback_data="confirm_registration"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔄 Заполнить заново",
-                    callback_data="restart_registration"
-                )
-            ],
-        ]
-    )

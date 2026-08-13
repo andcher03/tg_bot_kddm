@@ -1,8 +1,8 @@
 from aiogram import Router
 from aiogram.types import Message
-from services.google_service import GoogleService
+from services.google_service import google_service
 
-google = GoogleService()
+google = google_service
 
 router = Router()
 

@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from services.google_service import GoogleService
+from services.google_service import google_service
 
 
-google = GoogleService()
+google = google_service
 
 
 class LoggerService:

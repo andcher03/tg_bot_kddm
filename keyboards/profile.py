@@ -75,3 +75,15 @@ def edit_profile_menu():
             ]
         ]
     )
+
+def profile_back_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="⬅️ В профиль",
+                    callback_data="profile_back"
+                )
+            ]
+        ]
+    )

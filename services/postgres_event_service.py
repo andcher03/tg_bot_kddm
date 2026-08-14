@@ -82,4 +82,59 @@ class PostgresEventService:
                 if event.created_at
                 else ""
             ),
+            "scale": event.scale or "",
+            "organizer_type": event.organizer_type or "",
+            "company": event.company or "",
+            "activity_type": event.activity_type or "",
         }
+    
+    async def search_events(
+        self,
+        scale=None,
+        organizer_type=None,
+        company=None,
+        activity_type=None
+    ):
+
+        today = date.today()
+
+        async with SessionLocal() as session:
+
+            query = select(Event).where(
+                Event.status == "active",
+                Event.event_date >= today
+            )
+
+            if scale:
+                query = query.where(
+                    Event.scale == scale
+                )
+
+            if organizer_type:
+                query = query.where(
+                    Event.organizer_type == organizer_type
+                )
+
+            if company:
+                query = query.where(
+                    Event.company == company
+                )
+
+            if activity_type:
+                query = query.where(
+                    Event.activity_type == activity_type
+                )
+
+            query = query.order_by(
+                Event.event_date,
+                Event.start_time
+            )
+
+            result = await session.execute(query)
+
+            events = result.scalars().all()
+
+            return [
+                self._to_dict(event)
+                for event in events
+            ]

@@ -5,12 +5,6 @@ from aiogram.types import Message
 router = Router()
 
 
-@router.message(F.text == "🎭 Афиша")
-async def poster(message: Message):
-    await message.answer(
-        "🎭 Раздел «Афиша» скоро будет обновлён."
-    )
-
 
 @router.message(F.text == "🗺 Молодёжная карта Казани")
 async def youth_map(message: Message):

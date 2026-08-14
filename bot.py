@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from aiogram import Bot, Dispatcher
 
@@ -9,10 +10,13 @@ from handlers.start import router as start_router
 from handlers.registration import router as registration_router
 from handlers.user import router as user_router
 from handlers.channel import router as channel_router
-from middlewares.logger import LoggerMiddleware
 from handlers.profile import router as profile_router
 from handlers.events import router as events_router
 from handlers.main_sections import router as main_sections_router
+
+from services.logging_config import setup_logging
+setup_logging()
+logger = logging.getLogger(__name__)
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -22,19 +26,25 @@ dp.include_router(start_router)
 dp.include_router(registration_router)
 dp.include_router(user_router)
 dp.include_router(channel_router)
-dp.message.middleware(LoggerMiddleware())
-dp.callback_query.middleware(LoggerMiddleware())
 dp.include_router(profile_router)
 dp.include_router(events_router)
 dp.include_router(main_sections_router)
 
 
 async def main():
-    await set_default_commands(bot)
 
-    print("✅ Бот успешно запущен!")
+    logger.info("Бот запускается")
 
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+
+    except Exception:
+        logger.exception(
+            "Критическая ошибка при работе бота"
+        )
+
+    finally:
+        logger.info("Бот остановлен")
 
 
 if __name__ == "__main__":

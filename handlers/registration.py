@@ -3,8 +3,12 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from states.registration import RegistrationState
+
 from services.postgres_user_service import PostgresUserService
 from services.menu_service import show_main_menu
+from services.registration_service import RegistrationService
+from services.postgres_event_service import PostgresEventService
+
 
 
 router = Router()
@@ -48,11 +52,20 @@ async def education(
 
     # Сохраняем информацию,
     # откуда пользователь пришёл
-    state_data = await state.get_data()
+    data = await state.get_data()
 
-    after_registration = state_data.get(
+    after_registration = data.get(
         "after_registration"
     )
+
+    event_id = data.get(
+        "event_id"
+    )
+
+    # дальше создаём пользователя / регистрацию
+
+    # и только потом:
+    await state.clear()
 
     telegram_id = callback.from_user.id
     username = callback.from_user.username or ""
@@ -117,6 +130,53 @@ async def education(
             parse_mode="HTML",
             reply_markup=profile_menu()
         )
+
+        return
+
+    if after_registration == "event_registration":
+
+        event_id = data.get("event_id")
+
+        success = await registration_service.create_registration(
+            user_id=callback.from_user.id,
+            event_id=event_id
+        )
+
+        await state.clear()
+
+        if success:
+            event = await event_service.get_event_by_id(
+                event_id
+            )
+
+            event_title = (
+                event["title"]
+                if event
+                else "мероприятие"
+            )
+
+            await callback.message.edit_text(
+                "✅ <b>Регистрация завершена!</b>\n\n"
+                f"Вы зарегистрированы на:\n"
+                f"<b>{event_title}</b>",
+                parse_mode="HTML"
+            )
+
+            await show_main_menu(
+                callback.bot,
+                callback.from_user.id
+            )
+
+        else:
+            await callback.message.edit_text(
+                "Профиль создан, но зарегистрироваться "
+                "на мероприятие не удалось."
+            )
+
+            await show_main_menu(
+                callback.bot,
+                callback.from_user.id
+            )
 
         return
 

@@ -4,6 +4,8 @@ from aiogram.types import (
     CallbackQuery,
     ReplyKeyboardRemove,
 )
+from states.registration import RegistrationState
+from keyboards.registration import university_keyboard
 
 from keyboards.afisha import (
     afisha_menu,
@@ -164,9 +166,9 @@ async def event_details(
     F.data.startswith("afisha_register_")
 )
 async def register_event(
-    callback: CallbackQuery
+    callback: CallbackQuery,
+    state: FSMContext
 ):
-
     await callback.answer()
 
     event_id = callback.data.replace(
@@ -174,43 +176,60 @@ async def register_event(
         ""
     )
 
-    telegram_id = callback.from_user.id
-
     user = await users.get_user(
-        telegram_id
+        callback.from_user.id
     )
 
+    # Пользователь ещё не зарегистрирован в боте
     if not user:
+        await state.update_data(
+            after_registration="event_registration",
+            event_id=event_id
+        )
 
-        await callback.message.answer(
-            "👤 Для регистрации на мероприятие "
-            "сначала создайте профиль.\n\n"
-            "Откройте раздел «Мой профиль» "
-            "в главном меню."
+        await state.set_state(
+            RegistrationState.education
+        )
+
+        await callback.message.edit_text(
+            "🎓 <b>Для регистрации на мероприятие "
+            "нужно создать профиль.</b>\n\n"
+            "Это займёт несколько секунд.\n\n"
+            "Выберите ваш ВУЗ:",
+            parse_mode="HTML",
+            reply_markup=university_keyboard()
         )
 
         return
 
-    success = await (
-        registration_service.create_registration(
-            user_id=telegram_id,
-            event_id=event_id
-        )
+    # Пользователь уже зарегистрирован в боте
+    success = await registration_service.create_registration(
+        user_id=callback.from_user.id,
+        event_id=event_id
     )
 
     if not success:
-
         await callback.answer(
-            "Вы уже зарегистрированы "
-            "на это мероприятие.",
+            "Вы уже зарегистрированы на это мероприятие.",
             show_alert=True
         )
-
         return
 
-    await callback.message.answer(
-        "✅ Вы успешно зарегистрированы "
-        "на мероприятие!"
+    event = await event_service.get_event_by_id(
+        event_id
+    )
+
+    event_title = (
+        event["title"]
+        if event
+        else "мероприятие"
+    )
+
+    await callback.message.edit_text(
+        "✅ <b>Вы зарегистрированы!</b>\n\n"
+        f"Мероприятие:\n"
+        f"<b>{event_title}</b>",
+        parse_mode="HTML"
     )
 
 

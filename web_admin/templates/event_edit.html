@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}
+Редактирование — {{ event.title }}
+{% endblock %}
+
+
+{% block content %}
+
+
+<a
+    href="/events/{{ event.id }}"
+    class="back-link"
+>
+    ← К мероприятию
+</a>
+
+
+<div class="page-header">
+
+    <div>
+
+        <div class="event-detail-topline">
+
+            <span class="event-detail-code">
+                {{ event.event_code }}
+            </span>
+
+            {% if event.status == "archived" %}
+
+            <span class="event-status-badge event-status-archived">
+                Архив
+            </span>
+
+            {% elif event.status == "active" %}
+
+            <span class="event-status-badge event-status-active">
+                Опубликовано
+            </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <h1>
+            Редактирование мероприятия
+        </h1>
+
+        <p class="subtitle">
+            Измените необходимые данные и сохраните
+        </p>
+
+    </div>
+
+</div>
+
+
+
+<div class="event-create-card">
+
+<form
+    method="post"
+    action="/events/{{ event.id }}/edit"
+    class="event-form"
+>
+
+
+    <!-- НАЗВАНИЕ -->
+
+    <div class="form-field">
+
+        <label>
+            Название *
+        </label>
+
+        <input
+            type="text"
+            name="title"
+            value="{{ event.title }}"
+            required
+        >
+
+    </div>
+
+
+
+    <!-- ОПИСАНИЕ -->
+
+    <div class="form-field">
+
+        <label>
+            Описание
+        </label>
+
+        <textarea
+            name="description"
+            rows="6"
+        >{{ event.description or "" }}</textarea>
+
+    </div>
+
+
+
+    <!-- ДАТА И ВРЕМЯ -->
+
+    <div class="form-row">
+
+        <div class="form-field">
+
+            <label>
+                Дата *
+            </label>
+
+            <input
+                type="date"
+                name="event_date"
+
+                {% if event.event_date %}
+                value="{{ event.event_date.isoformat() }}"
+                {% endif %}
+
+                required
+            >
+
+        </div>
+
+
+        <div class="form-field">
+
+            <label>
+                Время *
+            </label>
+
+            <input
+                type="time"
+                name="start_time"
+
+                {% if event.start_time %}
+                value="{{ event.start_time.strftime('%H:%M') }}"
+                {% endif %}
+
+                required
+            >
+
+        </div>
+
+    </div>
+
+
+
+    <!-- МЕСТО -->
+
+    <div class="form-field">
+
+        <label>
+            Место проведения *
+        </label>
+
+        <input
+            type="text"
+            name="place"
+            value="{{ event.place or '' }}"
+            required
+        >
+
+    </div>
+
+
+
+    <!-- КАТЕГОРИЯ -->
+
+    <div class="form-field">
+
+        <label>
+            Категория
+        </label>
+
+        <input
+            type="text"
+            name="category"
+            value="{{ event.category or '' }}"
+        >
+
+    </div>
+
+
+
+    <!-- МАСШТАБ -->
+
+    <div class="form-field">
+
+        <label>
+            Масштаб *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="scale"
+                    value="chamber"
+
+                    {% if event.scale == "chamber" %}
+                    checked
+                    {% endif %}
+
+                    required
+                >
+
+                Камерное
+
+            </label>
+
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="scale"
+                    value="large"
+
+                    {% if event.scale == "large" %}
+                    checked
+                    {% endif %}
+                >
+
+                Крупное
+
+            </label>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ОРГАНИЗАТОР -->
+
+    <div class="form-field">
+
+        <label>
+            Организатор *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="organizer_type"
+                    value="kddm"
+
+                    {% if event.organizer_type == "kddm" %}
+                    checked
+                    {% endif %}
+
+                    required
+                >
+
+                КДМ
+
+            </label>
+
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="organizer_type"
+                    value="other"
+
+                    {% if event.organizer_type == "other" %}
+                    checked
+                    {% endif %}
+                >
+
+                Другой организатор
+
+            </label>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- КОМПАНИЯ -->
+
+    <div class="form-field">
+
+        <label>
+            С кем подходит идти *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="company"
+                    value="friends"
+
+                    {% if event.company == "friends" %}
+                    checked
+                    {% endif %}
+
+                    required
+                >
+
+                С друзьями
+
+            </label>
+
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="company"
+                    value="solo"
+
+                    {% if event.company == "solo" %}
+                    checked
+                    {% endif %}
+                >
+
+                Один
+
+            </label>
+
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="company"
+                    value="any"
+
+                    {% if event.company == "any" %}
+                    checked
+                    {% endif %}
+                >
+
+                Неважно
+
+            </label>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ФОРМАТ УЧАСТИЯ -->
+
+    <div class="form-field">
+
+        <label>
+            Формат участия *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="activity_type"
+                    value="active"
+
+                    {% if event.activity_type == "active" %}
+                    checked
+                    {% endif %}
+
+                    required
+                >
+
+                Активное участие
+
+            </label>
+
+
+            <label class="radio-option">
+
+                <input
+                    type="radio"
+                    name="activity_type"
+                    value="passive"
+
+                    {% if event.activity_type == "passive" %}
+                    checked
+                    {% endif %}
+                >
+
+                Смотрю / слушаю
+
+            </label>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- КНОПКИ -->
+
+    <div class="event-edit-actions">
+
+        <a
+            href="/events/{{ event.id }}"
+            class="cancel-button"
+        >
+            Отмена
+        </a>
+
+
+        <button
+            type="submit"
+            class="primary-button"
+        >
+            Сохранить изменения
+        </button>
+
+    </div>
+
+
+</form>
+
+</div>
+
+
+{% endblock %}

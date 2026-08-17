@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+Главная — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<h1>
+    Панель управления
+</h1>
+
+<p class="subtitle">
+    Общая информация о боте
+</p>
+
+
+<div class="cards">
+
+    <div class="card">
+        <span>Пользователи</span>
+        <strong>{{ users_count }}</strong>
+    </div>
+
+    <div class="card">
+        <span>Мероприятия</span>
+        <strong>{{ events_count }}</strong>
+    </div>
+
+    <div class="card">
+        <span>Регистрации</span>
+        <strong>{{ registrations_count }}</strong>
+    </div>
+
+    <div class="card">
+        <span>Отзывы</span>
+        <strong>{{ reviews_count }}</strong>
+    </div>
+
+    <div class="card">
+        <span>Подписки</span>
+        <strong>{{ subscriptions_count }}</strong>
+    </div>
+
+</div>
+
+{% endblock %}

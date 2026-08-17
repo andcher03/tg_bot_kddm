@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ event.title }} — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+
+<a
+    href="/events"
+    class="back-link"
+>
+    ← К мероприятиям
+</a>
+
+
+<div class="event-detail-header">
+
+    <div class="event-detail-header-main">
+
+        <div>
+
+            <div class="event-detail-topline">
+
+                <div class="event-detail-code">
+                    {{ event.event_code }}
+                </div>
+
+
+                {% if event.status == "archived" %}
+
+                <span class="event-status-badge event-status-archived">
+                    Архив
+                </span>
+
+                {% elif event.status == "active" %}
+
+                <span class="event-status-badge event-status-active">
+                    Опубликовано
+                </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <h1>
+                {{ event.title }}
+            </h1>
+
+
+            <div class="event-detail-meta">
+
+                {% if event.event_date %}
+
+                <span>
+                    📅 {{ event.event_date.strftime("%d.%m.%Y") }}
+                </span>
+
+                {% endif %}
+
+
+                {% if event.start_time %}
+
+                <span>
+                    🕐 {{ event.start_time.strftime("%H:%M") }}
+                </span>
+
+                {% endif %}
+
+
+                {% if event.place %}
+
+                <span>
+                    📍 {{ event.place }}
+                </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <div class="event-detail-actions">
+            <a
+                href="/events/{{ event.id }}/edit"
+                class="edit-event-button"
+            >
+                Редактировать
+            </a>
+            {% if event.status == "active" %}
+
+            <form
+                method="post"
+                action="/events/{{ event.id }}/archive"
+                onsubmit="return confirm(
+                    'Перенести мероприятие в архив? Все данные, регистрации и отзывы сохранятся.'
+                )"
+            >
+
+                <button
+                    type="submit"
+                    class="danger-button"
+                >
+                    Перенести в архив
+                </button>
+
+            </form>
+
+
+            {% elif event.status == "archived" %}
+
+            <form
+                method="post"
+                action="/events/{{ event.id }}/restore"
+            >
+
+                <button
+                    type="submit"
+                    class="restore-button"
+                >
+                    Вернуть в публикацию
+                </button>
+
+            </form>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+<!-- СТАТИСТИКА -->
+
+<div class="event-detail-stats">
+
+    <div class="event-stat-card">
+
+        <span>
+            Регистраций
+        </span>
+
+        <strong>
+            {{ registrations_count }}
+        </strong>
+
+    </div>
+
+
+    <div class="event-stat-card">
+
+        <span>
+            Средняя оценка
+        </span>
+
+        <strong>
+
+            {% if average_rating is not none %}
+
+                ⭐ {{ average_rating }}
+
+            {% else %}
+
+                —
+
+            {% endif %}
+
+        </strong>
+
+    </div>
+
+
+    <div class="event-stat-card">
+
+        <span>
+            Отзывов
+        </span>
+
+        <strong>
+            {{ reviews_count }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+
+<!-- О МЕРОПРИЯТИИ -->
+
+<div class="event-detail-section">
+
+    <h2>
+        О мероприятии
+    </h2>
+
+
+    <div class="event-info-card">
+
+        {% if event.description %}
+
+        <p class="event-full-description">
+            {{ event.description }}
+        </p>
+
+        {% else %}
+
+        <p class="muted">
+            Описание не указано
+        </p>
+
+        {% endif %}
+
+
+        <div class="event-properties">
+
+            <div>
+
+                <span>
+                    Категория
+                </span>
+
+                <strong>
+                    {{ event.category or "—" }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Статус
+                </span>
+
+                <strong>
+                    {{ event.status or "—" }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Масштаб
+                </span>
+
+                <strong>
+                    {{ event.scale or "—" }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Организатор
+                </span>
+
+                <strong>
+                    {{ event.organizer_type or "—" }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- УЧАСТНИКИ -->
+
+<div class="event-detail-section">
+
+    <h2>
+        Участники
+
+        <span class="section-count">
+            {{ registrations_count }}
+        </span>
+    </h2>
+
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>KZN ID</th>
+                    <th>Имя</th>
+                    <th>ВУЗ</th>
+                    <th>Статус</th>
+                    <th>Регистрация</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+            {% for participant in participants %}
+
+                <tr>
+
+                    <td>
+
+                        <a href="/users/{{ participant.user_id }}">
+                            {{ participant.user_code }}
+                        </a>
+
+                    </td>
+
+
+                    <td>
+                        {{ participant.full_name }}
+                    </td>
+
+
+                    <td>
+                        {{ participant.university or "—" }}
+                    </td>
+
+
+                    <td>
+                        {{ participant.status }}
+                    </td>
+
+
+                    <td>
+
+                        {% if participant.registration_date %}
+
+                            {{
+                                participant.registration_date.strftime(
+                                    "%d.%m.%Y %H:%M"
+                                )
+                            }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+
+            {% else %}
+
+                <tr>
+
+                    <td colspan="5">
+                        На мероприятие пока никто
+                        не зарегистрировался.
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
+<!-- ОТЗЫВЫ -->
+
+<div class="event-detail-section">
+
+    <h2>
+        Отзывы
+
+        <span class="section-count">
+            {{ reviews_count }}
+        </span>
+    </h2>
+
+    
+
+
+    <div class="event-reviews">
+
+        {% for review in reviews %}
+
+        <div class="event-review-card">
+
+
+            <div class="event-review-header">
+
+                <div>
+
+                    <a
+                        href="/users/{{ review.user_id }}"
+                        class="event-review-user"
+                    >
+                        {{ review.full_name }}
+                    </a>
+
+                    <span class="event-review-code">
+                        {{ review.user_code }}
+                    </span>
+
+                </div>
+
+
+                <strong>
+                    ⭐ {{ review.rating }}/5
+                </strong>
+
+            </div>
+
+
+            {% if review.text %}
+
+            <p>
+                {{ review.text }}
+            </p>
+
+            {% else %}
+
+            <p class="muted">
+                Без текстового отзыва
+            </p>
+
+            {% endif %}
+
+
+            {% if review.created_at %}
+
+            <span class="event-review-date">
+
+                {{
+                    review.created_at.strftime(
+                        "%d.%m.%Y %H:%M"
+                    )
+                }}
+
+            </span>
+
+            {% endif %}
+
+
+        </div>
+
+
+        {% else %}
+
+        <div class="empty-state">
+            Отзывов пока нет.
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+{% endblock %}

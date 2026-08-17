@@ -6,14 +6,6 @@ router = Router()
 
 
 
-@router.message(F.text == "🗺 Молодёжная карта Казани")
-async def youth_map(message: Message):
-    await message.answer(
-        "🗺 Раздел «Молодёжная карта Казани» "
-        "скоро будет доступен."
-    )
-
-
 @router.message(F.text == "🏙 Переехавшим в Казань")
 async def moved_to_kazan(message: Message):
     await message.answer(

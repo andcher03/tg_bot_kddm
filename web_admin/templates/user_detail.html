@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ user.full_name }} — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<a href="/users" class="back-link">
+    ← Пользователи
+</a>
+
+
+<div class="user-header">
+
+    <div>
+        <h1>
+            {{ user.full_name }}
+        </h1>
+
+        <p class="subtitle">
+            {{ user.user_code }}
+        </p>
+    </div>
+
+</div>
+
+
+<div class="profile-card">
+
+    <div class="profile-row">
+        <span>KZN ID</span>
+        <strong>
+            {{ user.user_code }}
+        </strong>
+    </div>
+
+    <div class="profile-row">
+        <span>Имя</span>
+        <strong>
+            {{ user.full_name }}
+        </strong>
+    </div>
+
+    <div class="profile-row">
+        <span>ВУЗ</span>
+        <strong>
+            {{ user.university or "—" }}
+        </strong>
+    </div>
+
+    <div class="profile-row">
+        <span>Telegram ID</span>
+        <strong>
+            {{ user.telegram_id }}
+        </strong>
+    </div>
+
+    <div class="profile-row">
+        <span>Username</span>
+
+        <strong>
+            {% if user.username %}
+                @{{ user.username }}
+            {% else %}
+                —
+            {% endif %}
+        </strong>
+    </div>
+
+    <div class="profile-row">
+        <span>Роль</span>
+        <strong>
+            {{ user.role }}
+        </strong>
+    </div>
+
+    <div class="profile-row">
+        <span>Дата регистрации</span>
+
+        <strong>
+            {% if user.created_at %}
+                {{ user.created_at.strftime("%d.%m.%Y %H:%M") }}
+            {% else %}
+                —
+            {% endif %}
+        </strong>
+    </div>
+
+</div>
+
+{% endblock %}

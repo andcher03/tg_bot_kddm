@@ -6,7 +6,7 @@ def university_keyboard():
         inline_keyboard=[
             [InlineKeyboardButton(text="🏛 КФУ", callback_data="uni_kfu")],
             [InlineKeyboardButton(text="✈️ КНИТУ-КАИ", callback_data="uni_kai")],
-            [InlineKeyboardButton(text="🧪 КНИТУ-КХТИ", callback_data="uni_khti")],
+            [InlineKeyboardButton(text="🧪 КНИТУ", callback_data="uni_khti")],
             [InlineKeyboardButton(text="⚡ КГЭУ", callback_data="uni_kgeu")],
             [InlineKeyboardButton(text="🏗 КГАСУ", callback_data="uni_kgasu")],
             [InlineKeyboardButton(text="⚕️ КазГМУ", callback_data="uni_kgmu")],

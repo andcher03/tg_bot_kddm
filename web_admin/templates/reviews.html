@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}
+Отзывы — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Отзывы</h1>
+
+        <p class="subtitle">
+            Отзывы пользователей по мероприятиям
+        </p>
+    </div>
+
+</div>
+
+<form
+    class="reviews-filter"
+    method="get"
+    action="/reviews"
+>
+
+<div class="review-stats">
+
+    <div class="stat-card">
+
+        <span class="stat-title">
+            Средняя оценка
+        </span>
+
+        <strong class="stat-value">
+
+            {% if average_rating is not none %}
+                ⭐ {{ average_rating }}
+            {% else %}
+                —
+            {% endif %}
+
+        </strong>
+
+        <span class="stat-description">
+            из 5
+        </span>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <span class="stat-title">
+            Количество отзывов
+        </span>
+
+        <strong class="stat-value">
+            {{ reviews_count }}
+        </strong>
+
+        <span class="stat-description">
+            всего
+        </span>
+
+    </div>
+
+</div>
+
+    <label>
+        Мероприятие
+    </label>
+
+    <select name="event_code">
+
+        <option value="">
+            Все мероприятия
+        </option>
+
+        {% for event in events %}
+
+            <option
+                value="{{ event.event_code }}"
+                {% if selected_event == event.event_code %}
+                    selected
+                {% endif %}
+            >
+                {{ event.title }}
+                — {{ event.event_code }}
+            </option>
+
+        {% endfor %}
+
+    </select>
+
+    <button type="submit">
+        Показать
+    </button>
+
+    {% if selected_event %}
+
+        <a
+            href="/reviews"
+            class="reset-button"
+        >
+            Сбросить
+        </a>
+
+    {% endif %}
+
+</form>
+
+
+<div class="table-container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Пользователь</th>
+                <th>Мероприятие</th>
+                <th>Оценка</th>
+                <th>Отзыв</th>
+                <th>Дата</th>
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+            {% for review in reviews %}
+
+            <tr>
+
+                <td>
+
+                    <a
+                        href="/users/{{ review.user_id }}"
+                        class="user-link"
+                    >
+                        {{ review.user_code }}
+                    </a>
+
+                    <br>
+
+                    <span>
+                        {{ review.user_name }}
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <strong>
+                        {{ review.event_title }}
+                    </strong>
+
+                    <br>
+
+                    <span>
+                        {{ review.event_code }}
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <strong>
+                        {{ review.rating }} / 5
+                    </strong>
+
+                </td>
+
+
+                <td class="review-text">
+
+                    {% if review.text %}
+                        {{ review.text }}
+                    {% else %}
+                        <span class="muted">
+                            Без комментария
+                        </span>
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+
+                    {% if review.created_at %}
+
+                        {{ review.created_at.strftime(
+                            "%d.%m.%Y %H:%M"
+                        ) }}
+
+                    {% else %}
+                        —
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="5">
+                    Отзывов пока нет.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

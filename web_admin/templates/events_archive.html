@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}
+Архив мероприятий — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <a
+            href="/events"
+            class="back-link"
+        >
+            ← К актуальным мероприятиям
+        </a>
+
+        <h1>
+            Архив мероприятий
+        </h1>
+
+        <p class="subtitle">
+            Завершённые и снятые с публикации мероприятия
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="events-section">
+
+    <div class="events-list">
+
+        {% for event in events %}
+
+        <a
+            href="/events/{{ event.id }}"
+            class="event-card event-card-link archived-event-card"
+        >
+
+            <div class="event-card-code">
+                {{ event.event_code }}
+            </div>
+
+            <h3>
+                {{ event.title }}
+            </h3>
+
+            <div class="event-card-info">
+
+                {% if event.event_date %}
+
+                <span>
+                    📅
+                    {{ event.event_date.strftime("%d.%m.%Y") }}
+                </span>
+
+                {% endif %}
+
+
+                {% if event.start_time %}
+
+                <span>
+                    🕐
+                    {{ event.start_time.strftime("%H:%M") }}
+                </span>
+
+                {% endif %}
+
+
+                {% if event.place %}
+
+                <span>
+                    📍 {{ event.place }}
+                </span>
+
+                {% endif %}
+
+            </div>
+
+
+            {% if event.description %}
+
+            <p class="event-description">
+                {{ event.description }}
+            </p>
+
+            {% endif %}
+
+
+            <div class="archive-badge">
+                Архив
+            </div>
+
+        </a>
+
+        {% else %}
+
+        <div class="empty-state">
+            В архиве пока нет мероприятий.
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

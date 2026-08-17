@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}
+Новое мероприятие — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<a
+    href="/events"
+    class="back-link"
+>
+    ← К мероприятиям
+</a>
+
+
+<div class="page-header">
+
+    <div>
+        <h1>
+            Новое мероприятие
+        </h1>
+
+        <p class="subtitle">
+            Заполните информацию о мероприятии
+        </p>
+    </div>
+
+</div>
+
+
+<div class="event-create-card">
+
+<form
+    method="post"
+    action="/events/new"
+    class="event-form"
+>
+
+
+    <div class="form-field">
+
+        <label>
+            Название *
+        </label>
+
+        <input
+            type="text"
+            name="title"
+            required
+        >
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            Описание
+        </label>
+
+        <textarea
+            name="description"
+            rows="6"
+        ></textarea>
+
+    </div>
+
+
+    <div class="form-row">
+
+        <div class="form-field">
+
+            <label>
+                Дата *
+            </label>
+
+            <input
+                type="date"
+                name="event_date"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-field">
+
+            <label>
+                Время *
+            </label>
+
+            <input
+                type="time"
+                name="start_time"
+                required
+            >
+
+        </div>
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            Место проведения *
+        </label>
+
+        <input
+            type="text"
+            name="place"
+            required
+        >
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            Категория
+        </label>
+
+        <input
+            type="text"
+            name="category"
+        >
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            Масштаб *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="scale"
+                    value="chamber"
+                    required
+                >
+                Камерное
+            </label>
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="scale"
+                    value="large"
+                >
+                Крупное
+            </label>
+
+        </div>
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            Организатор *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="organizer_type"
+                    value="kddm"
+                    required
+                >
+                КДМ
+            </label>
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="organizer_type"
+                    value="other"
+                >
+                Другой организатор
+            </label>
+
+        </div>
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            С кем подходит идти *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="company"
+                    value="friends"
+                    required
+                >
+                С друзьями
+            </label>
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="company"
+                    value="solo"
+                >
+                Один
+            </label>
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="company"
+                    value="any"
+                >
+                Неважно
+            </label>
+
+        </div>
+
+    </div>
+
+
+    <div class="form-field">
+
+        <label>
+            Формат участия *
+        </label>
+
+        <div class="radio-group">
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="activity_type"
+                    value="active"
+                    required
+                >
+                Активное участие
+            </label>
+
+            <label class="radio-option">
+                <input
+                    type="radio"
+                    name="activity_type"
+                    value="passive"
+                >
+                Смотрю / слушаю
+            </label>
+
+        </div>
+
+    </div>
+
+
+    <div class="event-submit">
+
+        <button
+            type="submit"
+            class="primary-button"
+        >
+            Создать мероприятие
+        </button>
+
+    </div>
+
+</form>
+
+</div>
+
+{% endblock %}

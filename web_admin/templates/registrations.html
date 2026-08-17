@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}
+Регистрации — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>
+            Регистрации
+        </h1>
+
+        <p class="subtitle">
+            Пользователи, зарегистрированные
+            на мероприятия
+        </p>
+    </div>
+
+</div>
+
+
+<input
+    type="text"
+    name="q"
+    value="{{ q }}"
+    placeholder="Поиск по пользователю, KZN ID, ВУЗу или мероприятию"
+    class="filter-search"
+>
+
+    <select name="event_code">
+
+        <option value="">
+            Все мероприятия
+        </option>
+
+
+        {% for event in events %}
+
+        <option
+            value="{{ event.event_code }}"
+
+            {% if selected_event == event.event_code %}
+            selected
+            {% endif %}
+        >
+            {{ event.title }}
+            — {{ event.event_code }}
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+
+    <button
+        type="submit"
+        class="primary-button"
+    >
+        Показать
+    </button>
+
+
+    {% if selected_event %}
+
+    <a
+        href="/registrations"
+        class="secondary-link-button"
+    >
+        Сбросить
+    </a>
+
+    {% endif %}
+
+</form>
+
+
+<div class="table-container">
+    
+<div class="registration-stats">
+
+    <div class="stat-card">
+
+        <span class="stat-title">
+            Регистраций
+        </span>
+
+        <strong class="stat-value">
+            {{ registrations_count }}
+        </strong>
+
+        <span class="stat-description">
+            в текущей выборке
+        </span>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <span class="stat-title">
+            Уникальных пользователей
+        </span>
+
+        <strong class="stat-value">
+            {{ unique_users_count }}
+        </strong>
+
+        <span class="stat-description">
+            в текущей выборке
+        </span>
+
+    </div>
+
+</div>
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>KZN ID</th>
+                <th>Пользователь</th>
+                <th>ВУЗ</th>
+                <th>Мероприятие</th>
+                <th>Статус</th>
+                <th>Дата регистрации</th>
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+        {% for registration in registrations %}
+
+            <tr>
+
+                <td>
+
+                    <a
+                        href="/users/{{ registration.user_id }}"
+                    >
+                        {{ registration.user_code }}
+                    </a>
+
+                </td>
+
+
+                <td>
+                    {{ registration.full_name }}
+                </td>
+
+
+                <td>
+                    {{ registration.university or "—" }}
+                </td>
+
+
+                <td>
+
+                    <a
+                        href="/events/{{ registration.event_id }}"
+                    >
+                        {{ registration.event_title }}
+                    </a>
+
+                    <div class="table-secondary">
+                        {{ registration.event_code }}
+                    </div>
+
+                </td>
+
+
+                <td>
+                    {{ registration.status }}
+                </td>
+
+
+                <td>
+
+                    {% if registration.registration_date %}
+
+                        {{
+                            registration.registration_date.strftime(
+                                "%d.%m.%Y %H:%M"
+                            )
+                        }}
+
+                    {% else %}
+
+                        —
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+
+        {% else %}
+
+            <tr>
+
+                <td colspan="6">
+                    Регистраций пока нет.
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+{% endblock %}

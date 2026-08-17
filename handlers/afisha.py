@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from aiogram import Router, F
 from aiogram.types import (
     Message,
@@ -294,6 +296,25 @@ async def rate_event(
         if not event:
             continue
 
+        # Пропускаем ещё не прошедшие мероприятия
+        if event["date"]:
+            event_date = datetime.strptime(
+                event["date"],
+                "%d.%m.%Y"
+            ).date()
+
+            if event_date >= datetime.now().date():
+                continue
+
+        # Пропускаем уже оценённые мероприятия
+        already_reviewed = await review_service.has_review(
+            telegram_id=callback.from_user.id,
+            event_code=event["id"]
+        )
+
+        if already_reviewed:
+            continue
+
         buttons.append(
             [
                 InlineKeyboardButton(
@@ -304,26 +325,6 @@ async def rate_event(
                 )
             ]
         )
-
-    buttons.append(
-        [
-            InlineKeyboardButton(
-                text="⬅️ В Афишу",
-                callback_data="afisha_back"
-            )
-        ]
-    )
-
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=buttons
-    )
-
-    await callback.message.edit_text(
-        "⭐ <b>Оценить событие</b>\n\n"
-        "Выберите мероприятие:",
-        parse_mode="HTML",
-        reply_markup=keyboard
-    )
 
 
 @router.callback_query(

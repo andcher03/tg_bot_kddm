@@ -14,7 +14,7 @@ from handlers.profile import router as profile_router
 from handlers.events import router as events_router
 from handlers.main_sections import router as main_sections_router
 from handlers.afisha import router as afisha_router
-
+from handlers.youth_map import router as youth_map_router
 
 from services.logging_config import setup_logging
 
@@ -37,6 +37,7 @@ dp.include_router(profile_router)
 dp.include_router(events_router)
 dp.include_router(main_sections_router)
 dp.include_router(afisha_router)
+dp.include_router(youth_map_router)
 
 # ВСЕГДА ПОСЛЕДНИМ
 dp.include_router(debug_router)

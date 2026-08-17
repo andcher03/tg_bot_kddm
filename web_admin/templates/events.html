@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}
+Мероприятия — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Мероприятия</h1>
+
+        <p class="subtitle">
+            Актуальные мероприятия
+        </p>
+    </div>
+
+
+    <div class="page-actions">
+
+    <a
+        href="/events/archive"
+        class="secondary-link-button"
+    >
+        Архив
+    </a>
+
+    <a
+        href="/events/new"
+        class="primary-link-button"
+    >
+        + Добавить мероприятие
+    </a>
+
+</div>
+
+</div>
+
+
+<div class="events-section">
+
+    <h2>
+        Актуальные мероприятия
+    </h2>
+
+
+<div class="events-list">
+
+    {% for event in events %}
+
+    <a
+        href="/events/{{ event.id }}"
+        class="event-card event-card-link"
+    >
+
+        <div class="event-card-code">
+            {{ event.event_code }}
+        </div>
+
+        <h3>
+            {{ event.title }}
+        </h3>
+
+        <div class="event-card-info">
+
+            {% if event.event_date %}
+            <span>
+                📅 {{ event.event_date.strftime("%d.%m.%Y") }}
+            </span>
+            {% endif %}
+
+            {% if event.start_time %}
+            <span>
+                🕐 {{ event.start_time.strftime("%H:%M") }}
+            </span>
+            {% endif %}
+
+            {% if event.place %}
+            <span>
+                📍 {{ event.place }}
+            </span>
+            {% endif %}
+
+        </div>
+
+        {% if event.description %}
+
+        <p class="event-description">
+            {{ event.description }}
+        </p>
+
+        {% endif %}
+
+    </a>
+
+    {% else %}
+
+    <div class="empty-state">
+        Актуальных мероприятий пока нет.
+
+    {% endfor %}
+
+</div>
+
+</div>
+
+{% endblock %}

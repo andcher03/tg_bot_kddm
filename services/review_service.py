@@ -113,3 +113,43 @@ class ReviewService:
                 )
 
             return reviews
+    
+    async def has_review(
+        self,
+        telegram_id: int,
+        event_code: str
+    ):
+        async with SessionLocal() as session:
+
+            user_result = await session.execute(
+                select(User).where(
+                    User.telegram_id == telegram_id
+                )
+            )
+
+            user = user_result.scalar_one_or_none()
+
+            if not user:
+                return False
+
+            event_result = await session.execute(
+                select(Event).where(
+                    Event.event_code == event_code
+                )
+            )
+
+            event = event_result.scalar_one_or_none()
+
+            if not event:
+                return False
+
+            review_result = await session.execute(
+                select(EventReview).where(
+                    EventReview.user_id == user.id,
+                    EventReview.event_id == event.id
+                )
+            )
+
+            review = review_result.scalar_one_or_none()
+
+            return review is not None

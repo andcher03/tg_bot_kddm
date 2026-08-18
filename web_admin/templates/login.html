@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        Вход — Молодёжь Казани
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/auth.css"
+    >
+
+</head>
+
+
+<body class="auth-page">
+
+    <main class="auth-shell">
+
+        <section class="auth-card">
+
+            <div class="auth-brand">
+                Молодёжь Казани
+            </div>
+
+
+            <div class="auth-heading">
+
+                <h1>
+                    Вход в панель
+                </h1>
+
+                <p>
+                    Введите данные своей учётной записи
+                </p>
+
+            </div>
+
+
+            {% if error %}
+
+            <div class="auth-error">
+                {{ error }}
+            </div>
+
+            {% endif %}
+
+
+            <form
+                method="post"
+                action="/login"
+                class="auth-form"
+            >
+
+                <input
+                    type="hidden"
+                    name="next_url"
+                    value="{{ next_url }}"
+                >
+
+
+                <label class="auth-field">
+
+                    <span>
+                        Логин
+                    </span>
+
+                    <input
+                        type="text"
+                        name="username"
+                        value="{{ username }}"
+                        autocomplete="username"
+                        autofocus
+                        required
+                    >
+
+                </label>
+
+
+                <label class="auth-field">
+
+                    <span>
+                        Пароль
+                    </span>
+
+                    <input
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                </label>
+
+
+                <label class="auth-remember">
+
+                    <input
+                        type="checkbox"
+                        name="remember_me"
+                        value="1"
+                        {% if remember_me %}checked{% endif %}
+                    >
+
+                    <span>
+                        Запомнить меня на 30 дней
+                    </span>
+
+                </label>
+
+
+                <button
+                    type="submit"
+                    class="auth-submit"
+                >
+                    Войти
+                </button>
+
+            </form>
+
+
+            <p class="auth-security-note">
+                Доступ только для сотрудников с выданной учётной записью
+            </p>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

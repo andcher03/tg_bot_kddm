@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}
+Нет доступа — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<div class="auth-forbidden">
+
+    <span class="auth-forbidden-code">
+        403
+    </span>
+
+    <h1>
+        Нет доступа к разделу
+    </h1>
+
+    <p>
+        Ваша роль не позволяет открыть эту страницу.
+    </p>
+
+
+    {% if request.state.auth_user.role == "editor" %}
+
+    <a href="/events">
+        Вернуться к мероприятиям
+    </a>
+
+    {% else %}
+
+    <a href="/">
+        Вернуться на главную
+    </a>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -2,6 +2,7 @@
 <html lang="ru">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -19,9 +20,18 @@
         rel="stylesheet"
         href="/static/style.css"
     >
+
+    <link
+        rel="stylesheet"
+        href="/static/auth.css"
+    >
+
 </head>
 
+
 <body>
+
+    {% set auth_user = request.state.auth_user %}
 
     <aside class="sidebar">
 
@@ -29,7 +39,11 @@
             Молодёжь Казани
         </div>
 
+
         <nav>
+
+            {% if auth_user.role == "admin" %}
+
             <a href="/">
                 Главная
             </a>
@@ -53,13 +67,70 @@
             <a href="/mailing">
                 Рассылка
             </a>
+
+
+            {% elif auth_user.role == "editor" %}
+
+            <a href="/events">
+                Мероприятия
+            </a>
+
+            <a href="/reviews">
+                Отзывы
+            </a>
+
+            {% endif %}
+
         </nav>
+
+
+        <div class="sidebar-auth-user">
+
+            <div class="sidebar-auth-user-main">
+
+                <div class="sidebar-auth-avatar">
+                    {{ auth_user.display_name[:1]|upper }}
+                </div>
+
+                <div class="sidebar-auth-user-text">
+
+                    <strong>
+                        {{ auth_user.display_name }}
+                    </strong>
+
+                    <span>
+                        {{ auth_user.role_label }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="/logout"
+            >
+
+                <button
+                    type="submit"
+                    class="sidebar-logout-button"
+                >
+                    Выйти
+                </button>
+
+            </form>
+
+        </div>
 
     </aside>
 
+
     <main class="content">
+
         {% block content %}
         {% endblock %}
+
     </main>
 
 </body>

@@ -230,7 +230,7 @@ async def save_university(
         "uni_kgasu": "КГАСУ",
         "uni_kgmu": "КазГМУ",
         "uni_tisbi": "Университет управления ТИСБИ",
-        "uni_other": "Другой ВУЗ",
+        "uni_other": "Другое",
         "uni_none": "Я не студент",
     }
 

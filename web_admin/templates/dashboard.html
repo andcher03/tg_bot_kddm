@@ -2,45 +2,759 @@
 
 {% block title %}
 Главная — Молодёжь Казани
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const countEl =
+        document.getElementById(
+            "channelMemberCount"
+        );
+
+    const changeEl =
+        document.getElementById(
+            "channelNetChange"
+        );
+
+    const arrowEl =
+        document.getElementById(
+            "channelNetArrow"
+        );
+
+    const valueEl =
+        document.getElementById(
+            "channelNetValue"
+        );
+
+    const lastEventEl =
+        document.getElementById(
+            "channelLastEvent"
+        );
+
+
+    function renderNet(value) {
+
+        changeEl.classList.remove(
+            "dashboard-change-up",
+            "dashboard-change-down",
+            "dashboard-change-neutral"
+        );
+
+
+        if (value > 0) {
+
+            changeEl.classList.add(
+                "dashboard-change-up"
+            );
+
+            arrowEl.textContent = "↑";
+            valueEl.textContent = `+${value}`;
+
+        } else if (value < 0) {
+
+            changeEl.classList.add(
+                "dashboard-change-down"
+            );
+
+            arrowEl.textContent = "↓";
+            valueEl.textContent = String(value);
+
+        } else {
+
+            changeEl.classList.add(
+                "dashboard-change-neutral"
+            );
+
+            arrowEl.textContent = "—";
+            valueEl.textContent = "0";
+        }
+    }
+
+
+    function renderLastEvent(event) {
+
+        if (!event) {
+
+            lastEventEl.innerHTML =
+                '<span class="dashboard-channel-last-neutral">' +
+                'Последних изменений пока нет' +
+                '</span>';
+
+            return;
+        }
+
+
+        if (event.event_type === "join") {
+
+            lastEventEl.innerHTML =
+                '<span class="dashboard-channel-last-join">' +
+                '↑ Последнее изменение: подписка · ' +
+                event.time +
+                '</span>';
+
+        } else {
+
+            lastEventEl.innerHTML =
+                '<span class="dashboard-channel-last-leave">' +
+                '↓ Последнее изменение: отписка · ' +
+                event.time +
+                '</span>';
+        }
+    }
+
+
+    function render(data) {
+
+        if (
+            data.total !== null
+            && data.total !== undefined
+        ) {
+
+            countEl.textContent =
+                Number(data.total)
+                .toLocaleString("ru-RU");
+
+            countEl.classList.remove(
+                "dashboard-metric-value-muted"
+            );
+        }
+
+
+        renderNet(
+            Number(data.today || 0)
+        );
+
+        renderLastEvent(
+            data.last_event || null
+        );
+    }
+
+
+    async function refresh() {
+
+        try {
+
+            const response = await fetch(
+                "/api/dashboard/channel-stats",
+                {
+                    cache: "no-store"
+                }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            render(
+                await response.json()
+            );
+
+        } catch (error) {
+
+            console.debug(
+                "Channel live refresh skipped",
+                error
+            );
+        }
+    }
+
+
+    setInterval(
+        refresh,
+        3000
+    );
+});
+</script>
+
+
 {% endblock %}
 
 
 {% block content %}
 
-<h1>
-    Панель управления
-</h1>
+<div class="dashboard-page">
 
-<p class="subtitle">
-    Общая информация о боте
-</p>
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <div class="dashboard-header">
+
+        <div>
+
+            <h1>
+                Главная
+            </h1>
+
+            <p class="subtitle">
+                Обзор проекта
+            </p>
+
+        </div>
 
 
-<div class="cards">
+        <div class="dashboard-updated">
 
-    <div class="card">
-        <span>Пользователи</span>
-        <strong>{{ users_count }}</strong>
+            <span>
+                Данные на
+            </span>
+
+            <strong>
+                {{ dashboard_now.strftime("%d.%m.%Y · %H:%M") }}
+            </strong>
+
+        </div>
+
     </div>
 
-    <div class="card">
-        <span>Мероприятия</span>
-        <strong>{{ events_count }}</strong>
+
+
+    <!-- =====================================================
+         ОСНОВНЫЕ ПОКАЗАТЕЛИ
+         ===================================================== -->
+
+    <div class="dashboard-metrics">
+
+
+        <!-- ПОДПИСЧИКИ КАНАЛА -->
+
+        <div class="dashboard-metric-card">
+
+            <div class="dashboard-metric-top">
+
+                <span class="dashboard-metric-title">
+                    Подписчики канала
+                </span>
+
+                <span class="dashboard-metric-icon">
+                    TG
+                </span>
+
+            </div>
+
+
+            <strong
+                class="
+                    dashboard-metric-value
+                    {% if channel_stats.total is none %}
+                        dashboard-metric-value-muted
+                    {% endif %}
+                "
+                id="channelMemberCount"
+            >
+                {% if channel_stats.total is not none %}
+                    {{ channel_stats.total }}
+                {% else %}
+                    —
+                {% endif %}
+            </strong>
+
+
+            <div
+                id="channelNetChange"
+                class="
+                    dashboard-change
+                    {% if channel_stats.today > 0 %}
+                        dashboard-change-up
+                    {% elif channel_stats.today < 0 %}
+                        dashboard-change-down
+                    {% else %}
+                        dashboard-change-neutral
+                    {% endif %}
+                "
+            >
+
+                <span
+                    class="dashboard-change-arrow"
+                    id="channelNetArrow"
+                >
+                    {% if channel_stats.today > 0 %}
+                        ↑
+                    {% elif channel_stats.today < 0 %}
+                        ↓
+                    {% else %}
+                        —
+                    {% endif %}
+                </span>
+
+                <strong id="channelNetValue">
+                    {% if channel_stats.today > 0 %}
+                        +{{ channel_stats.today }}
+                    {% else %}
+                        {{ channel_stats.today }}
+                    {% endif %}
+                </strong>
+
+                <span>
+                    сегодня
+                </span>
+
+            </div>
+
+
+            <div
+                class="dashboard-channel-last-event"
+                id="channelLastEvent"
+            >
+
+                {% if channel_stats.last_event %}
+
+                    {% if channel_stats.last_event.event_type == "join" %}
+
+                    <span class="dashboard-channel-last-join">
+                        ↑ Последнее изменение:
+                        подписка ·
+                        {{ channel_stats.last_event.time }}
+                    </span>
+
+                    {% else %}
+
+                    <span class="dashboard-channel-last-leave">
+                        ↓ Последнее изменение:
+                        отписка ·
+                        {{ channel_stats.last_event.time }}
+                    </span>
+
+                    {% endif %}
+
+                {% else %}
+
+                <span class="dashboard-channel-last-neutral">
+                    Последних изменений пока нет
+                </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <span class="dashboard-live-indicator">
+                <i></i>
+                live
+            </span>
+
+        </div>
+
+
+
+        <!-- ПОЛЬЗОВАТЕЛИ БОТА -->
+
+        <a
+            href="/users"
+            class="dashboard-metric-card dashboard-metric-card-link"
+        >
+
+            <div class="dashboard-metric-top">
+
+                <span class="dashboard-metric-title">
+                    Пользователи бота
+                </span>
+
+                <span class="dashboard-metric-icon">
+                    KZN
+                </span>
+
+            </div>
+
+
+            <strong class="dashboard-metric-value">
+                {{ users_count }}
+            </strong>
+
+
+            {% if users_today > 0 %}
+
+            <div class="dashboard-change dashboard-change-up">
+
+                <span class="dashboard-change-arrow">
+                    ↑
+                </span>
+
+                <strong>
+                    +{{ users_today }}
+                </strong>
+
+                <span>
+                    сегодня
+                </span>
+
+            </div>
+
+            {% else %}
+
+            <div class="dashboard-change dashboard-change-neutral">
+
+                <span class="dashboard-change-arrow">
+                    —
+                </span>
+
+                <strong>
+                    0
+                </strong>
+
+                <span>
+                    сегодня
+                </span>
+
+            </div>
+
+            {% endif %}
+
+        </a>
+
     </div>
 
-    <div class="card">
-        <span>Регистрации</span>
-        <strong>{{ registrations_count }}</strong>
+
+
+    <!-- =====================================================
+         ПОСЛЕДНЯЯ АКТИВНОСТЬ
+         ===================================================== -->
+
+    <div class="dashboard-section-header">
+
+        <div>
+
+            <span class="dashboard-section-kicker">
+                Последняя активность
+            </span>
+
+            <h2>
+                Что произошло недавно
+            </h2>
+
+        </div>
+
     </div>
 
-    <div class="card">
-        <span>Отзывы</span>
-        <strong>{{ reviews_count }}</strong>
+
+
+    <!-- =====================================================
+         ПОСЛЕДНЯЯ РАССЫЛКА
+         ===================================================== -->
+
+    {% if latest_mailing %}
+
+    <a
+        href="/mailing/history/{{ latest_mailing.id }}"
+        class="dashboard-mailing-card"
+    >
+
+        <div class="dashboard-mailing-media">
+
+            {% if latest_mailing.photo_url %}
+
+            <img
+                src="{{ latest_mailing.photo_url }}"
+                alt="Фото последней рассылки"
+            >
+
+            {% else %}
+
+            <div class="dashboard-mailing-media-empty">
+                TG
+            </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="dashboard-mailing-main">
+
+            <div class="dashboard-activity-label">
+                Последняя рассылка
+            </div>
+
+
+            <div class="dashboard-activity-date">
+
+                {% if latest_mailing.created_at %}
+                    {{ latest_mailing.created_at.strftime("%d.%m.%Y в %H:%M") }}
+                {% endif %}
+
+            </div>
+
+
+            <div class="dashboard-mailing-message">
+                {{ latest_mailing.message }}
+            </div>
+
+
+            <div class="dashboard-mailing-stats">
+
+                <div>
+                    <span>Получателей</span>
+                    <strong>
+                        {{ latest_mailing.recipients_count }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Доставлено</span>
+                    <strong class="dashboard-success">
+                        {{ latest_mailing.sent_count }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Ошибок</span>
+                    <strong
+                        class="
+                            {% if latest_mailing.failed_count > 0 %}
+                            dashboard-error
+                            {% endif %}
+                        "
+                    >
+                        {{ latest_mailing.failed_count }}
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-card-arrow">
+            →
+        </div>
+
+    </a>
+
+
+    {% else %}
+
+    <div class="dashboard-empty-card">
+
+        <span>
+            Последняя рассылка
+        </span>
+
+        <strong>
+            Рассылок пока нет
+        </strong>
+
+        <a href="/mailing">
+            Создать первую рассылку →
+        </a>
+
     </div>
 
-    <div class="card">
-        <span>Подписки</span>
-        <strong>{{ subscriptions_count }}</strong>
+    {% endif %}
+
+
+
+    <!-- =====================================================
+         МЕРОПРИЯТИЕ + ОТЗЫВ
+         ===================================================== -->
+
+    <div class="dashboard-activity-grid">
+
+
+        <!-- МЕРОПРИЯТИЕ -->
+
+        {% if latest_event %}
+
+        <a
+            href="/events/{{ latest_event.id }}"
+            class="dashboard-activity-card"
+        >
+
+            <div class="dashboard-activity-card-top">
+
+                <span class="dashboard-activity-label">
+                    Последнее мероприятие
+                </span>
+
+                <span class="dashboard-status dashboard-status-active">
+                    Опубликовано
+                </span>
+
+            </div>
+
+
+            <div class="dashboard-event-code">
+                {{ latest_event.event_code }}
+            </div>
+
+
+            <h3>
+                {{ latest_event.title }}
+            </h3>
+
+
+            <div class="dashboard-event-meta">
+
+                {% if latest_event.event_date %}
+
+                <span>
+                    {{ latest_event.event_date.strftime("%d.%m.%Y") }}
+                </span>
+
+                {% endif %}
+
+
+                {% if latest_event.start_time %}
+
+                <span>
+                    {{ latest_event.start_time.strftime("%H:%M") }}
+                </span>
+
+                {% endif %}
+
+
+                {% if latest_event.place %}
+
+                <span>
+                    {{ latest_event.place }}
+                </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <div class="dashboard-activity-footer">
+
+                <div>
+
+                    <span>
+                        Регистраций
+                    </span>
+
+                    <strong>
+                        {{ latest_event.registrations_count }}
+                    </strong>
+
+                </div>
+
+                <span class="dashboard-open-link">
+                    Открыть →
+                </span>
+
+            </div>
+
+        </a>
+
+
+        {% else %}
+
+        <div class="dashboard-empty-card dashboard-small-empty">
+
+            <span>
+                Последнее мероприятие
+            </span>
+
+            <strong>
+                Активных мероприятий пока нет
+            </strong>
+
+        </div>
+
+        {% endif %}
+
+
+
+        <!-- ОТЗЫВ -->
+
+        {% if latest_review %}
+
+        <div class="dashboard-activity-card dashboard-review-card">
+
+            <div class="dashboard-activity-card-top">
+
+                <span class="dashboard-activity-label">
+                    Последний отзыв
+                </span>
+
+
+                <div
+                    class="dashboard-stars"
+                    aria-label="Оценка {{ latest_review.rating }} из 5"
+                >
+
+                    {% for number in range(1, 6) %}
+
+                        {% if number <= latest_review.rating %}
+                            <span class="dashboard-star-active">★</span>
+                        {% else %}
+                            <span>★</span>
+                        {% endif %}
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-review-text">
+
+                {% if latest_review.review_text %}
+                    «{{ latest_review.review_text }}»
+                {% else %}
+                    <span class="muted">
+                        Пользователь оставил оценку без текста.
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="dashboard-review-links">
+
+                <a href="/users/{{ latest_review.user_id }}">
+                    {{ latest_review.full_name }}
+                    ·
+                    {{ latest_review.user_code }}
+                </a>
+
+                <a href="/events/{{ latest_review.event_id }}">
+                    {{ latest_review.event_title }}
+                    ·
+                    {{ latest_review.event_code }}
+                </a>
+
+            </div>
+
+
+            <div class="dashboard-activity-footer">
+
+                <span class="dashboard-activity-date">
+
+                    {% if latest_review.created_at %}
+                        {{ latest_review.created_at.strftime("%d.%m.%Y в %H:%M") }}
+                    {% endif %}
+
+                </span>
+
+                <a
+                    href="/reviews?event={{ latest_review.event_code }}"
+                    class="dashboard-open-link"
+                >
+                    Открыть →
+                </a>
+
+            </div>
+
+        </div>
+
+
+        {% else %}
+
+        <div class="dashboard-empty-card dashboard-small-empty">
+
+            <span>
+                Последний отзыв
+            </span>
+
+            <strong>
+                Отзывов пока нет
+            </strong>
+
+        </div>
+
+        {% endif %}
+
     </div>
 
 </div>

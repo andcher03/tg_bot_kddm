@@ -44,7 +44,7 @@ UNIVERSITIES = [
     "КГАСУ",
     "КазГМУ",
     "Университет управления ТИСБИ",
-    "Другой ВУЗ",
+    "Другое",
 ]
 
 BASE_DIR = Path(__file__).resolve().parent.parent

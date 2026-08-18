@@ -1,0 +1,897 @@
+{% extends "base.html" %}
+
+{% block title %}
+Рассылка #{{ campaign.id }} — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<div class="mailing-detail-page">
+
+    <div class="mailing-detail-topbar">
+
+        <a
+            href="/mailing/history"
+            class="back-link"
+        >
+            ← История рассылок
+        </a>
+
+
+        <div class="mailing-detail-meta">
+
+            <span>
+                Рассылка #{{ campaign.id }}
+            </span>
+
+            {% if campaign.created_at %}
+            <span>
+                {{ campaign.created_at.strftime("%d.%m.%Y в %H:%M") }}
+            </span>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="mailing-telegram-heading">
+
+        <div>
+
+            <span class="mailing-preview-kicker">
+                Просмотр рассылки
+            </span>
+
+            <h1>
+                Так сообщение увидели пользователи
+            </h1>
+
+        </div>
+
+
+        <div class="mailing-detail-heading-actions">
+
+            {% if campaign.status == "completed" %}
+
+            <span class="mailing-history-status mailing-history-status-completed">
+                Завершена
+            </span>
+
+            {% elif campaign.status == "sending" %}
+
+            <span class="mailing-history-status mailing-history-status-sending">
+                Отправляется
+            </span>
+
+            {% endif %}
+
+
+            <button
+                type="button"
+                class="mailing-repeat-button"
+                id="mailingRepeatButton"
+            >
+                Повторить рассылку
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =================================================
+         TELEGRAM
+         ================================================= -->
+
+    <section class="mailing-telegram-section mailing-history-telegram-section">
+
+        <div class="telegram-preview-window">
+
+            <div class="telegram-preview-header">
+
+                <div class="telegram-header-avatar-wrap">
+
+                    <img
+                        src="/static/bot_avatar.png"
+                        alt="Аватар бота"
+                        class="telegram-header-avatar"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                    >
+
+                    <div class="telegram-avatar-fallback">
+                        МК
+                    </div>
+
+                </div>
+
+
+                <div class="telegram-header-info">
+
+                    <strong>
+                        Молодёжь Казани
+                    </strong>
+
+                    <span>
+                        бот
+                    </span>
+
+                </div>
+
+
+                <div class="telegram-header-actions" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+            </div>
+
+
+            <div class="telegram-chat-wallpaper">
+
+                <div class="telegram-day-pill">
+
+                    {% if campaign.created_at %}
+                        {{ campaign.created_at.strftime("%d.%m.%Y") }}
+                    {% else %}
+                        —
+                    {% endif %}
+
+                </div>
+
+
+                <div class="telegram-message-row">
+
+                    <div class="telegram-message-avatar-wrap">
+
+                        <img
+                            src="/static/bot_avatar.png"
+                            alt=""
+                            class="telegram-message-avatar"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+
+                        <div class="telegram-message-avatar telegram-avatar-fallback telegram-avatar-fallback-small">
+                            МК
+                        </div>
+
+                    </div>
+
+
+                    <div class="telegram-message-column">
+
+                        <div class="telegram-sender-name">
+                            Молодёжь Казани
+                        </div>
+
+
+                        {% if campaign.photo_url %}
+
+                            {% if campaign.message|length <= 1024 %}
+
+                            <div class="telegram-bubble telegram-bubble-media">
+
+                                <img
+                                    src="{{ campaign.photo_url }}"
+                                    alt="Фото рассылки"
+                                    class="telegram-message-photo"
+                                >
+
+                                {% if campaign.message %}
+                                <div class="telegram-message-caption">
+                                    {{ campaign.message }}
+                                </div>
+                                {% endif %}
+
+                                <div class="telegram-message-time">
+                                    {% if campaign.created_at %}
+                                        {{ campaign.created_at.strftime("%H:%M") }}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+                            {% else %}
+
+                            <div class="telegram-bubble telegram-bubble-media telegram-bubble-photo-only">
+
+                                <img
+                                    src="{{ campaign.photo_url }}"
+                                    alt="Фото рассылки"
+                                    class="telegram-message-photo"
+                                >
+
+                                <div class="telegram-message-time telegram-message-time-on-photo">
+                                    {% if campaign.created_at %}
+                                        {{ campaign.created_at.strftime("%H:%M") }}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+
+                            <div class="telegram-bubble telegram-bubble-text">
+
+                                <div class="telegram-message-text">
+                                    {{ campaign.message }}
+                                </div>
+
+                                <div class="telegram-message-time">
+                                    {% if campaign.created_at %}
+                                        {{ campaign.created_at.strftime("%H:%M") }}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+                            {% endif %}
+
+                        {% else %}
+
+                        <div class="telegram-bubble telegram-bubble-text">
+
+                            <div class="telegram-message-text">
+                                {{ campaign.message }}
+                            </div>
+
+                            <div class="telegram-message-time">
+                                {% if campaign.created_at %}
+                                    {{ campaign.created_at.strftime("%H:%M") }}
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         СТАТИСТИКА
+         ================================================= -->
+
+    <div class="mailing-detail-stats">
+
+        <div>
+            <span>Получателей</span>
+            <strong>{{ campaign.recipients_count }}</strong>
+        </div>
+
+        <div>
+            <span>Доставлено</span>
+            <strong class="mailing-history-success">
+                {{ campaign.sent_count }}
+            </strong>
+        </div>
+
+        <div>
+            <span>Ошибок</span>
+            <strong
+                class="
+                    {% if campaign.failed_count > 0 %}
+                    mailing-history-error
+                    {% endif %}
+                "
+            >
+                {{ campaign.failed_count }}
+            </strong>
+        </div>
+
+    </div>
+
+
+
+    <!-- =================================================
+         ПОВТОР
+         ================================================= -->
+
+    <section
+        class="mailing-repeat-panel"
+        id="mailingRepeatPanel"
+        hidden
+    >
+
+        <div class="mailing-repeat-panel-header">
+
+            <div>
+
+                <span class="mailing-preview-kicker">
+                    Повторная рассылка
+                </span>
+
+                <h2>
+                    Выберите получателей
+                </h2>
+
+                <p>
+                    Получатели исходной рассылки уже выбраны.
+                    Можно снять галочку или добавить других пользователей.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="mailing-repeat-close"
+                id="mailingRepeatClose"
+                aria-label="Закрыть"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        {% if repeat_error %}
+
+        <div class="mailing-warning">
+            Выберите хотя бы одного получателя.
+        </div>
+
+        {% endif %}
+
+
+        <form
+            method="post"
+            action="/mailing/history/{{ campaign.id }}/repeat"
+            id="mailingRepeatForm"
+            class="mailing-repeat-form"
+            onsubmit="
+                return confirm(
+                    'Повторить рассылку выбранным пользователям?'
+                );
+            "
+        >
+
+
+            <div class="mailing-repeat-selected-bar">
+
+                <div>
+
+                    <span>
+                        Выбрано
+                    </span>
+
+                    <strong id="mailingRepeatSelectedCount">
+                        {{ previous_recipients|length }}
+                    </strong>
+
+                </div>
+
+
+                <div class="mailing-repeat-selection-actions">
+
+                    <button
+                        type="button"
+                        id="mailingSelectPrevious"
+                    >
+                        Получатели прошлой рассылки
+                    </button>
+
+                    <button
+                        type="button"
+                        id="mailingClearSelection"
+                    >
+                        Снять выбор
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ПРЕЖНИЕ ПОЛУЧАТЕЛИ -->
+
+            <div class="mailing-repeat-section">
+
+                <div class="mailing-repeat-section-title">
+
+                    <div>
+
+                        <h3>
+                            Получатели прошлой рассылки
+                        </h3>
+
+                        <span>
+                            {{ previous_recipients|length }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="mailing-repeat-users">
+
+                    {% for user in previous_recipients %}
+
+                    <label class="mailing-repeat-user">
+
+                        <input
+                            type="checkbox"
+                            name="user_ids"
+                            value="{{ user.id }}"
+                            data-previous="1"
+                            checked
+                        >
+
+                        <span class="mailing-repeat-user-check"></span>
+
+
+                        <div class="mailing-repeat-user-main">
+
+                            <strong>
+                                {{ user.full_name }}
+                            </strong>
+
+                            <span>
+                                {{ user.user_code }}
+                                ·
+                                {{ user.university or "ВУЗ не указан" }}
+                            </span>
+
+                        </div>
+
+
+                        {% set delivery_status = delivery_status_by_user.get(user.id) %}
+
+                        {% if delivery_status == "sent" %}
+
+                        <span class="mailing-repeat-delivery mailing-repeat-delivery-sent">
+                            Доставлено
+                        </span>
+
+                        {% elif delivery_status == "failed" %}
+
+                        <span class="mailing-repeat-delivery mailing-repeat-delivery-failed">
+                            Ошибка
+                        </span>
+
+                        {% endif %}
+
+                    </label>
+
+
+                    {% else %}
+
+                    <div class="mailing-repeat-empty">
+                        Получатели исходной рассылки не найдены.
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ДОБАВИТЬ -->
+
+            <div class="mailing-repeat-section">
+
+                <div class="mailing-repeat-section-title">
+
+                    <div>
+
+                        <h3>
+                            Добавить пользователей
+                        </h3>
+
+                        <span>
+                            {{ additional_users|length }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <input
+                    type="search"
+                    class="mailing-repeat-search"
+                    id="mailingRepeatSearch"
+                    placeholder="Поиск по имени, KZN ID или ВУЗу"
+                    autocomplete="off"
+                >
+
+
+                <div
+                    class="mailing-repeat-users mailing-repeat-users-additional"
+                    id="mailingAdditionalUsers"
+                >
+
+                    {% for user in additional_users %}
+
+                    <label
+                        class="mailing-repeat-user"
+                        data-search="
+                            {{ user.full_name }}
+                            {{ user.user_code }}
+                            {{ user.university or '' }}
+                        "
+                    >
+
+                        <input
+                            type="checkbox"
+                            name="user_ids"
+                            value="{{ user.id }}"
+                        >
+
+                        <span class="mailing-repeat-user-check"></span>
+
+
+                        <div class="mailing-repeat-user-main">
+
+                            <strong>
+                                {{ user.full_name }}
+                            </strong>
+
+                            <span>
+                                {{ user.user_code }}
+                                ·
+                                {{ user.university or "ВУЗ не указан" }}
+                            </span>
+
+                        </div>
+
+                    </label>
+
+
+                    {% else %}
+
+                    <div class="mailing-repeat-empty">
+                        Других пользователей пока нет.
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+
+            <div class="mailing-repeat-submit">
+
+                <button
+                    type="button"
+                    class="mailing-repeat-cancel"
+                    id="mailingRepeatCancel"
+                >
+                    Отмена
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="mailing-send-button"
+                    id="mailingRepeatSubmit"
+                >
+                    Повторить рассылку
+                </button>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+
+    <!-- =================================================
+         ДОСТАВКА
+         ================================================= -->
+
+    <details class="mailing-recipients-details mailing-detail-deliveries">
+
+        <summary>
+
+            <span>
+                Доставка
+            </span>
+
+            <strong>
+                {{ deliveries|length }}
+            </strong>
+
+        </summary>
+
+
+        <div class="table-container mailing-users-table">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>KZN ID</th>
+                        <th>Пользователь</th>
+                        <th>ВУЗ</th>
+                        <th>Статус</th>
+                        <th>Ошибка</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for delivery in deliveries %}
+
+                    <tr>
+
+                        <td>
+
+                            {% if delivery.user_id %}
+
+                            <a href="/users/{{ delivery.user_id }}">
+                                {{ delivery.user_code or "—" }}
+                            </a>
+
+                            {% else %}
+                                —
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ delivery.full_name or "—" }}
+                        </td>
+
+
+                        <td>
+                            {{ delivery.university or "—" }}
+                        </td>
+
+
+                        <td>
+
+                            {% if delivery.status == "sent" %}
+
+                            <span class="mailing-delivery-badge mailing-delivery-sent">
+                                Доставлено
+                            </span>
+
+                            {% else %}
+
+                            <span class="mailing-delivery-badge mailing-delivery-failed">
+                                Ошибка
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td class="mailing-delivery-error">
+                            {{ delivery.error_message or "—" }}
+                        </td>
+
+                    </tr>
+
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="5">
+                            Данные о доставке отсутствуют.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </details>
+
+</div>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const repeatButton =
+        document.getElementById("mailingRepeatButton");
+
+    const repeatPanel =
+        document.getElementById("mailingRepeatPanel");
+
+    const repeatClose =
+        document.getElementById("mailingRepeatClose");
+
+    const repeatCancel =
+        document.getElementById("mailingRepeatCancel");
+
+    const searchInput =
+        document.getElementById("mailingRepeatSearch");
+
+    const selectedCount =
+        document.getElementById("mailingRepeatSelectedCount");
+
+    const repeatSubmit =
+        document.getElementById("mailingRepeatSubmit");
+
+    const selectPrevious =
+        document.getElementById("mailingSelectPrevious");
+
+    const clearSelection =
+        document.getElementById("mailingClearSelection");
+
+
+    function checkboxes() {
+        return [
+            ...document.querySelectorAll(
+                '#mailingRepeatForm input[name="user_ids"]'
+            )
+        ];
+    }
+
+
+    function updateSelectedCount() {
+
+        const count = checkboxes().filter(
+            checkbox => checkbox.checked
+        ).length;
+
+        if (selectedCount) {
+            selectedCount.textContent = count;
+        }
+
+        if (repeatSubmit) {
+
+            repeatSubmit.disabled = count === 0;
+
+            repeatSubmit.textContent =
+                count > 0
+                    ? `Повторить рассылку для ${count}`
+                    : "Выберите получателей";
+        }
+    }
+
+
+    function openRepeatPanel() {
+
+        if (!repeatPanel) {
+            return;
+        }
+
+        repeatPanel.hidden = false;
+
+        repeatPanel.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+
+    function closeRepeatPanel() {
+
+        if (!repeatPanel) {
+            return;
+        }
+
+        repeatPanel.hidden = true;
+    }
+
+
+    repeatButton?.addEventListener(
+        "click",
+        openRepeatPanel
+    );
+
+    repeatClose?.addEventListener(
+        "click",
+        closeRepeatPanel
+    );
+
+    repeatCancel?.addEventListener(
+        "click",
+        closeRepeatPanel
+    );
+
+
+    checkboxes().forEach(
+        checkbox => {
+            checkbox.addEventListener(
+                "change",
+                updateSelectedCount
+            );
+        }
+    );
+
+
+    selectPrevious?.addEventListener(
+        "click",
+        () => {
+
+            checkboxes().forEach(
+                checkbox => {
+                    checkbox.checked =
+                        checkbox.dataset.previous === "1";
+                }
+            );
+
+            updateSelectedCount();
+        }
+    );
+
+
+    clearSelection?.addEventListener(
+        "click",
+        () => {
+
+            checkboxes().forEach(
+                checkbox => {
+                    checkbox.checked = false;
+                }
+            );
+
+            updateSelectedCount();
+        }
+    );
+
+
+    searchInput?.addEventListener(
+        "input",
+        () => {
+
+            const query =
+                searchInput.value
+                .trim()
+                .toLowerCase();
+
+            document
+                .querySelectorAll(
+                    "#mailingAdditionalUsers .mailing-repeat-user"
+                )
+                .forEach(
+                    item => {
+
+                        const haystack =
+                            (
+                                item.dataset.search
+                                || ""
+                            )
+                            .toLowerCase();
+
+                        item.hidden =
+                            query
+                            && !haystack.includes(query);
+                    }
+                );
+        }
+    );
+
+
+    updateSelectedCount();
+
+
+    {% if repeat_error %}
+        openRepeatPanel();
+    {% endif %}
+});
+</script>
+
+{% endblock %}

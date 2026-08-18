@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}
+История рассылок — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- =====================================================
+     HEADER
+     ===================================================== -->
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            История рассылок
+        </h1>
+
+        <p class="subtitle">
+            Отправленные Telegram-рассылки
+            и статистика доставки
+        </p>
+
+    </div>
+
+
+    <div class="page-actions">
+
+        <a
+            href="/mailing"
+            class="primary-link-button"
+        >
+            + Новая рассылка
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     ОБЩАЯ СТАТИСТИКА
+     ===================================================== -->
+
+<div class="mailing-history-summary">
+
+    <div class="mailing-history-summary-card">
+
+        <span>
+            Рассылок
+        </span>
+
+        <strong>
+            {{ total_campaigns }}
+        </strong>
+
+        <small>
+            всего
+        </small>
+
+    </div>
+
+
+    <div class="mailing-history-summary-card">
+
+        <span>
+            Доставлено
+        </span>
+
+        <strong>
+            {{ total_sent }}
+        </strong>
+
+        <small>
+            сообщений
+        </small>
+
+    </div>
+
+
+    <div class="mailing-history-summary-card">
+
+        <span>
+            Ошибок
+        </span>
+
+        <strong>
+            {{ total_failed }}
+        </strong>
+
+        <small>
+            при доставке
+        </small>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     СПИСОК РАССЫЛОК
+     ===================================================== -->
+
+<div class="mailing-history-section">
+
+    <div class="mailing-history-section-header">
+
+        <h2>
+            Рассылки
+        </h2>
+
+        <span>
+            {{ total_campaigns }}
+        </span>
+
+    </div>
+
+
+    <div class="mailing-history-list">
+
+        {% for campaign in campaigns %}
+
+        <a
+    href="/mailing/history/{{ campaign.id }}"
+    class="mailing-history-card mailing-history-card-link"
+>
+
+    <!-- ФОТО -->
+
+    {% if campaign.photo_url %}
+
+    <div class="mailing-history-photo">
+
+        <img
+            src="{{ campaign.photo_url }}"
+            alt="Фото рассылки"
+        >
+
+    </div>
+
+    {% else %}
+
+    <div class="mailing-history-photo mailing-history-photo-empty">
+        Без фото
+    </div>
+
+    {% endif %}
+
+
+
+    <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+
+    <div class="mailing-history-card-main">
+
+        <div class="mailing-history-card-top">
+
+            <span class="mailing-history-id">
+                #{{ campaign.id }}
+            </span>
+
+
+            {% if campaign.status == "completed" %}
+
+            <span class="mailing-history-status mailing-history-status-completed">
+                Завершена
+            </span>
+
+            {% elif campaign.status == "sending" %}
+
+            <span class="mailing-history-status mailing-history-status-sending">
+                Отправляется
+            </span>
+
+            {% else %}
+
+            <span class="mailing-history-status">
+                {{ campaign.status }}
+            </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="mailing-history-date">
+
+            {% if campaign.created_at %}
+
+                {{
+                    campaign.created_at.strftime(
+                        "%d.%m.%Y в %H:%M"
+                    )
+                }}
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="mailing-history-message">
+
+            {{ campaign.message[:120] }}
+
+            {% if campaign.message|length > 120 %}
+                ...
+            {% endif %}
+
+        </div>
+
+
+        <div class="mailing-history-tags">
+
+            {% if campaign.all_users %}
+
+            <span class="mailing-history-tag">
+                Все пользователи
+            </span>
+
+            {% else %}
+
+                {% if campaign.universities %}
+
+                <span class="mailing-history-tag">
+                    ВУЗы: {{ campaign.universities|length }}
+                </span>
+
+                {% endif %}
+
+
+                {% if campaign.event_ids %}
+
+                <span class="mailing-history-tag">
+                    Мероприятия: {{ campaign.event_ids|length }}
+                </span>
+
+                {% endif %}
+
+
+                {% if not campaign.universities and not campaign.event_ids %}
+
+                <span class="mailing-history-tag">
+                    Выбранные пользователи
+                </span>
+
+                {% endif %}
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- СТАТИСТИКА -->
+
+    <div class="mailing-history-card-stats">
+
+        <div>
+
+            <span>
+                Получателей
+            </span>
+
+            <strong>
+                {{ campaign.recipients_count }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span>
+                Доставлено
+            </span>
+
+            <strong class="mailing-history-success">
+                {{ campaign.sent_count }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span>
+                Ошибок
+            </span>
+
+            <strong
+                class="
+                    {% if campaign.failed_count > 0 %}
+                    mailing-history-error
+                    {% endif %}
+                "
+            >
+                {{ campaign.failed_count }}
+            </strong>
+
+        </div>
+
+    </div>
+
+</a>
+
+
+
+        {% else %}
+
+
+        <div class="mailing-history-empty">
+
+            <strong>
+                История пока пустая
+            </strong>
+
+            <span>
+                После первой отправленной рассылки
+                она появится здесь.
+            </span>
+
+            <a
+                href="/mailing"
+                class="primary-link-button"
+            >
+                Создать рассылку
+            </a>
+
+        </div>
+
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+{% endblock %}

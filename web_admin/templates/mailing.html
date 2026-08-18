@@ -4,108 +4,77 @@
 Рассылка — Молодёжь Казани
 {% endblock %}
 
-
 {% block content %}
 
 <div class="page-header">
-
     <div>
-
-        <h1>
-            Рассылка
-        </h1>
-
+        <h1>Рассылка</h1>
         <p class="subtitle">
             Создание рассылки пользователям Telegram-бота
         </p>
-
     </div>
 
+    <div class="page-actions">
+        <a
+            href="/mailing/history"
+            class="mailing-history-button"
+        >
+            История рассылок
+        </a>
+    </div>
 </div>
 
 {% if send_result %}
-
 <div class="mailing-send-result">
-
     <div>
-
-        <span>
-            Рассылка завершена
-        </span>
-
-        <strong>
-            {{ send_result.sent }}
-        </strong>
-
-        <small>
-            успешно отправлено
-        </small>
-
+        <span>Рассылка завершена</span>
+        <strong>{{ send_result.sent }}</strong>
+        <small>успешно отправлено</small>
     </div>
 
-
     <div>
-
-        <span>
-            Ошибок
-        </span>
-
-        <strong>
-            {{ send_result.failed }}
-        </strong>
-
-        <small>
-            не доставлено
-        </small>
-
+        <span>Ошибок</span>
+        <strong>{{ send_result.failed }}</strong>
+        <small>не доставлено</small>
     </div>
 
-
     <div>
-
-        <span>
-            Всего
-        </span>
-
-        <strong>
-            {{ send_result.total }}
-        </strong>
-
-        <small>
-            получателей
-        </small>
-
+        <span>Всего</span>
+        <strong>{{ send_result.total }}</strong>
+        <small>получателей</small>
     </div>
-
 </div>
-
 {% endif %}
 
+
+<div
+    id="mailingEditorState"
+    class="{% if recipient_count is not none %}mailing-view-hidden{% endif %}"
+>
 
 <form
     method="post"
     action="/mailing/preview"
     class="mailing-form"
     enctype="multipart/form-data"
+    id="mailingForm"
 >
 
-{% if photo_url %}
+    {% if photo_url %}
+    <input
+        type="hidden"
+        name="existing_photo_url"
+        value="{{ photo_url }}"
+        id="existingPhotoUrl"
+    >
+    {% endif %}
 
-<input
-    type="hidden"
-    name="existing_photo_url"
-    value="{{ photo_url }}"
->
+    {% if photo_error %}
+    <div class="mailing-warning">
+        {{ photo_error }}
+    </div>
+    {% endif %}
 
-{% endif %}
-
-{% if photo_error %}
-
-<div class="mailing-warning">
-    {{ photo_error }}
-</div>
-
-{% endif %}
 
     <!-- =================================================
          СООБЩЕНИЕ
@@ -114,25 +83,13 @@
     <div class="mailing-card">
 
         <div class="mailing-card-header">
-
-            <div class="mailing-step-number">
-                1
-            </div>
+            <div class="mailing-step-number">1</div>
 
             <div>
-
-                <h2>
-                    Сообщение
-                </h2>
-
-                <p>
-                    Текст, который получат пользователи
-                </p>
-
+                <h2>Сообщение</h2>
+                <p>Текст, который получат пользователи</p>
             </div>
-
         </div>
-
 
         <textarea
             name="message"
@@ -142,39 +99,116 @@
             required
         >{{ message }}</textarea>
 
+
+        <!-- ФОТО -->
+
         <div class="mailing-photo-block">
 
-    <label class="mailing-photo-label">
-        Фотография
-    </label>
+            <label class="mailing-photo-label">
+                Фотография
+            </label>
 
-    <p class="mailing-section-help">
-        Необязательно. Добавьте изображение к рассылке.
-    </p>
+            <p class="mailing-section-help">
+                Необязательно. Нажмите на поле или перетащите изображение прямо в него.
+            </p>
 
-    <label class="mailing-photo-upload">
 
-        <input
-            type="file"
-            name="photo"
-            accept="image/jpeg,image/png,image/webp"
-        >
+            <div
+                class="mailing-dropzone {% if photo_url %}has-file{% endif %}"
+                id="mailingDropzone"
+                role="button"
+                tabindex="0"
+                aria-label="Добавить фотографию"
+            >
 
-        <div class="mailing-photo-upload-content">
+                <input
+                    type="file"
+                    name="photo"
+                    id="mailingPhotoInput"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                >
 
-            <strong>
-                + Добавить фотографию
-            </strong>
 
-            <span>
-                JPG, PNG или WEBP
-            </span>
+                <div
+                    class="mailing-dropzone-empty"
+                    id="mailingDropzoneEmpty"
+                    {% if photo_url %}hidden{% endif %}
+                >
+                    <div class="mailing-dropzone-icon" aria-hidden="true">
+                        +
+                    </div>
+
+                    <strong>
+                        Добавить фотографию
+                    </strong>
+
+                    <span>
+                        Нажмите или перетащите файл сюда
+                    </span>
+
+                    <small>
+                        JPG, PNG или WEBP · до 10 МБ
+                    </small>
+                </div>
+
+
+                <div
+                    class="mailing-selected-file"
+                    id="mailingSelectedFile"
+                    {% if not photo_url %}hidden{% endif %}
+                >
+
+                    <img
+                        id="mailingSelectedThumb"
+                        class="mailing-selected-thumb"
+                        {% if photo_url %}
+                        src="{{ photo_url }}"
+                        {% endif %}
+                        alt="Предпросмотр фотографии"
+                    >
+
+                    <div class="mailing-selected-info">
+
+                        <strong
+                            id="mailingSelectedName"
+                            title="{% if photo_url %}Загруженная фотография{% endif %}"
+                        >
+                            {% if photo_url %}
+                                Загруженная фотография
+                            {% endif %}
+                        </strong>
+
+                        <span id="mailingSelectedMeta">
+                            {% if photo_url %}
+                                Фото уже сохранено на сервере
+                            {% endif %}
+                        </span>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="mailing-remove-photo"
+                        id="mailingRemovePhoto"
+                        aria-label="Удалить фотографию"
+                        title="Удалить фотографию"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="mailing-file-error"
+                id="mailingFileError"
+                hidden
+            ></div>
 
         </div>
-
-    </label>
-
-</div>
 
     </div>
 
@@ -188,20 +222,11 @@
 
         <div class="mailing-card-header">
 
-            <div class="mailing-step-number">
-                2
-            </div>
+            <div class="mailing-step-number">2</div>
 
             <div>
-
-                <h2>
-                    Получатели
-                </h2>
-
-                <p>
-                    Выберите аудиторию рассылки
-                </p>
-
+                <h2>Получатели</h2>
+                <p>Выберите аудиторию рассылки</p>
             </div>
 
         </div>
@@ -215,30 +240,23 @@
                 Общая аудитория
             </h3>
 
-
             <label class="mailing-checkbox mailing-checkbox-main">
 
                 <input
                     type="checkbox"
                     name="all_users"
                     value="1"
-
-                    {% if all_users %}
-                    checked
-                    {% endif %}
+                    {% if all_users %}checked{% endif %}
                 >
 
                 <div>
-
                     <strong>
                         Все пользователи
                     </strong>
 
                     <span>
-                        Все зарегистрированные
-                        пользователи бота
+                        Все зарегистрированные пользователи бота
                     </span>
-
                 </div>
 
             </label>
@@ -270,10 +288,7 @@
                         type="checkbox"
                         name="universities"
                         value="{{ university }}"
-
-                        {% if university in selected_universities %}
-                        checked
-                        {% endif %}
+                        {% if university in selected_universities %}checked{% endif %}
                     >
 
                     <span>
@@ -305,8 +320,7 @@
             </h3>
 
             <p class="mailing-section-help">
-                Пользователи, зарегистрированные
-                на выбранные мероприятия
+                Пользователи, зарегистрированные на выбранные мероприятия
             </p>
 
 
@@ -320,35 +334,21 @@
                         type="checkbox"
                         name="events"
                         value="{{ event.id }}"
-
-                        {% if event.id in selected_event_ids %}
-                        checked
-                        {% endif %}
+                        {% if event.id in selected_event_ids %}checked{% endif %}
                     >
 
-
                     <div>
-
                         <strong>
                             {{ event.title }}
                         </strong>
 
-
                         <span>
-
                             {{ event.event_code }}
 
                             {% if event.event_date %}
-
-                                ·
-                                {{ event.event_date.strftime(
-                                    "%d.%m.%Y"
-                                ) }}
-
+                                · {{ event.event_date.strftime("%d.%m.%Y") }}
                             {% endif %}
-
                         </span>
-
                     </div>
 
                 </label>
@@ -369,11 +369,17 @@
 
 
 
-    <!-- =================================================
-         ПРЕДПРОСМОТР
-         ================================================= -->
-
     <div class="mailing-form-actions">
+
+        {% if recipient_count is not none %}
+        <button
+            type="button"
+            class="mailing-return-preview-button"
+            id="mailingReturnPreviewButton"
+        >
+            Вернуться к предпросмотру
+        </button>
+        {% endif %}
 
         <button
             type="submit"
@@ -384,28 +390,218 @@
 
     </div>
 
-
 </form>
+
+</div>
 
 
 
 <!-- =====================================================
-     РЕЗУЛЬТАТ ПРЕДПРОСМОТРА
+     TELEGRAM-ПРЕДПРОСМОТР
      ===================================================== -->
 
 {% if recipient_count is not none %}
 
-<div class="mailing-preview">
+<section
+    class="mailing-telegram-section"
+    id="mailingPreviewState"
+>
 
-    <div class="mailing-preview-header">
+    <div class="mailing-telegram-heading">
 
         <div>
+            <span class="mailing-preview-kicker">
+                Предпросмотр
+            </span>
 
-            <span class="mailing-preview-label">
+            <h2>
+                Так сообщение увидит пользователь
+            </h2>
+        </div>
+
+        <div class="mailing-preview-heading-actions">
+
+            {% if recipient_count > 0 %}
+            <span class="mailing-ready-badge">
+                Аудитория сформирована
+            </span>
+            {% endif %}
+
+            <button
+                type="button"
+                class="mailing-edit-preview-button"
+                id="mailingEditPreviewButton"
+            >
+                Изменить рассылку
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="telegram-preview-window">
+
+        <div class="telegram-preview-header">
+
+            <div class="telegram-header-avatar-wrap">
+
+                <img
+                    src="/static/bot_avatar.png"
+                    alt="Аватар бота"
+                    class="telegram-header-avatar"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                >
+
+                <div class="telegram-avatar-fallback">
+                    МК
+                </div>
+
+            </div>
+
+            <div class="telegram-header-info">
+                <strong>
+                    Молодёжь Казани
+                </strong>
+
+                <span>
+                    бот
+                </span>
+            </div>
+
+            <div class="telegram-header-actions" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+        </div>
+
+
+        <div class="telegram-chat-wallpaper">
+
+            <div class="telegram-day-pill">
+                Сегодня
+            </div>
+
+
+            <div class="telegram-message-row">
+
+                <div class="telegram-message-avatar-wrap">
+
+                    <img
+                        src="/static/bot_avatar.png"
+                        alt=""
+                        class="telegram-message-avatar"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                    >
+
+                    <div class="telegram-message-avatar telegram-avatar-fallback telegram-avatar-fallback-small">
+                        МК
+                    </div>
+
+                </div>
+
+
+                <div class="telegram-message-column">
+
+                    <div class="telegram-sender-name">
+                        Молодёжь Казани
+                    </div>
+
+
+                    {% if photo_url %}
+
+                        {% if message|length <= 1024 %}
+
+                        <div class="telegram-bubble telegram-bubble-media">
+
+                            <img
+                                src="{{ photo_url }}"
+                                alt="Фото рассылки"
+                                class="telegram-message-photo"
+                            >
+
+                            {% if message %}
+                            <div class="telegram-message-caption">
+                                {{ message }}
+                            </div>
+                            {% endif %}
+
+                            <div class="telegram-message-time">
+                                <span class="js-current-time">сейчас</span>
+                            </div>
+
+                        </div>
+
+                        {% else %}
+
+                        <div class="telegram-bubble telegram-bubble-media telegram-bubble-photo-only">
+
+                            <img
+                                src="{{ photo_url }}"
+                                alt="Фото рассылки"
+                                class="telegram-message-photo"
+                            >
+
+                            <div class="telegram-message-time telegram-message-time-on-photo">
+                                <span class="js-current-time">сейчас</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="telegram-bubble telegram-bubble-text">
+
+                            <div class="telegram-message-text">
+                                {{ message }}
+                            </div>
+
+                            <div class="telegram-message-time">
+                                <span class="js-current-time">сейчас</span>
+                            </div>
+
+                        </div>
+
+                        {% endif %}
+
+                    {% else %}
+
+                    <div class="telegram-bubble telegram-bubble-text">
+
+                        <div class="telegram-message-text">
+                            {{ message }}
+                        </div>
+
+                        <div class="telegram-message-time">
+                            <span class="js-current-time">сейчас</span>
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- СТАТИСТИКА + ОТПРАВКА -->
+
+    <div class="mailing-preview-toolbar">
+
+        <div class="mailing-preview-recipient-stat">
+
+            <span>
                 Получателей
             </span>
 
-            <strong class="mailing-preview-count">
+            <strong>
                 {{ recipient_count }}
             </strong>
 
@@ -414,213 +610,474 @@
 
         {% if recipient_count > 0 %}
 
-        <span class="mailing-ready-badge">
-            Аудитория сформирована
-        </span>
-        {% if photo_url %}
+        <form
+            method="post"
+            action="/mailing/send"
+            class="mailing-send-form mailing-send-form-inline"
+            onsubmit="
+                return confirm(
+                    'Отправить рассылку {{ recipient_count }} пользователям?'
+                );
+            "
+        >
 
-        <div class="mailing-photo-preview">
+            <textarea
+                name="message"
+                style="display: none;"
+            >{{ message }}</textarea>
 
-            <span class="mailing-preview-label">
-                Фотография
-            </span>
 
-            <img
-                src="{{ photo_url }}"
-                alt="Фото рассылки"
+            {% if all_users %}
+            <input
+                type="hidden"
+                name="all_users"
+                value="1"
             >
+            {% endif %}
 
-        </div>
 
-        {% endif %}
+            {% for university in selected_universities %}
+            <input
+                type="hidden"
+                name="universities"
+                value="{{ university }}"
+            >
+            {% endfor %}
+
+
+            {% for event_id in selected_event_ids %}
+            <input
+                type="hidden"
+                name="events"
+                value="{{ event_id }}"
+            >
+            {% endfor %}
+
+
+            {% if photo_url %}
+            <input
+                type="hidden"
+                name="photo_url"
+                value="{{ photo_url }}"
+            >
+            {% endif %}
+
+
+            <button
+                type="submit"
+                class="mailing-send-button"
+            >
+                Отправить {{ recipient_count }} пользователям
+            </button>
+
+        </form>
+
         {% endif %}
 
     </div>
+
 
 
     {% if recipient_count == 0 %}
 
-    <div class="mailing-warning">
-
-        По выбранным параметрам
-        получатели не найдены.
-
+    <div class="mailing-warning mailing-preview-warning">
+        По выбранным параметрам получатели не найдены.
     </div>
-
 
     {% else %}
 
 
-    <div class="table-container mailing-users-table">
+    <!-- ПОЛУЧАТЕЛИ -->
 
-        <table>
+    <details class="mailing-recipients-details">
 
-            <thead>
-
-                <tr>
-                    <th>KZN ID</th>
-                    <th>Пользователь</th>
-                    <th>ВУЗ</th>
-                    <th>Telegram ID</th>
-                </tr>
-
-            </thead>
-
-
-            <tbody>
-
-                {% for user in preview_users[:50] %}
-
-                <tr>
-
-                    <td>
-
-                        <a href="/users/{{ user.id }}">
-                            {{ user.user_code }}
-                        </a>
-
-                    </td>
-
-
-                    <td>
-                        {{ user.full_name }}
-                    </td>
-
-
-                    <td>
-                        {{ user.university or "—" }}
-                    </td>
-
-
-                    <td>
-                        {{ user.telegram_id }}
-                    </td>
-
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-    {% if recipient_count > 50 %}
-
-    <p class="mailing-more-users">
-        Показаны первые 50 получателей.
-        Ещё: {{ recipient_count - 50 }}
-    </p>
-
-    {% endif %}
-
-
-<form
-    method="post"
-    action="/mailing/send"
-    class="mailing-send-form"
-    onsubmit="
-        return confirm(
-            'Отправить рассылку {{ recipient_count }} пользователям?'
-        );
-    "
->
-
-    <!-- ТЕКСТ -->
-
-    <textarea
-        name="message"
-        style="display: none;"
-    >{{ message }}</textarea>
-
-
-    <!-- ВСЕ ПОЛЬЗОВАТЕЛИ -->
-
-    {% if all_users %}
-
-    <input
-        type="hidden"
-        name="all_users"
-        value="1"
-    >
-
-    {% endif %}
-
-
-    <!-- ВУЗЫ -->
-
-    {% for university in selected_universities %}
-
-    <input
-        type="hidden"
-        name="universities"
-        value="{{ university }}"
-    >
-
-    {% endfor %}
-
-
-    <!-- МЕРОПРИЯТИЯ -->
-
-    {% for event_id in selected_event_ids %}
-
-    <input
-        type="hidden"
-        name="events"
-        value="{{ event_id }}"
-    >
-
-    {% endfor %}
-
-
-    <!-- ФОТО -->
-
-    {% if photo_url %}
-
-    <input
-        type="hidden"
-        name="photo_url"
-        value="{{ photo_url }}"
-    >
-
-    {% endif %}
-
-
-    <div class="mailing-send-actions">
-
-        <div>
+        <summary>
+            <span>
+                Получатели
+            </span>
 
             <strong>
-                Всё готово к отправке
+                {{ recipient_count }}
             </strong>
+        </summary>
 
-            <span>
-                Получателей: {{ recipient_count }}
-            </span>
+
+        <div class="table-container mailing-users-table">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>KZN ID</th>
+                        <th>Пользователь</th>
+                        <th>ВУЗ</th>
+                        <th>Telegram ID</th>
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    {% for user in preview_users[:50] %}
+
+                    <tr>
+
+                        <td>
+                            <a href="/users/{{ user.id }}">
+                                {{ user.user_code }}
+                            </a>
+                        </td>
+
+                        <td>
+                            {{ user.full_name }}
+                        </td>
+
+                        <td>
+                            {{ user.university or "—" }}
+                        </td>
+
+                        <td>
+                            {{ user.telegram_id }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
 
         </div>
 
 
-        <button
-            type="submit"
-            class="mailing-send-button"
-        >
-            Отправить {{ recipient_count }}
-            пользователям
-        </button>
+        {% if recipient_count > 50 %}
+        <p class="mailing-more-users">
+            Показаны первые 50 получателей.
+            Ещё: {{ recipient_count - 50 }}
+        </p>
+        {% endif %}
 
-    </div>
-
-</form>
-
+    </details>
 
     {% endif %}
 
-</div>
+</section>
 
 {% endif %}
 
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("mailingPhotoInput");
+    const dropzone = document.getElementById("mailingDropzone");
+    const emptyState = document.getElementById("mailingDropzoneEmpty");
+    const selectedState = document.getElementById("mailingSelectedFile");
+    const thumb = document.getElementById("mailingSelectedThumb");
+    const fileName = document.getElementById("mailingSelectedName");
+    const fileMeta = document.getElementById("mailingSelectedMeta");
+    const removeButton = document.getElementById("mailingRemovePhoto");
+    const errorBox = document.getElementById("mailingFileError");
+    const existingPhotoUrl = document.getElementById("existingPhotoUrl");
+
+    const editorState = document.getElementById("mailingEditorState");
+    const previewState = document.getElementById("mailingPreviewState");
+    const editPreviewButton = document.getElementById("mailingEditPreviewButton");
+    const returnPreviewButton = document.getElementById("mailingReturnPreviewButton");
+
+
+    function showEditor() {
+        if (editorState) {
+            editorState.classList.remove("mailing-view-hidden");
+        }
+
+        if (previewState) {
+            previewState.classList.add("mailing-view-hidden");
+        }
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+
+    function showPreview() {
+        if (editorState) {
+            editorState.classList.add("mailing-view-hidden");
+        }
+
+        if (previewState) {
+            previewState.classList.remove("mailing-view-hidden");
+        }
+
+        previewState?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+
+    if (editPreviewButton) {
+        editPreviewButton.addEventListener(
+            "click",
+            showEditor
+        );
+    }
+
+
+    if (returnPreviewButton) {
+        returnPreviewButton.addEventListener(
+            "click",
+            showPreview
+        );
+    }
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+    const maxSize = 10 * 1024 * 1024;
+
+    let previewObjectUrl = null;
+
+
+    function formatBytes(bytes) {
+        if (!bytes && bytes !== 0) {
+            return "";
+        }
+
+        if (bytes < 1024) {
+            return `${bytes} Б`;
+        }
+
+        if (bytes < 1024 * 1024) {
+            return `${(bytes / 1024).toFixed(1)} КБ`;
+        }
+
+        return `${(bytes / (1024 * 1024)).toFixed(2)} МБ`;
+    }
+
+
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.hidden = false;
+    }
+
+
+    function clearError() {
+        errorBox.textContent = "";
+        errorBox.hidden = true;
+    }
+
+
+    function clearObjectUrl() {
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+    }
+
+
+    function resetPhoto() {
+        clearObjectUrl();
+
+        input.value = "";
+
+        if (existingPhotoUrl) {
+            existingPhotoUrl.value = "";
+        }
+
+        thumb.removeAttribute("src");
+        fileName.textContent = "";
+        fileName.removeAttribute("title");
+        fileMeta.textContent = "";
+
+        selectedState.hidden = true;
+        emptyState.hidden = false;
+
+        dropzone.classList.remove(
+            "has-file",
+            "is-dragging"
+        );
+
+        clearError();
+    }
+
+
+    function setFile(file) {
+        clearError();
+
+        if (!allowedTypes.includes(file.type)) {
+            showError(
+                "Можно загрузить только JPG, PNG или WEBP."
+            );
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            showError(
+                "Размер фотографии не должен превышать 10 МБ."
+            );
+            return false;
+        }
+
+        clearObjectUrl();
+
+        previewObjectUrl = URL.createObjectURL(file);
+
+        thumb.src = previewObjectUrl;
+
+        fileName.textContent = file.name;
+        fileName.title = file.name;
+
+        const typeLabel =
+            file.type === "image/jpeg"
+                ? "JPG"
+                : file.type === "image/png"
+                    ? "PNG"
+                    : "WEBP";
+
+        fileMeta.textContent =
+            `${typeLabel} · ${formatBytes(file.size)}`;
+
+        emptyState.hidden = true;
+        selectedState.hidden = false;
+
+        dropzone.classList.add("has-file");
+
+        return true;
+    }
+
+
+    function putFileIntoInput(file) {
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+    }
+
+
+    if (dropzone && input) {
+
+        dropzone.addEventListener("click", (event) => {
+            if (
+                event.target === removeButton ||
+                removeButton.contains(event.target)
+            ) {
+                return;
+            }
+
+            input.click();
+        });
+
+
+        dropzone.addEventListener("keydown", (event) => {
+            if (
+                event.key === "Enter" ||
+                event.key === " "
+            ) {
+                event.preventDefault();
+                input.click();
+            }
+        });
+
+
+        input.addEventListener("change", () => {
+            const file = input.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            if (!setFile(file)) {
+                input.value = "";
+            }
+        });
+
+
+        [
+            "dragenter",
+            "dragover"
+        ].forEach((eventName) => {
+            dropzone.addEventListener(
+                eventName,
+                (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    dropzone.classList.add(
+                        "is-dragging"
+                    );
+                }
+            );
+        });
+
+
+        [
+            "dragleave",
+            "drop"
+        ].forEach((eventName) => {
+            dropzone.addEventListener(
+                eventName,
+                (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    dropzone.classList.remove(
+                        "is-dragging"
+                    );
+                }
+            );
+        });
+
+
+        dropzone.addEventListener("drop", (event) => {
+            const files = event.dataTransfer.files;
+
+            if (!files || !files.length) {
+                return;
+            }
+
+            const file = files[0];
+
+            if (setFile(file)) {
+                putFileIntoInput(file);
+            }
+        });
+    }
+
+
+    if (removeButton) {
+        removeButton.addEventListener(
+            "click",
+            (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                resetPhoto();
+            }
+        );
+    }
+
+
+    document
+        .querySelectorAll(".js-current-time")
+        .forEach((element) => {
+            const now = new Date();
+
+            element.textContent =
+                now.toLocaleTimeString(
+                    "ru-RU",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
+        });
+});
+</script>
 
 {% endblock %}

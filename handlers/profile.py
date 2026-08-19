@@ -145,8 +145,39 @@ async def save_full_name(
 
     await state.clear()
 
+    user = await users.get_user(
+        message.from_user.id
+    )
+
+    if not user:
+        return
+
+    created_at = (
+        user.created_at.strftime("%d.%m.%Y %H:%M")
+        if user.created_at
+        else ""
+    )
+
+    username = (
+        f"@{user.username.lstrip('@')}"
+        if user.username
+        else "не указан"
+    )
+
+    text = (
+        "👤 <b>Мой профиль</b>\n\n"
+        f"👤 Имя: {user.full_name}\n"
+        f"🔗 Username: {username}\n"
+        f"🎓 Университет: "
+        f"{user.university or 'не указан'}\n\n"
+        f"📅 Дата регистрации: {created_at}\n"
+        f"🆔 ID участника: "
+        f"<code>{user.user_code or ''}</code>"
+    )
+
     await message.answer(
-        "✅ ФИО успешно изменено!",
+        text,
+        parse_mode="HTML",
         reply_markup=profile_menu()
     )
 
@@ -262,9 +293,40 @@ async def save_university(
     await state.clear()
     await callback.answer("Университет изменён!")
 
+    user = await users.get_user(
+        callback.from_user.id
+    )
+
+    if not user:
+        return
+
+    created_at = (
+        user.created_at.strftime("%d.%m.%Y %H:%M")
+        if user.created_at
+        else ""
+    )
+
+    username = (
+        f"@{user.username.lstrip('@')}"
+        if user.username
+        else "не указан"
+    )
+
+    text = (
+        "👤 <b>Мой профиль</b>\n\n"
+        f"👤 Имя: {user.full_name}\n"
+        f"🔗 Username: {username}\n"
+        f"🎓 Университет: "
+        f"{user.university or 'не указан'}\n\n"
+        f"📅 Дата регистрации: {created_at}\n"
+        f"🆔 ID участника: "
+        f"<code>{user.user_code or ''}</code>"
+    )
+
     await callback.message.edit_text(
-        f"✅ Университет изменён!\n\n"
-        f"🎓 {university}"
+        text,
+        parse_mode="HTML",
+        reply_markup=profile_menu()
     )
 
 @router.callback_query(F.data == "profile_edit")
@@ -275,6 +337,39 @@ async def edit_profile(callback: CallbackQuery):
     await callback.message.edit_text(
         "Что хотите изменить?",
         reply_markup=edit_profile_menu()
+    )
+
+
+@router.callback_query(F.data == "profile_edit_name")
+async def edit_profile_name(
+    callback: CallbackQuery,
+    state: FSMContext
+):
+    await callback.answer()
+
+    await state.set_state(
+        ProfileState.edit_full_name
+    )
+
+    await callback.message.edit_text(
+        "Введите новое ФИО:"
+    )
+
+
+@router.callback_query(F.data == "profile_edit_university")
+async def edit_profile_university(
+    callback: CallbackQuery,
+    state: FSMContext
+):
+    await callback.answer()
+
+    await state.set_state(
+        ProfileState.edit_university
+    )
+
+    await callback.message.edit_text(
+        "Выберите новое учебное заведение:",
+        reply_markup=university_keyboard()
     )
 
 @router.callback_query(F.data == "profile_my_events")

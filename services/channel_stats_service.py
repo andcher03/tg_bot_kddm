@@ -706,6 +706,7 @@ async def get_channel_stats():
                 """
                 SELECT
                     member_count,
+                    day_start_count,
                     today_joins,
                     today_leaves,
                     stat_date,
@@ -822,13 +823,25 @@ async def get_channel_stats():
         state["today_leaves"] or 0
     )
 
+    member_count = int(
+        state["member_count"] or 0
+    )
+
+    day_start_count = int(
+        state["day_start_count"] or 0
+    )
+
 
     return {
         "total":
-            int(state["member_count"]),
+            member_count,
 
+        # Суточную динамику считаем по фактическому
+        # количеству подписчиков относительно начала дня.
+        # Так изменение не потеряется, даже если Telegram
+        # не прислал отдельный chat_member update.
         "today":
-            joins - leaves,
+            member_count - day_start_count,
 
         "last_event":
             (

@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
 
 from services.postgres_user_service import PostgresUserService
 from services.postgres_event_service import PostgresEventService
@@ -275,13 +276,26 @@ async def my_events(callback: CallbackQuery):
         user_id
     )
 
+    async def render_events(text: str):
+        try:
+            await callback.message.edit_text(
+                text,
+                parse_mode="HTML",
+                reply_markup=profile_back_keyboard()
+            )
+        except TelegramBadRequest as error:
+            # Повторное нажатие может попытаться отрисовать
+            # абсолютно то же сообщение. Telegram в таком случае
+            # возвращает "message is not modified" — это не ошибка
+            # для пользователя, поэтому просто игнорируем её.
+            if "message is not modified" not in str(error):
+                raise
+
     if not registrations:
 
-        await callback.message.edit_text(
+        await render_events(
             "📅 <b>Мои события</b>\n\n"
-            "У вас пока нет регистраций на события.",
-            parse_mode="HTML",
-            reply_markup=profile_menu()
+            "У вас пока нет регистраций на события."
         )
 
         return
@@ -316,11 +330,7 @@ async def my_events(callback: CallbackQuery):
             f"Статус: {status_text}\n\n"
         )
 
-    await callback.message.edit_text(
-        text,
-        parse_mode="HTML",
-        reply_markup=profile_menu()
-    )
+    await render_events(text)
 
 @router.callback_query(F.data == "profile_my_contests")
 async def my_contests(callback: CallbackQuery):

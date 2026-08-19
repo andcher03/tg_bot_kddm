@@ -13,18 +13,6 @@ def profile_menu():
             ],
             [
                 InlineKeyboardButton(
-                    text="🏆 Мои конкурсы",
-                    callback_data="profile_my_contests"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="📨 Мои рассылки",
-                    callback_data="profile_my_mailings"
-                )
-            ],
-            [
-                InlineKeyboardButton(
                     text="💬 Мои отзывы",
                     callback_data="profile_my_reviews"
                 )

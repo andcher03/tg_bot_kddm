@@ -489,40 +489,38 @@ async def profile_rate_event(
 ):
     await callback.answer()
 
+    telegram_id = callback.from_user.id
+
     registrations = (
         await registration_service.get_user_registrations(
-            callback.from_user.id
+            telegram_id
         )
     )
 
-    if not registrations:
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="⬅️ В профиль",
-                        callback_data="profile_back"
-                    )
-                ]
-            ]
-        )
+    reviews = await review_service.get_user_reviews(
+        telegram_id
+    )
 
-        await callback.message.edit_text(
-            "⭐ <b>Оценить событие</b>\n\n"
-            "У вас пока нет мероприятий, "
-            "которые можно оценить.",
-            parse_mode="HTML",
-            reply_markup=keyboard
-        )
-
-        return
+    # get_user_reviews() возвращает event_code
+    # в поле "event_id". Регистрации тоже используют
+    # event_code, поэтому сравниваем именно эти значения.
+    reviewed_event_ids = {
+        review["event_id"]
+        for review in reviews
+    }
 
     buttons = []
 
     for registration in registrations:
 
+        event_id = registration["event_id"]
+
+        # Уже оценённые события больше не показываем.
+        if event_id in reviewed_event_ids:
+            continue
+
         event = await event_service.get_event_by_id(
-            registration["event_id"]
+            event_id
         )
 
         if not event:
@@ -538,6 +536,16 @@ async def profile_rate_event(
                 )
             ]
         )
+
+    if not buttons:
+        await callback.message.edit_text(
+            "⭐ <b>Оценить событие</b>\n\n"
+            "У вас нет мероприятий, "
+            "которые ещё можно оценить.",
+            parse_mode="HTML",
+            reply_markup=profile_back_keyboard()
+        )
+        return
 
     buttons.append(
         [
@@ -556,6 +564,7 @@ async def profile_rate_event(
             inline_keyboard=buttons
         )
     )
+
 
 @router.callback_query(F.data == "profile_back")
 async def back_to_profile(callback: CallbackQuery):

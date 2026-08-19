@@ -16,9 +16,8 @@ async def youth_map(message: Message):
 
     await message.answer(
         "🗺 <b>Молодёжная карта Казани</b>\n\n"
-        "Здесь будет информация о Молодёжной карте Казани.\n\n"
-        "На карте собраны полезные для молодёжи места, "
-        "пространства и возможности города.",
+        "Мы собрали более 50 топовых городских локаций — кафе, парков, зон развлечений, баров, мастерские — на одной карте. \n\n"
+        "Стройте маршрут по Молодежной карте Казани и открывайте город с новой стороны! ",
         parse_mode="HTML",
         reply_markup=youth_map_keyboard()
     )
@@ -34,7 +33,7 @@ async def youth_map(message: Message):
 
         await message.answer_document(
             document=pdf,
-            caption="🗺 Молодёжная карта Казани"
+            caption="PDF вариант молодежной карты Казани"
         )
     else:
         await message.answer(

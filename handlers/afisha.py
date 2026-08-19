@@ -280,7 +280,16 @@ async def rate_event(
             "У вас пока нет мероприятий, "
             "которые можно оценить.",
             parse_mode="HTML",
-            reply_markup=afisha_menu()
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="⬅️ Назад в афишу",
+                            callback_data="afisha_back"
+                        )
+                    ]
+                ]
+            )
         )
 
         return
@@ -295,16 +304,6 @@ async def rate_event(
 
         if not event:
             continue
-
-        # Пропускаем ещё не прошедшие мероприятия
-        if event["date"]:
-            event_date = datetime.strptime(
-                event["date"],
-                "%d.%m.%Y"
-            ).date()
-
-            if event_date >= datetime.now().date():
-                continue
 
         # Пропускаем уже оценённые мероприятия
         already_reviewed = await review_service.has_review(
@@ -325,6 +324,45 @@ async def rate_event(
                 )
             ]
         )
+
+    # Если регистраций много, но все события ещё не прошли
+    # или уже были оценены, список кнопок будет пустым.
+    if not buttons:
+        await callback.message.edit_text(
+            "⭐ <b>Оценить событие</b>\n\n"
+            "У вас нет мероприятий, "
+            "которые ещё можно оценить.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="⬅️ Назад в афишу",
+                            callback_data="afisha_back"
+                        )
+                    ]
+                ]
+            )
+        )
+        return
+
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Назад в афишу",
+                callback_data="afisha_back"
+            )
+        ]
+    )
+
+    await callback.message.edit_text(
+        "⭐ <b>Оценить событие</b>\n\n"
+        "Выберите мероприятие:",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=buttons
+        )
+    )
 
 
 @router.callback_query(

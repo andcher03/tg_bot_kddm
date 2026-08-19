@@ -234,6 +234,11 @@ async def register_event(
         parse_mode="HTML"
     )
 
+    await show_main_menu(
+        callback.bot,
+        callback.from_user.id
+    )
+
 
 @router.callback_query(
     F.data == "afisha_search"

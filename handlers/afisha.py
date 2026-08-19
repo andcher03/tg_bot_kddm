@@ -99,13 +99,41 @@ async def nearest_events(
 
     events = await event_service.get_active_events()
 
-    if not events:
+    # Убираем из списка мероприятия, на которые
+    # текущий пользователь уже зарегистрирован.
+    registrations = (
+        await registration_service.get_user_registrations(
+            callback.from_user.id
+        )
+    )
+
+    registered_event_ids = {
+        str(registration["event_id"])
+        for registration in registrations
+    }
+
+    available_events = [
+        event
+        for event in events
+        if str(event["id"]) not in registered_event_ids
+    ]
+
+    if not available_events:
 
         await callback.message.edit_text(
             "📅 <b>Ближайшие события</b>\n\n"
-            "Сейчас нет доступных мероприятий.",
+            "Нет мероприятий, доступных для новой регистрации.",
             parse_mode="HTML",
-            reply_markup=afisha_menu()
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="⬅️ Назад в афишу",
+                            callback_data="afisha_back"
+                        )
+                    ]
+                ]
+            )
         )
 
         return
@@ -115,7 +143,7 @@ async def nearest_events(
         "Выберите мероприятие:",
         parse_mode="HTML",
         reply_markup=nearest_events_keyboard(
-            events
+            available_events
         )
     )
 

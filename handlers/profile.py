@@ -182,6 +182,7 @@ async def my_events(message: Message):
         return
 
     text = "📅 <b>Мои мероприятия:</b>\n\n"
+    visible_events = 0
 
     for registration in registrations:
 
@@ -190,6 +191,10 @@ async def my_events(message: Message):
         )
 
         if not event:
+            continue
+
+        # Архивные мероприятия не показываем пользователю.
+        if event.get("status") == "archived":
             continue
 
         status = registration["status"]
@@ -208,6 +213,13 @@ async def my_events(message: Message):
             f"📍 {event['place']}\n"
             f"Статус: {status_text}\n\n"
         )
+        visible_events += 1
+
+    if visible_events == 0:
+        await message.answer(
+            "📅 У вас пока нет активных регистраций на мероприятия."
+        )
+        return
 
     await message.answer(
         text,
@@ -301,6 +313,7 @@ async def my_events(callback: CallbackQuery):
         return
 
     text = "📅 <b>Мои события</b>\n\n"
+    visible_events = 0
 
     for registration in registrations:
 
@@ -309,6 +322,12 @@ async def my_events(callback: CallbackQuery):
         )
 
         if not event:
+            continue
+
+        # Если мероприятие перенесено в архив в админке,
+        # оно больше не отображается в «Моих событиях».
+        # Саму регистрацию из базы не удаляем.
+        if event.get("status") == "archived":
             continue
 
         status = registration["status"]
@@ -329,6 +348,14 @@ async def my_events(callback: CallbackQuery):
             f"📍 {event['place']}\n"
             f"Статус: {status_text}\n\n"
         )
+        visible_events += 1
+
+    if visible_events == 0:
+        await render_events(
+            "📅 <b>Мои события</b>\n\n"
+            "У вас пока нет активных регистраций на события."
+        )
+        return
 
     await render_events(text)
 

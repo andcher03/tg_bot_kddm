@@ -14,6 +14,8 @@ from services.postgres_event_service import PostgresEventService
 router = Router()
 
 users = PostgresUserService()
+registration_service = RegistrationService()
+event_service = PostgresEventService()
 
 
 UNIVERSITIES = {

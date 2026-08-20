@@ -1,44 +1,100 @@
-import asyncio
+import os
+from uuid import uuid4
 
-from services.postgres_user_service import PostgresUserService
+import pytest
+from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
+from sqlalchemy.ext.asyncio import (
+    async_sessionmaker,
+    create_async_engine,
+)
 
 
-users = PostgresUserService()
+load_dotenv()
 
 
-async def main():
+def get_test_database_url() -> str:
+    test_url = os.getenv("TEST_DATABASE_URL")
 
-    telegram_id = 999999999
+    if not test_url:
+        pytest.skip("TEST_DATABASE_URL не задан")
 
-    print("Проверяем пользователя...")
+    production_url = os.getenv("DATABASE_URL")
 
-    registered = await users.is_registered(telegram_id)
+    if production_url:
+        test_parsed = make_url(test_url)
+        production_parsed = make_url(production_url)
 
-    print("Зарегистрирован:", registered)
-
-    if not registered:
-
-        user = await users.register_user(
-            telegram_id=telegram_id,
-            username="test_user",
-            full_name="Тестовый Пользователь",
-            university="КНИТУ-КАИ"
+        test_identity = (
+            (test_parsed.host or "localhost").lower(),
+            test_parsed.port or 5432,
+            test_parsed.database,
+        )
+        production_identity = (
+            (production_parsed.host or "localhost").lower(),
+            production_parsed.port or 5432,
+            production_parsed.database,
         )
 
-        print("✅ Пользователь создан")
-        print("ID:", user.id)
-        print("Telegram ID:", user.telegram_id)
-        print("Имя:", user.full_name)
+        if test_identity == production_identity:
+            pytest.fail(
+                "TEST_DATABASE_URL должен указывать на отдельную тестовую БД"
+            )
 
-    user = await users.get_user(telegram_id)
-
-    print("\nПользователь из PostgreSQL:")
-    print(user.id)
-    print(user.telegram_id)
-    print(user.username)
-    print(user.full_name)
-    print(user.university)
-    print(user.role)
+    return test_url
 
 
-asyncio.run(main())
+@pytest.mark.asyncio
+async def test_register_and_read_user(monkeypatch):
+    test_url = get_test_database_url()
+
+    # Импорт сервиса выполняется только после проверки адреса БД.
+    monkeypatch.setenv("DATABASE_URL", test_url)
+    monkeypatch.setenv("BOT_TOKEN", "123456:test-token")
+
+    from services.models import Base
+    import services.database as database_module
+    import services.postgres_user_service as user_service_module
+
+    engine = create_async_engine(test_url)
+
+    try:
+        async with engine.connect() as connection:
+            transaction = await connection.begin()
+
+            try:
+                await connection.run_sync(Base.metadata.create_all)
+
+                test_session = async_sessionmaker(
+                    bind=connection,
+                    expire_on_commit=False,
+                    join_transaction_mode="create_savepoint",
+                )
+                monkeypatch.setattr(
+                    user_service_module,
+                    "SessionLocal",
+                    test_session,
+                )
+
+                service = user_service_module.PostgresUserService()
+                telegram_id = -(uuid4().int % 9_000_000_000 + 1)
+
+                created = await service.register_user(
+                    telegram_id=telegram_id,
+                    username="test_user",
+                    full_name="Тестовый Пользователь",
+                    university="КНИТУ-КАИ",
+                )
+
+                assert created
+                assert created.user_code == f"KZN-{created.id:06d}"
+
+                loaded = await service.get_user(telegram_id)
+                assert loaded is not None
+                assert loaded.id == created.id
+                assert loaded.full_name == "Тестовый Пользователь"
+            finally:
+                await transaction.rollback()
+    finally:
+        await engine.dispose()
+        await database_module.engine.dispose()

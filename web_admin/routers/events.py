@@ -11,7 +11,7 @@ from fastapi import (
 
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, text
+from sqlalchemy import select
 
 from services.database import SessionLocal
 from services.models import (
@@ -97,19 +97,7 @@ async def create_event(
 
     async with SessionLocal() as session:
 
-        event_number = await session.scalar(
-            text(
-                "SELECT nextval('event_code_seq')"
-            )
-        )
-
-        event_code = (
-            f"EVENT-{event_number:06d}"
-        )
-
         event = Event(
-            event_code=event_code,
-
             title=title.strip(),
             description=description.strip(),
 
@@ -128,6 +116,11 @@ async def create_event(
         )
 
         session.add(event)
+
+        # Используем первичный ключ как источник публичного кода.
+        # Отдельная sequence для event_code больше не требуется.
+        await session.flush()
+        event.event_code = f"EVENT-{event.id:06d}"
 
         await session.commit()
 

@@ -193,7 +193,11 @@ async def get_recipients(
                 .where(
                     Registration.event_id.in_(
                         selected_event_ids
-                    )
+                    ),
+                    Registration.status.in_((
+                        "registered",
+                        "confirmed",
+                    )),
                 )
             )
 

@@ -249,6 +249,24 @@ Telegram-бот и веб-панель используют одну базу д
 
 ## База данных
 
+Схема PostgreSQL управляется через Alembic. Для новой базы выполните:
+
+```bash
+python -m alembic upgrade head
+```
+
+Команда создаёт основные таблицы бота, Web Admin, историю рассылок и
+таблицы статистики Telegram-канала.
+
+Если база уже существовала до добавления Alembic, сначала сделайте резервную
+копию и сравните её схему с начальной миграцией. Не запускайте начальную
+миграцию поверх существующих таблиц. После проверки совместимости отметьте
+схему как применённую:
+
+```bash
+python -m alembic stamp 20260820_0001
+```
+
 Основные таблицы проекта:
 
 ```text
@@ -359,6 +377,15 @@ tg_bot_kddm/
 
 ## Запуск Telegram-бота
 
+Создайте виртуальное окружение и установите зафиксированные зависимости:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m alembic upgrade head
+```
+
 Активируйте виртуальное окружение и запустите:
 
 ```bash
@@ -392,6 +419,7 @@ http://127.0.0.1:8000
 ```env
 BOT_TOKEN=your_telegram_bot_token
 DATABASE_URL=postgresql+asyncpg://user@localhost:5432/database_name
+TELEGRAM_CHANNEL_ID=-1001234567890
 ```
 
 Файл `.env` не должен попадать в GitHub.
@@ -401,6 +429,25 @@ DATABASE_URL=postgresql+asyncpg://user@localhost:5432/database_name
 ```gitignore
 .env
 ```
+
+### Тесты
+
+Тестовые зависимости устанавливаются отдельно:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest
+```
+
+Проверки, которым нужна PostgreSQL, запускаются только при наличии отдельной
+тестовой базы:
+
+```env
+TEST_DATABASE_URL=postgresql+asyncpg://user@localhost:5432/kddm_test
+```
+
+`TEST_DATABASE_URL` не может указывать на ту же базу, что и `DATABASE_URL`.
+Изменения интеграционного теста выполняются в транзакции и откатываются.
 
 ---
 

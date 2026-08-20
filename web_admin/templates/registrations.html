@@ -1,222 +1,134 @@
 {% extends "base.html" %}
 
-{% block title %}
-Регистрации — Молодёжь Казани
-{% endblock %}
-
+{% block title %}Регистрации — Молодёжь Казани{% endblock %}
 
 {% block content %}
 
-<div class="page-header">
-
+<div class="page-header registrations-page-header">
     <div>
-        <h1>
-            Регистрации
-        </h1>
-
+        <h1>Регистрации</h1>
         <p class="subtitle">
-            Пользователи, зарегистрированные
-            на мероприятия
+            Актуальные мероприятия, на которые сейчас идёт регистрация
         </p>
     </div>
-
 </div>
 
-
-<input
-    type="text"
-    name="q"
-    value="{{ q }}"
-    placeholder="Поиск по пользователю, KZN ID, ВУЗу или мероприятию"
-    class="filter-search"
+<form
+    method="get"
+    action="/registrations"
+    class="registrations-search-form"
+    role="search"
 >
-
-    <select name="event_code">
-
-        <option value="">
-            Все мероприятия
-        </option>
-
-
-        {% for event in events %}
-
-        <option
-            value="{{ event.event_code }}"
-
-            {% if selected_event == event.event_code %}
-            selected
-            {% endif %}
+    <div class="registrations-search-field">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+        </svg>
+        <input
+            type="search"
+            name="q"
+            value="{{ q }}"
+            placeholder="Найти мероприятие по названию, коду или месту"
+            aria-label="Поиск актуального мероприятия"
         >
-            {{ event.title }}
-            — {{ event.event_code }}
-        </option>
+    </div>
 
-        {% endfor %}
-
-    </select>
-
-
-    <button
-        type="submit"
-        class="primary-button"
-    >
-        Показать
+    <button type="submit" class="primary-button">
+        Найти
     </button>
 
-
-    {% if selected_event %}
-
-    <a
-        href="/registrations"
-        class="secondary-link-button"
-    >
+    {% if q %}
+    <a href="/registrations" class="secondary-link-button">
         Сбросить
     </a>
-
     {% endif %}
-
 </form>
 
-
-<div class="table-container">
-    
-<div class="registration-stats">
-
-    <div class="stat-card">
-
-        <span class="stat-title">
-            Регистраций
-        </span>
-
-        <strong class="stat-value">
-            {{ registrations_count }}
-        </strong>
-
-        <span class="stat-description">
-            в текущей выборке
-        </span>
-
+<div class="registrations-section-heading">
+    <div>
+        <h2>Открытые регистрации</h2>
+        <p>Выберите мероприятие, чтобы посмотреть участников</p>
     </div>
-
-
-    <div class="stat-card">
-
-        <span class="stat-title">
-            Уникальных пользователей
-        </span>
-
-        <strong class="stat-value">
-            {{ unique_users_count }}
-        </strong>
-
-        <span class="stat-description">
-            в текущей выборке
-        </span>
-
-    </div>
-
+    <span class="registrations-events-count">
+        {{ events|length }}
+    </span>
 </div>
-    <table>
 
-        <thead>
+<div class="registration-events-grid">
+    {% for event in events %}
+    <a
+        href="/registrations/{{ event.id }}"
+        class="registration-event-card"
+    >
+        <div class="registration-event-card-top">
+            <span class="registration-open-badge">
+                <i aria-hidden="true"></i>
+                Регистрация открыта
+            </span>
 
-            <tr>
-                <th>KZN ID</th>
-                <th>Пользователь</th>
-                <th>ВУЗ</th>
-                <th>Мероприятие</th>
-                <th>Статус</th>
-                <th>Дата регистрации</th>
-            </tr>
+            <span class="registration-event-code">
+                {{ event.event_code or "Без кода" }}
+            </span>
+        </div>
 
-        </thead>
+        <h3>{{ event.title }}</h3>
 
+        <div class="registration-event-meta">
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path>
+                </svg>
+                {{ event.event_date.strftime("%d.%m.%Y") }}
+            </span>
 
-        <tbody>
+            {% if event.start_time %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                </svg>
+                {{ event.start_time.strftime("%H:%M") }}
+            </span>
+            {% endif %}
 
-        {% for registration in registrations %}
+            {% if event.place %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                    <circle cx="12" cy="10" r="2.5"></circle>
+                </svg>
+                {{ event.place }}
+            </span>
+            {% endif %}
+        </div>
 
-            <tr>
+        <div class="registration-event-card-footer">
+            <div class="registration-event-total">
+                <strong>{{ event.registrations_count }}</strong>
+                <span>{{ event.registrations_word }}</span>
+            </div>
 
-                <td>
+            <span class="registration-card-action">
+                Посмотреть участников
+                <span aria-hidden="true">→</span>
+            </span>
+        </div>
+    </a>
 
-                    <a
-                        href="/users/{{ registration.user_id }}"
-                    >
-                        {{ registration.user_code }}
-                    </a>
-
-                </td>
-
-
-                <td>
-                    {{ registration.full_name }}
-                </td>
-
-
-                <td>
-                    {{ registration.university or "—" }}
-                </td>
-
-
-                <td>
-
-                    <a
-                        href="/events/{{ registration.event_id }}"
-                    >
-                        {{ registration.event_title }}
-                    </a>
-
-                    <div class="table-secondary">
-                        {{ registration.event_code }}
-                    </div>
-
-                </td>
-
-
-                <td>
-                    {{ registration.status }}
-                </td>
-
-
-                <td>
-
-                    {% if registration.registration_date %}
-
-                        {{
-                            registration.registration_date.strftime(
-                                "%d.%m.%Y %H:%M"
-                            )
-                        }}
-
-                    {% else %}
-
-                        —
-
-                    {% endif %}
-
-                </td>
-
-            </tr>
-
-
+    {% else %}
+    <div class="registrations-empty-state">
+        <div class="registrations-empty-icon" aria-hidden="true">⌕</div>
+        {% if q %}
+        <h3>Мероприятия не найдены</h3>
+        <p>Попробуйте изменить запрос или сбросить поиск.</p>
+        <a href="/registrations" class="secondary-link-button">
+            Показать все мероприятия
+        </a>
         {% else %}
-
-            <tr>
-
-                <td colspan="6">
-                    Регистраций пока нет.
-                </td>
-
-            </tr>
-
-        {% endfor %}
-
-        </tbody>
-
-    </table>
-
+        <h3>Открытых регистраций пока нет</h3>
+        <p>Здесь появятся активные предстоящие мероприятия.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
 </div>
-
 
 {% endblock %}

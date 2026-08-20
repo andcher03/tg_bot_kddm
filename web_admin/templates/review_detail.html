@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Отзывы — {{ event.title }}{% endblock %}
+
+{% block content %}
+
+<a href="/reviews" class="back-link">
+    ← Ко всем мероприятиям
+</a>
+
+<section class="review-detail-hero">
+    <div class="review-detail-main">
+        <div class="review-detail-topline">
+            <span class="review-event-status review-event-status-{{ status_class }}">
+                <i aria-hidden="true"></i>
+                {{ status_label }}
+            </span>
+            <span class="review-event-code">
+                {{ event.event_code or "Без кода" }}
+            </span>
+        </div>
+
+        <h1>{{ event.title }}</h1>
+
+        <div class="review-event-meta">
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1-1Z"></path>
+                </svg>
+                {{ event.event_date.strftime("%d.%m.%Y") }}
+            </span>
+
+            {% if event.start_time %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                </svg>
+                {{ event.start_time.strftime("%H:%M") }}
+            </span>
+            {% endif %}
+
+            {% if event.place %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                    <circle cx="12" cy="10" r="2.5"></circle>
+                </svg>
+                {{ event.place }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="review-detail-stats">
+        <div>
+            <span>Всего отзывов</span>
+            <strong>{{ reviews_count }}</strong>
+            <small>{{ reviews_word }}</small>
+        </div>
+        <div>
+            <span>Средняя оценка</span>
+            <strong class="review-detail-rating">
+                {% if average_rating is not none %}
+                    <i aria-hidden="true">★</i>{{ average_rating }}
+                {% else %}
+                    —
+                {% endif %}
+            </strong>
+            <small>из 5</small>
+        </div>
+    </div>
+</section>
+
+<section class="review-list-card">
+    <div class="review-list-header">
+        <div>
+            <h2>
+                Отзывы пользователей
+                <span>{{ reviews_count }}</span>
+            </h2>
+            <p>Оценки и комментарии к выбранному мероприятию</p>
+        </div>
+
+        <form
+            method="get"
+            action="/reviews/{{ event.id }}"
+            class="review-users-search"
+            role="search"
+        >
+            <div class="catalog-search-field">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+                </svg>
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ q }}"
+                    placeholder="Имя, KZN ID, ВУЗ, оценка или текст"
+                    aria-label="Поиск отзыва пользователя"
+                >
+            </div>
+
+            <button type="submit" class="primary-button">
+                Найти
+            </button>
+
+            {% if q %}
+            <a
+                href="/reviews/{{ event.id }}"
+                class="review-search-reset"
+                aria-label="Сбросить поиск"
+            >×</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if q %}
+    <div class="review-search-result">
+        По запросу «{{ q }}» найдено: {{ shown_reviews_count }}
+    </div>
+    {% endif %}
+
+    <div class="review-entries-scroll">
+        {% for review in reviews %}
+        <article class="review-entry-card">
+            <div class="review-entry-header">
+                <a
+                    href="/users/{{ review.user_id }}"
+                    class="review-entry-user"
+                >
+                    <span class="review-user-avatar">
+                        {{ review.full_name[:1]|upper }}
+                    </span>
+                    <span>
+                        <strong>{{ review.full_name }}</strong>
+                        <small>
+                            {{ review.user_code or "Без KZN ID" }}
+                            {% if review.username %}
+                                · @{{ review.username }}
+                            {% endif %}
+                        </small>
+                    </span>
+                </a>
+
+                <div
+                    class="review-entry-rating"
+                    aria-label="Оценка {{ review.rating }} из 5"
+                >
+                    <span aria-hidden="true">
+                        {% for star in range(1, 6) %}
+                            <i class="{% if star <= review.rating %}is-active{% endif %}">★</i>
+                        {% endfor %}
+                    </span>
+                    <strong>{{ review.rating }}.0</strong>
+                </div>
+            </div>
+
+            {% if review.text %}
+            <p>{{ review.text }}</p>
+            {% else %}
+            <p class="review-entry-empty">Пользователь оставил оценку без комментария.</p>
+            {% endif %}
+
+            <div class="review-entry-footer">
+                <span>{{ review.university or "ВУЗ не указан" }}</span>
+                <time>
+                    {% if review.created_at %}
+                        {{ review.created_at.strftime("%d.%m.%Y, %H:%M") }}
+                    {% else %}
+                        Дата не указана
+                    {% endif %}
+                </time>
+            </div>
+        </article>
+
+        {% else %}
+        <div class="review-list-empty">
+            <span aria-hidden="true">☆</span>
+            {% if q %}
+                <h3>Отзывы не найдены</h3>
+                <p>Попробуйте изменить поисковый запрос.</p>
+            {% else %}
+                <h3>Отзывов пока нет</h3>
+                <p>Первый отзыв появится здесь после оценки мероприятия пользователем.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

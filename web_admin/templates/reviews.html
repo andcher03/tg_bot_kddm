@@ -1,228 +1,139 @@
 {% extends "base.html" %}
 
-{% block title %}
-Отзывы — Молодёжь Казани
-{% endblock %}
-
+{% block title %}Отзывы — Молодёжь Казани{% endblock %}
 
 {% block content %}
 
-<div class="page-header">
-
+<div class="page-header reviews-page-header">
     <div>
         <h1>Отзывы</h1>
-
         <p class="subtitle">
-            Отзывы пользователей по мероприятиям
+            Отзывы пользователей по всем мероприятиям
         </p>
     </div>
-
 </div>
 
 <form
-    class="reviews-filter"
     method="get"
     action="/reviews"
+    class="reviews-search-form"
+    role="search"
 >
-
-<div class="review-stats">
-
-    <div class="stat-card">
-
-        <span class="stat-title">
-            Средняя оценка
-        </span>
-
-        <strong class="stat-value">
-
-            {% if average_rating is not none %}
-                ⭐ {{ average_rating }}
-            {% else %}
-                —
-            {% endif %}
-
-        </strong>
-
-        <span class="stat-description">
-            из 5
-        </span>
-
+    <div class="catalog-search-field">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+        </svg>
+        <input
+            type="search"
+            name="q"
+            value="{{ q }}"
+            placeholder="Найти мероприятие по названию, коду или месту"
+            aria-label="Поиск мероприятия с отзывами"
+        >
     </div>
 
-
-    <div class="stat-card">
-
-        <span class="stat-title">
-            Количество отзывов
-        </span>
-
-        <strong class="stat-value">
-            {{ reviews_count }}
-        </strong>
-
-        <span class="stat-description">
-            всего
-        </span>
-
-    </div>
-
-</div>
-
-    <label>
-        Мероприятие
-    </label>
-
-    <select name="event_code">
-
-        <option value="">
-            Все мероприятия
-        </option>
-
-        {% for event in events %}
-
-            <option
-                value="{{ event.event_code }}"
-                {% if selected_event == event.event_code %}
-                    selected
-                {% endif %}
-            >
-                {{ event.title }}
-                — {{ event.event_code }}
-            </option>
-
-        {% endfor %}
-
-    </select>
-
-    <button type="submit">
-        Показать
+    <button type="submit" class="primary-button">
+        Найти
     </button>
 
-    {% if selected_event %}
-
-        <a
-            href="/reviews"
-            class="reset-button"
-        >
-            Сбросить
-        </a>
-
+    {% if q %}
+    <a href="/reviews" class="secondary-link-button">
+        Сбросить
+    </a>
     {% endif %}
-
 </form>
 
+<div class="reviews-section-heading">
+    <div>
+        <h2>Все мероприятия</h2>
+        <p>Выберите мероприятие, чтобы открыть отзывы пользователей</p>
+    </div>
+    <span class="reviews-events-count">{{ events|length }}</span>
+</div>
 
-<div class="table-container">
+<div class="review-events-grid">
+    {% for event in events %}
+    <a href="/reviews/{{ event.id }}" class="review-event-card">
+        <div class="review-event-card-top">
+            <span class="review-event-status review-event-status-{{ event.status_class }}">
+                <i aria-hidden="true"></i>
+                {{ event.status_label }}
+            </span>
+            <span class="review-event-code">
+                {{ event.event_code or "Без кода" }}
+            </span>
+        </div>
 
-    <table>
+        <h3>{{ event.title }}</h3>
 
-        <thead>
+        <div class="review-event-meta">
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path>
+                </svg>
+                {{ event.event_date.strftime("%d.%m.%Y") }}
+            </span>
 
-            <tr>
-                <th>Пользователь</th>
-                <th>Мероприятие</th>
-                <th>Оценка</th>
-                <th>Отзыв</th>
-                <th>Дата</th>
-            </tr>
+            {% if event.start_time %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                </svg>
+                {{ event.start_time.strftime("%H:%M") }}
+            </span>
+            {% endif %}
 
-        </thead>
+            {% if event.place %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                    <circle cx="12" cy="10" r="2.5"></circle>
+                </svg>
+                {{ event.place }}
+            </span>
+            {% endif %}
+        </div>
 
+        <div class="review-event-card-footer">
+            <div class="review-event-total">
+                <strong>{{ event.reviews_count }}</strong>
+                <span>{{ event.reviews_word }}</span>
+            </div>
 
-        <tbody>
+            <div class="review-event-rating">
+                {% if event.average_rating is not none %}
+                    <span aria-hidden="true">★</span>
+                    <strong>{{ event.average_rating }}</strong>
+                    <small>из 5</small>
+                {% else %}
+                    <strong>—</strong>
+                    <small>нет оценок</small>
+                {% endif %}
+            </div>
 
-            {% for review in reviews %}
+            <span class="review-card-action">
+                Открыть отзывы
+                <span aria-hidden="true">→</span>
+            </span>
+        </div>
+    </a>
 
-            <tr>
-
-                <td>
-
-                    <a
-                        href="/users/{{ review.user_id }}"
-                        class="user-link"
-                    >
-                        {{ review.user_code }}
-                    </a>
-
-                    <br>
-
-                    <span>
-                        {{ review.user_name }}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <strong>
-                        {{ review.event_title }}
-                    </strong>
-
-                    <br>
-
-                    <span>
-                        {{ review.event_code }}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <strong>
-                        {{ review.rating }} / 5
-                    </strong>
-
-                </td>
-
-
-                <td class="review-text">
-
-                    {% if review.text %}
-                        {{ review.text }}
-                    {% else %}
-                        <span class="muted">
-                            Без комментария
-                        </span>
-                    {% endif %}
-
-                </td>
-
-
-                <td>
-
-                    {% if review.created_at %}
-
-                        {{ review.created_at.strftime(
-                            "%d.%m.%Y %H:%M"
-                        ) }}
-
-                    {% else %}
-                        —
-                    {% endif %}
-
-                </td>
-
-            </tr>
-
-
-            {% else %}
-
-            <tr>
-
-                <td colspan="5">
-                    Отзывов пока нет.
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </tbody>
-
-    </table>
-
+    {% else %}
+    <div class="reviews-empty-state">
+        <div class="reviews-empty-icon" aria-hidden="true">★</div>
+        {% if q %}
+        <h3>Мероприятия не найдены</h3>
+        <p>Попробуйте изменить запрос или сбросить поиск.</p>
+        <a href="/reviews" class="secondary-link-button">
+            Показать все мероприятия
+        </a>
+        {% else %}
+        <h3>Мероприятий пока нет</h3>
+        <p>После создания мероприятия оно появится в этом списке.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
 </div>
 
 {% endblock %}

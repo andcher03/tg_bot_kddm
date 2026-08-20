@@ -181,9 +181,7 @@
                                 >
 
                                 {% if campaign.message %}
-                                <div class="telegram-message-caption">
-                                    {{ campaign.message }}
-                                </div>
+                                <div class="telegram-message-caption">{{ campaign.message }}</div>
                                 {% endif %}
 
                                 <div class="telegram-message-time">
@@ -215,9 +213,7 @@
 
                             <div class="telegram-bubble telegram-bubble-text">
 
-                                <div class="telegram-message-text">
-                                    {{ campaign.message }}
-                                </div>
+                                <div class="telegram-message-text">{{ campaign.message }}</div>
 
                                 <div class="telegram-message-time">
                                     {% if campaign.created_at %}
@@ -233,9 +229,7 @@
 
                         <div class="telegram-bubble telegram-bubble-text">
 
-                            <div class="telegram-message-text">
-                                {{ campaign.message }}
-                            </div>
+                            <div class="telegram-message-text">{{ campaign.message }}</div>
 
                             <div class="telegram-message-time">
                                 {% if campaign.created_at %}

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрации — {{ event.title }}{% endblock %}
+
+{% block content %}
+
+<a href="/registrations" class="back-link">
+    ← К открытым регистрациям
+</a>
+
+<section class="registration-detail-hero">
+    <div class="registration-detail-main">
+        <div class="registration-detail-topline">
+            <span class="registration-open-badge">
+                <i aria-hidden="true"></i>
+                Регистрация открыта
+            </span>
+            <span class="registration-event-code">
+                {{ event.event_code or "Без кода" }}
+            </span>
+        </div>
+
+        <h1>{{ event.title }}</h1>
+
+        <div class="registration-event-meta">
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"></path>
+                </svg>
+                {{ event.event_date.strftime("%d.%m.%Y") }}
+            </span>
+
+            {% if event.start_time %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                </svg>
+                {{ event.start_time.strftime("%H:%M") }}
+            </span>
+            {% endif %}
+
+            {% if event.place %}
+            <span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                    <circle cx="12" cy="10" r="2.5"></circle>
+                </svg>
+                {{ event.place }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="registration-detail-total">
+        <span>Всего регистраций</span>
+        <strong>{{ registrations_count }}</strong>
+        <small>на это мероприятие</small>
+    </div>
+</section>
+
+<section class="registration-participants-card">
+    <div class="registration-participants-header">
+        <div>
+            <h2>
+                Зарегистрированные пользователи
+                <span>{{ registrations_count }}</span>
+            </h2>
+            <p>Список обновляется после каждой новой регистрации</p>
+        </div>
+
+        <form
+            method="get"
+            action="/registrations/{{ event.id }}"
+            class="registration-users-search"
+            role="search"
+        >
+            <div class="registrations-search-field">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+                </svg>
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ q }}"
+                    placeholder="Имя, KZN ID, ВУЗ или Telegram"
+                    aria-label="Поиск зарегистрированного пользователя"
+                >
+            </div>
+
+            <button type="submit" class="primary-button">
+                Найти
+            </button>
+
+            {% if q %}
+            <a
+                href="/registrations/{{ event.id }}"
+                class="registration-search-reset"
+                aria-label="Сбросить поиск"
+            >×</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if q %}
+    <div class="registration-search-result">
+        По запросу «{{ q }}» найдено: {{ shown_registrations_count }}
+    </div>
+    {% endif %}
+
+    <div class="registration-participants-table-wrap">
+        <table class="registration-participants-table">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>KZN ID</th>
+                    <th>ВУЗ</th>
+                    <th>Telegram</th>
+                    <th>Статус</th>
+                    <th>Дата регистрации</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for registration in registrations %}
+                <tr>
+                    <td>
+                        <a
+                            href="/users/{{ registration.user_id }}"
+                            class="registration-user-cell"
+                        >
+                            <span class="registration-user-avatar">
+                                {{ registration.full_name[:1]|upper }}
+                            </span>
+                            <span>
+                                <strong>{{ registration.full_name }}</strong>
+                                {% if registration.username %}
+                                <small>@{{ registration.username }}</small>
+                                {% endif %}
+                            </span>
+                        </a>
+                    </td>
+                    <td>
+                        <a
+                            href="/users/{{ registration.user_id }}"
+                            class="registration-code-link"
+                        >
+                            {{ registration.user_code or "—" }}
+                        </a>
+                    </td>
+                    <td>{{ registration.university or "—" }}</td>
+                    <td class="registration-telegram-id">
+                        {{ registration.telegram_id }}
+                    </td>
+                    <td>
+                        <span class="registration-status-badge">
+                            {% if registration.status == "registered" %}
+                                Зарегистрирован
+                            {% else %}
+                                {{ registration.status }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if registration.registration_date %}
+                            {{ registration.registration_date.strftime("%d.%m.%Y, %H:%M") }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td colspan="6" class="registration-table-empty">
+                        {% if q %}
+                            По вашему запросу никто не найден.
+                        {% else %}
+                            На мероприятие пока никто не зарегистрировался.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}

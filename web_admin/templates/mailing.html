@@ -523,9 +523,7 @@
                             >
 
                             {% if message %}
-                            <div class="telegram-message-caption">
-                                {{ message }}
-                            </div>
+                            <div class="telegram-message-caption">{{ message }}</div>
                             {% endif %}
 
                             <div class="telegram-message-time">
@@ -553,9 +551,7 @@
 
                         <div class="telegram-bubble telegram-bubble-text">
 
-                            <div class="telegram-message-text">
-                                {{ message }}
-                            </div>
+                            <div class="telegram-message-text">{{ message }}</div>
 
                             <div class="telegram-message-time">
                                 <span class="js-current-time">сейчас</span>
@@ -569,9 +565,7 @@
 
                     <div class="telegram-bubble telegram-bubble-text">
 
-                        <div class="telegram-message-text">
-                            {{ message }}
-                        </div>
+                        <div class="telegram-message-text">{{ message }}</div>
 
                         <div class="telegram-message-time">
                             <span class="js-current-time">сейчас</span>
@@ -689,7 +683,7 @@
 
     <!-- ПОЛУЧАТЕЛИ -->
 
-    <details class="mailing-recipients-details">
+    <details class="mailing-recipients-details" open>
 
         <summary>
             <span>

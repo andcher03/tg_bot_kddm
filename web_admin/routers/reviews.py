@@ -2,11 +2,17 @@ from datetime import date
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import String, cast, func, or_, select
 
 from services.database import SessionLocal
 from services.models import Event, EventReview, User
+from web_admin.review_export import (
+    EXCEL_MEDIA_TYPE,
+    build_reviews_workbook,
+    reviews_export_filename,
+)
 
 
 router = APIRouter()
@@ -233,5 +239,66 @@ async def review_detail_page(
             "status_label": status_label,
             "status_class": status_class,
             "q": search_query,
+        },
+    )
+
+
+@router.get("/reviews/{event_id}/export")
+async def export_event_reviews(event_id: int):
+    async with SessionLocal() as session:
+        event_result = await session.execute(
+            select(Event).where(Event.id == event_id)
+        )
+        event = event_result.scalar_one_or_none()
+
+        if event is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Мероприятие не найдено",
+            )
+
+        reviews_result = await session.execute(
+            select(EventReview, User)
+            .join(User, EventReview.user_id == User.id)
+            .where(EventReview.event_id == event_id)
+            .order_by(
+                EventReview.created_at.desc(),
+                EventReview.id.desc(),
+            )
+        )
+
+        reviews = [
+            {
+                "rating": review.rating,
+                "text": review.review_text,
+                "created_at": review.created_at,
+                "user_code": user.user_code,
+                "full_name": user.full_name,
+                "username": user.username,
+                "university": user.university,
+                "telegram_id": user.telegram_id,
+            }
+            for review, user in reviews_result.all()
+        ]
+
+    status_label, _ = event_display_status(
+        event.status,
+        event.event_date,
+    )
+    workbook = build_reviews_workbook(
+        event,
+        reviews,
+        status_label,
+    )
+    filename = reviews_export_filename(event)
+
+    return StreamingResponse(
+        workbook,
+        media_type=EXCEL_MEDIA_TYPE,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{filename}"'
+            ),
+            "Cache-Control": "no-store",
         },
     )

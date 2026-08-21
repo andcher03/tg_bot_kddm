@@ -25,8 +25,18 @@ def upgrade() -> None:
         sa.Column("username", sa.String(length=255), nullable=True),
         sa.Column("full_name", sa.String(length=255), nullable=False),
         sa.Column("university", sa.String(length=255), nullable=True),
-        sa.Column("role", sa.String(length=50), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column(
+            "role",
+            sa.String(length=50),
+            nullable=False,
+            server_default=sa.text("'user'"),
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
         sa.Column("user_code", sa.String(length=20), nullable=True),
         sa.UniqueConstraint("telegram_id"),
         sa.UniqueConstraint("user_code"),
@@ -41,8 +51,18 @@ def upgrade() -> None:
         sa.Column("start_time", sa.Time(), nullable=True),
         sa.Column("place", sa.String(length=255), nullable=True),
         sa.Column("category", sa.String(length=100), nullable=True),
-        sa.Column("status", sa.String(length=50), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column(
+            "status",
+            sa.String(length=50),
+            nullable=False,
+            server_default=sa.text("'draft'"),
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
         sa.Column("event_code", sa.String(length=30), nullable=True),
         sa.Column("scale", sa.String(length=20), nullable=True),
         sa.Column("organizer_type", sa.String(length=20), nullable=True),
@@ -63,14 +83,24 @@ def upgrade() -> None:
         sa.Column("code", sa.String(length=50), nullable=False),
         sa.Column("title", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column(
+            "is_active",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.text("TRUE"),
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
         sa.UniqueConstraint("code"),
     )
 
     op.create_table(
         "mailing_campaigns",
-        sa.Column("id", sa.BigInteger(), primary_key=True),
+        sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("message", sa.Text(), nullable=False),
         sa.Column("photo_url", sa.Text(), nullable=True),
         sa.Column(
@@ -111,17 +141,17 @@ def upgrade() -> None:
         ),
         sa.Column(
             "status",
-            sa.String(length=20),
+            sa.String(length=30),
             nullable=False,
             server_default=sa.text("'sending'"),
         ),
         sa.Column(
             "created_at",
-            sa.DateTime(timezone=True),
+            sa.DateTime(),
             nullable=False,
             server_default=sa.text("CURRENT_TIMESTAMP"),
         ),
-        sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("finished_at", sa.DateTime(), nullable=True),
     )
 
     op.create_table(
@@ -152,7 +182,7 @@ def upgrade() -> None:
         sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
         sa.CheckConstraint(
             "role IN ('admin', 'editor')",
-            name="ck_web_admin_users_role",
+            name="web_admin_users_role_check",
         ),
         sa.UniqueConstraint("username"),
     )
@@ -193,19 +223,19 @@ def upgrade() -> None:
         ),
         sa.CheckConstraint(
             "member_count >= 0",
-            name="ck_telegram_channel_state_member_count",
+            name="telegram_channel_state_member_count_check",
         ),
         sa.CheckConstraint(
             "day_start_count >= 0",
-            name="ck_telegram_channel_state_day_start_count",
+            name="telegram_channel_state_day_start_count_check",
         ),
         sa.CheckConstraint(
             "today_joins >= 0",
-            name="ck_telegram_channel_state_today_joins",
+            name="telegram_channel_state_today_joins_check",
         ),
         sa.CheckConstraint(
             "today_leaves >= 0",
-            name="ck_telegram_channel_state_today_leaves",
+            name="telegram_channel_state_today_leaves_check",
         ),
     )
 
@@ -224,8 +254,18 @@ def upgrade() -> None:
             sa.ForeignKey("events.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("status", sa.String(length=50), nullable=False),
-        sa.Column("registration_date", sa.DateTime(), nullable=False),
+        sa.Column(
+            "status",
+            sa.String(length=50),
+            nullable=False,
+            server_default=sa.text("'registered'"),
+        ),
+        sa.Column(
+            "registration_date",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
         sa.Column("registration_code", sa.String(length=30), nullable=True),
         sa.UniqueConstraint(
             "user_id",
@@ -252,7 +292,16 @@ def upgrade() -> None:
         ),
         sa.Column("rating", sa.Integer(), nullable=False),
         sa.Column("review_text", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
+        sa.CheckConstraint(
+            "rating >= 1 AND rating <= 5",
+            name="rating_range",
+        ),
         sa.UniqueConstraint(
             "user_id",
             "event_id",
@@ -275,7 +324,12 @@ def upgrade() -> None:
             sa.ForeignKey("mailing_lists.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
         sa.UniqueConstraint(
             "user_id",
             "mailing_list_id",
@@ -339,21 +393,28 @@ def upgrade() -> None:
         ),
         sa.CheckConstraint(
             "event_type IN ('join', 'leave')",
-            name="ck_telegram_channel_member_events_type",
+            name=(
+                "telegram_channel_member_events_"
+                "event_type_check"
+            ),
         ),
     )
     op.create_index(
         "ix_telegram_channel_member_events_channel_time",
         "telegram_channel_member_events",
-        ["channel_id", "occurred_at", "id"],
+        [
+            "channel_id",
+            sa.text("occurred_at DESC"),
+            sa.text("id DESC"),
+        ],
     )
 
     op.create_table(
         "mailing_deliveries",
-        sa.Column("id", sa.BigInteger(), primary_key=True),
+        sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column(
             "campaign_id",
-            sa.BigInteger(),
+            sa.Integer(),
             sa.ForeignKey("mailing_campaigns.id", ondelete="CASCADE"),
             nullable=False,
         ),
@@ -364,31 +425,19 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.Column("telegram_id", sa.BigInteger(), nullable=False),
-        sa.Column("status", sa.String(length=20), nullable=False),
+        sa.Column("status", sa.String(length=30), nullable=False),
         sa.Column("error_message", sa.Text(), nullable=True),
-        sa.Column("sent_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("sent_at", sa.DateTime(), nullable=True),
+        sa.UniqueConstraint(
+            "campaign_id",
+            "telegram_id",
+            name=(
+                "mailing_deliveries_"
+                "campaign_id_telegram_id_key"
+            ),
+        ),
     )
-    op.create_index(
-        "ix_mailing_deliveries_campaign_id",
-        "mailing_deliveries",
-        ["campaign_id"],
-    )
-    op.create_index(
-        "ix_mailing_deliveries_user_id",
-        "mailing_deliveries",
-        ["user_id"],
-    )
-
-
 def downgrade() -> None:
-    op.drop_index(
-        "ix_mailing_deliveries_user_id",
-        table_name="mailing_deliveries",
-    )
-    op.drop_index(
-        "ix_mailing_deliveries_campaign_id",
-        table_name="mailing_deliveries",
-    )
     op.drop_table("mailing_deliveries")
 
     op.drop_index(

@@ -1363,6 +1363,47 @@ tbody tr:hover{ background: var(--canvas); }
     border-radius: var(--radius-lg);
 }
 
+.review-detail-toolbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.review-detail-toolbar .back-link{ margin-bottom: 0; }
+
+.review-export-button{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: var(--surface);
+    color: var(--accent-strong);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color .15s ease, background .15s ease;
+}
+
+.review-export-button svg{
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.review-export-button:hover{
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
+
 .review-detail-main{ min-width: 0; }
 
 .review-detail-topline{
@@ -3658,4 +3699,11 @@ a.dashboard-activity-card:hover{
     .review-entry-footer{ align-items: flex-start; flex-direction: column; }
     .review-entry-card > p,
     .review-entry-footer{ margin-left: 0; }
+
+    .review-detail-toolbar{
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .review-export-button{ width: 100%; }
 }

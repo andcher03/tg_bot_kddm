@@ -62,13 +62,15 @@ class User(Base):
     role: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="user"
+        default="user",
+        server_default=text("'user'"),
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.now
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
     registrations: Mapped[list["Registration"]] = relationship(
@@ -123,13 +125,15 @@ class Event(Base):
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="draft"
+        default="draft",
+        server_default=text("'draft'"),
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.now
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
     registrations: Mapped[list["Registration"]] = relationship(
@@ -198,13 +202,15 @@ class Registration(Base):
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="registered"
+        default="registered",
+        server_default=text("'registered'"),
     )
 
     registration_date: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.now
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
     user: Mapped["User"] = relationship(
@@ -243,6 +249,10 @@ class EventReview(Base):
             "event_id",
             name="unique_user_event_review"
         ),
+        CheckConstraint(
+            "rating >= 1 AND rating <= 5",
+            name="rating_range",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -278,7 +288,9 @@ class EventReview(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.now
+        nullable=False,
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
     user: Mapped["User"] = relationship()
@@ -312,12 +324,15 @@ class MailingList(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
-        nullable=False
+        nullable=False,
+        server_default=text("TRUE"),
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.now
+        nullable=False,
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
 class MailingSubscription(Base):
@@ -354,7 +369,9 @@ class MailingSubscription(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.now
+        nullable=False,
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
 
@@ -362,7 +379,7 @@ class MailingCampaign(Base):
     __tablename__ = "mailing_campaigns"
 
     id: Mapped[int] = mapped_column(
-        BigInteger,
+        Integer,
         primary_key=True,
     )
 
@@ -413,19 +430,19 @@ class MailingCampaign(Base):
     )
 
     status: Mapped[str] = mapped_column(
-        String(20),
+        String(30),
         nullable=False,
         server_default=text("'sending'"),
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=False,
         server_default=text("CURRENT_TIMESTAMP"),
     )
 
     finished_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=True,
     )
 
@@ -433,9 +450,13 @@ class MailingCampaign(Base):
 class MailingDelivery(Base):
     __tablename__ = "mailing_deliveries"
     __table_args__ = (
-        Index(
-            "ix_mailing_deliveries_campaign_id",
+        UniqueConstraint(
             "campaign_id",
+            "telegram_id",
+            name=(
+                "mailing_deliveries_"
+                "campaign_id_telegram_id_key"
+            ),
         ),
         Index(
             "ix_mailing_deliveries_user_id",
@@ -444,7 +465,7 @@ class MailingDelivery(Base):
     )
 
     id: Mapped[int] = mapped_column(
-        BigInteger,
+        Integer,
         primary_key=True,
     )
 
@@ -470,7 +491,7 @@ class MailingDelivery(Base):
     )
 
     status: Mapped[str] = mapped_column(
-        String(20),
+        String(30),
         nullable=False,
     )
 
@@ -480,7 +501,7 @@ class MailingDelivery(Base):
     )
 
     sent_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
+        DateTime,
         nullable=True,
     )
 
@@ -490,7 +511,7 @@ class WebAdminUser(Base):
     __table_args__ = (
         CheckConstraint(
             "role IN ('admin', 'editor')",
-            name="ck_web_admin_users_role",
+            name="web_admin_users_role_check",
         ),
     )
 
@@ -605,19 +626,19 @@ class TelegramChannelState(Base):
     __table_args__ = (
         CheckConstraint(
             "member_count >= 0",
-            name="ck_telegram_channel_state_member_count",
+            name="telegram_channel_state_member_count_check",
         ),
         CheckConstraint(
             "day_start_count >= 0",
-            name="ck_telegram_channel_state_day_start_count",
+            name="telegram_channel_state_day_start_count_check",
         ),
         CheckConstraint(
             "today_joins >= 0",
-            name="ck_telegram_channel_state_today_joins",
+            name="telegram_channel_state_today_joins_check",
         ),
         CheckConstraint(
             "today_leaves >= 0",
-            name="ck_telegram_channel_state_today_leaves",
+            name="telegram_channel_state_today_leaves_check",
         ),
     )
 
@@ -667,13 +688,10 @@ class TelegramChannelMemberEvent(Base):
     __table_args__ = (
         CheckConstraint(
             "event_type IN ('join', 'leave')",
-            name="ck_telegram_channel_member_events_type",
-        ),
-        Index(
-            "ix_telegram_channel_member_events_channel_time",
-            "channel_id",
-            "occurred_at",
-            "id",
+            name=(
+                "telegram_channel_member_events_"
+                "event_type_check"
+            ),
         ),
     )
 
@@ -702,3 +720,11 @@ class TelegramChannelMemberEvent(Base):
         nullable=False,
         server_default=text("CURRENT_TIMESTAMP"),
     )
+
+
+Index(
+    "ix_telegram_channel_member_events_channel_time",
+    TelegramChannelMemberEvent.channel_id,
+    TelegramChannelMemberEvent.occurred_at.desc(),
+    TelegramChannelMemberEvent.id.desc(),
+)

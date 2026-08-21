@@ -31,6 +31,36 @@ config.set_main_option(
 
 target_metadata = Base.metadata
 
+# Эти таблицы остались от прежних функций приложения. Они не входят
+# в текущую модель данных, но могут содержать исторические сведения.
+# Alembic не должен удалять их автоматически: решение об удалении
+# принимается отдельной миграцией после проверки данных.
+LEGACY_TABLES = frozenset(
+    {
+        "contests",
+        "contest_registrations",
+        "telegram_channel_snapshots",
+    }
+)
+
+
+def include_object(
+    object_,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to,
+) -> bool:
+    if (
+        type_ == "table"
+        and reflected
+        and compare_to is None
+        and name in LEGACY_TABLES
+    ):
+        return False
+
+    return True
+
 
 def run_migrations_offline() -> None:
     context.configure(
@@ -40,6 +70,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -52,6 +83,7 @@ def do_run_migrations(connection) -> None:
         target_metadata=target_metadata,
         compare_type=True,
         compare_server_default=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():

@@ -6,7 +6,6 @@ from fastapi.staticfiles import StaticFiles
 
 from web_admin.auth import (
     cleanup_expired_sessions,
-    init_auth_tables,
     web_admin_auth_middleware,
 )
 
@@ -36,11 +35,22 @@ from web_admin.routers.registrations import (
 BASE_DIR = Path(__file__).resolve().parent
 
 
+class AdminStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+
+        if path.lower().endswith(".css"):
+            response.headers["Cache-Control"] = (
+                "no-store, no-cache, must-revalidate, max-age=0"
+            )
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+        return response
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    await init_auth_tables()
-
     await cleanup_expired_sessions()
 
     yield
@@ -54,7 +64,7 @@ app = FastAPI(
 
 app.mount(
     "/static",
-    StaticFiles(
+    AdminStaticFiles(
         directory=BASE_DIR / "static"
     ),
     name="static",

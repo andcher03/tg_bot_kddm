@@ -57,83 +57,6 @@ def is_target_channel(
     )
 
 
-async def _ensure_tables(session):
-
-    await session.execute(
-        text(
-            """
-            CREATE TABLE IF NOT EXISTS
-            telegram_channel_state (
-                channel_id TEXT PRIMARY KEY,
-
-                member_count INTEGER NOT NULL
-                    DEFAULT 0
-                    CHECK (member_count >= 0),
-
-                day_start_count INTEGER NOT NULL
-                    DEFAULT 0
-                    CHECK (day_start_count >= 0),
-
-                today_joins INTEGER NOT NULL
-                    DEFAULT 0
-                    CHECK (today_joins >= 0),
-
-                today_leaves INTEGER NOT NULL
-                    DEFAULT 0
-                    CHECK (today_leaves >= 0),
-
-                stat_date DATE NOT NULL,
-
-                updated_at TIMESTAMPTZ NOT NULL
-                    DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
-    )
-
-    await session.execute(
-        text(
-            """
-            CREATE TABLE IF NOT EXISTS
-            telegram_channel_member_events (
-                id BIGSERIAL PRIMARY KEY,
-
-                channel_id TEXT NOT NULL,
-
-                telegram_user_id BIGINT,
-
-                event_type TEXT NOT NULL
-                    CHECK (
-                        event_type IN (
-                            'join',
-                            'leave'
-                        )
-                    ),
-
-                occurred_at TIMESTAMPTZ NOT NULL
-                    DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
-    )
-
-    await session.execute(
-        text(
-            """
-            CREATE INDEX IF NOT EXISTS
-            ix_telegram_channel_member_events_channel_time
-            ON telegram_channel_member_events (
-                channel_id,
-                occurred_at DESC,
-                id DESC
-            )
-            """
-        )
-    )
-
-    await session.commit()
-
-
 async def _reset_day_if_needed(
     session,
 ):
@@ -362,10 +285,6 @@ async def refresh_channel_member_count(
 
         async with SessionLocal() as session:
 
-            await _ensure_tables(
-                session
-            )
-
             await _save_absolute_count(
                 session,
                 int(member_count),
@@ -436,10 +355,6 @@ async def record_channel_member_event(
 
 
     async with SessionLocal() as session:
-
-        await _ensure_tables(
-            session
-        )
 
         await _restore_from_old_snapshot_if_possible(
             session
@@ -685,10 +600,6 @@ async def get_channel_stats():
 
 
     async with SessionLocal() as session:
-
-        await _ensure_tables(
-            session
-        )
 
         await _restore_from_old_snapshot_if_possible(
             session

@@ -100,9 +100,15 @@ def role_can_access(
         return False
 
     # Редактор работает только с мероприятиями,
-    # отзывами и может открыть конкретного пользователя
-    # из карточки мероприятия / отзыва.
+    # регистрациями, отзывами и может открыть
+    # конкретного пользователя из рабочих разделов.
     if path == "/events" or path.startswith("/events/"):
+        return True
+
+    if (
+        path == "/registrations"
+        or path.startswith("/registrations/")
+    ):
         return True
 
     if path == "/reviews" or path.startswith("/reviews/"):
@@ -115,100 +121,6 @@ def role_can_access(
         return True
 
     return False
-
-
-async def init_auth_tables():
-    """
-    Таблицы создаются отдельно от users Telegram-бота.
-    """
-
-    async with SessionLocal() as session:
-
-        await session.execute(
-            text(
-                """
-                CREATE TABLE IF NOT EXISTS
-                web_admin_users (
-                    id BIGSERIAL PRIMARY KEY,
-
-                    username VARCHAR(80) NOT NULL UNIQUE,
-
-                    display_name VARCHAR(120),
-
-                    password_hash TEXT NOT NULL,
-
-                    role VARCHAR(20) NOT NULL
-                        CHECK (
-                            role IN (
-                                'admin',
-                                'editor'
-                            )
-                        ),
-
-                    is_active BOOLEAN NOT NULL
-                        DEFAULT TRUE,
-
-                    created_at TIMESTAMPTZ NOT NULL
-                        DEFAULT CURRENT_TIMESTAMP,
-
-                    updated_at TIMESTAMPTZ NOT NULL
-                        DEFAULT CURRENT_TIMESTAMP,
-
-                    last_login_at TIMESTAMPTZ
-                )
-                """
-            )
-        )
-
-        await session.execute(
-            text(
-                """
-                CREATE TABLE IF NOT EXISTS
-                web_admin_sessions (
-                    id BIGSERIAL PRIMARY KEY,
-
-                    user_id BIGINT NOT NULL
-                        REFERENCES web_admin_users(id)
-                        ON DELETE CASCADE,
-
-                    token_hash CHAR(64) NOT NULL UNIQUE,
-
-                    remember_me BOOLEAN NOT NULL
-                        DEFAULT FALSE,
-
-                    created_at TIMESTAMPTZ NOT NULL
-                        DEFAULT CURRENT_TIMESTAMP,
-
-                    expires_at TIMESTAMPTZ NOT NULL,
-
-                    last_seen_at TIMESTAMPTZ NOT NULL
-                        DEFAULT CURRENT_TIMESTAMP
-                )
-                """
-            )
-        )
-
-        await session.execute(
-            text(
-                """
-                CREATE INDEX IF NOT EXISTS
-                ix_web_admin_sessions_user_id
-                ON web_admin_sessions(user_id)
-                """
-            )
-        )
-
-        await session.execute(
-            text(
-                """
-                CREATE INDEX IF NOT EXISTS
-                ix_web_admin_sessions_expires_at
-                ON web_admin_sessions(expires_at)
-                """
-            )
-        )
-
-        await session.commit()
 
 
 async def cleanup_expired_sessions():
@@ -582,9 +494,6 @@ async def create_or_update_web_user(
         (display_name or "").strip()
         or normalized
     )
-
-
-    await init_auth_tables()
 
 
     async with SessionLocal() as session:

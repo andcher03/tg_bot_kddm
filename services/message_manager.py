@@ -1,7 +1,3 @@
-from aiogram.types import Message
-from aiogram.fsm.context import FSMContext
-
-
 async def send_step(message, state, text, reply_markup=None):
     data = await state.get_data()
 

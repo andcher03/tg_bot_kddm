@@ -2904,7 +2904,22 @@ tbody tr:hover{ background: var(--canvas); }
 .mailing-history-status-completed,
 .mailing-delivery-sent{ background: var(--accent-soft); color: var(--accent-strong); }
 .mailing-history-status-sending{ background: var(--info-soft); color: var(--info); }
+.mailing-history-status-pending,
+.mailing-delivery-pending{ background: var(--warning-soft); color: var(--warning); }
+.mailing-delivery-processing{ background: var(--info-soft); color: var(--info); }
+.mailing-delivery-retry{ background: var(--warning-soft); color: var(--warning); }
 .mailing-delivery-failed{ background: var(--danger-soft); color: var(--danger); }
+
+.mailing-queue-notice{
+    margin-bottom: 18px;
+    padding: 13px 16px;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-md);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 13px;
+    font-weight: 700;
+}
 
 .mailing-history-date{
     margin-top: 6px;

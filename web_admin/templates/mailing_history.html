@@ -177,6 +177,12 @@
                 Отправляется
             </span>
 
+            {% elif campaign.status == "pending" %}
+
+            <span class="mailing-history-status mailing-history-status-pending">
+                В очереди
+            </span>
+
             {% else %}
 
             <span class="mailing-history-status">

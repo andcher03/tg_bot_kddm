@@ -330,7 +330,7 @@ async def save_university(
     )
 
 @router.callback_query(F.data == "profile_edit")
-async def edit_profile(callback: CallbackQuery):
+async def edit_profile_callback(callback: CallbackQuery):
 
     await callback.answer()
 
@@ -373,7 +373,7 @@ async def edit_profile_university(
     )
 
 @router.callback_query(F.data == "profile_my_events")
-async def my_events(callback: CallbackQuery):
+async def my_events_callback(callback: CallbackQuery):
 
     await callback.answer()
 
@@ -689,7 +689,7 @@ async def profile_rate_event(
 
 
 @router.callback_query(F.data == "profile_back")
-async def back_to_profile(callback: CallbackQuery):
+async def back_to_profile_callback(callback: CallbackQuery):
 
     await callback.answer()
 

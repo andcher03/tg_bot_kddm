@@ -23,6 +23,7 @@ from handlers.youth_map import router as youth_map_router
 from handlers.channel_members import router as channel_members_router
 
 from services.logging_config import setup_logging
+from services.database import engine, ensure_database_ready
 
 # ВСЕГДА ПОСЛЕДНИМ
 from handlers.debug import router as debug_router
@@ -65,6 +66,12 @@ async def main():
 
     try:
 
+        # Windows может запустить службу бота раньше PostgreSQL.
+        # Ждём готовности базы и проверяем, что применены все миграции.
+        await ensure_database_ready()
+
+        await set_default_commands(bot)
+
         # Первый контрольный замер количества подписчиков
         # сразу при запуске бота.
         sync_ok = await refresh_channel_member_count(
@@ -106,6 +113,7 @@ async def main():
         await dp.start_polling(
             bot,
             allowed_updates=allowed_updates,
+            close_bot_session=False,
         )
 
 
@@ -114,6 +122,10 @@ async def main():
         logger.exception(
             "Критическая ошибка при работе бота"
         )
+
+        # Ненулевой код завершения нужен диспетчеру служб,
+        # чтобы он понимал, что процесс необходимо перезапустить.
+        raise
 
 
     finally:
@@ -129,6 +141,9 @@ async def main():
 
 
         logger.info("Бот остановлен")
+
+        await bot.session.close()
+        await engine.dispose()
 
 
 if __name__ == "__main__":

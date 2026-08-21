@@ -726,14 +726,6 @@ async def get_channel_stats():
         }
 
 
-    joins = int(
-        state["today_joins"] or 0
-    )
-
-    leaves = int(
-        state["today_leaves"] or 0
-    )
-
     member_count = int(
         state["member_count"] or 0
     )

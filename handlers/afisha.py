@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from aiogram import Router, F
 from aiogram.types import (
     Message,
@@ -569,42 +567,6 @@ async def search_activity(
         reply_markup=search_results_keyboard(
             events
         )
-    )
-
-def rating_keyboard(event_id):
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="1 ⭐",
-                    callback_data=f"rate_{event_id}_1"
-                ),
-                InlineKeyboardButton(
-                    text="2 ⭐",
-                    callback_data=f"rate_{event_id}_2"
-                ),
-                InlineKeyboardButton(
-                    text="3 ⭐",
-                    callback_data=f"rate_{event_id}_3"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="4 ⭐",
-                    callback_data=f"rate_{event_id}_4"
-                ),
-                InlineKeyboardButton(
-                    text="5 ⭐",
-                    callback_data=f"rate_{event_id}_5"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⬅️ Назад",
-                    callback_data="afisha_rate"
-                )
-            ]
-        ]
     )
 
 @router.callback_query(

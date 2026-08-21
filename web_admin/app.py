@@ -8,6 +8,7 @@ from web_admin.auth import (
     cleanup_expired_sessions,
     web_admin_auth_middleware,
 )
+from services.database import engine, ensure_database_ready
 
 from web_admin.routers.auth import (
     router as auth_router,
@@ -51,9 +52,13 @@ class AdminStaticFiles(StaticFiles):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await ensure_database_ready()
     await cleanup_expired_sessions()
 
-    yield
+    try:
+        yield
+    finally:
+        await engine.dispose()
 
 
 app = FastAPI(

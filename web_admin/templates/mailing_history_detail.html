@@ -9,6 +9,16 @@
 
 <div class="mailing-detail-page">
 
+    {% if queued is not none %}
+    <div class="mailing-queue-notice">
+        {% if queued %}
+        Рассылка поставлена в очередь. Отправка продолжится в фоновом режиме.
+        {% else %}
+        Эта рассылка уже была поставлена в очередь ранее.
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="mailing-detail-topbar">
 
         <a
@@ -63,6 +73,12 @@
 
             <span class="mailing-history-status mailing-history-status-sending">
                 Отправляется
+            </span>
+
+            {% elif campaign.status == "pending" %}
+
+            <span class="mailing-history-status mailing-history-status-pending">
+                В очереди
             </span>
 
             {% endif %}
@@ -350,6 +366,12 @@
                 );
             "
         >
+
+            <input
+                type="hidden"
+                name="request_key"
+                value="{{ request_key }}"
+            >
 
 
             <div class="mailing-repeat-selected-bar">
@@ -663,10 +685,28 @@
                                 Доставлено
                             </span>
 
-                            {% else %}
+                            {% elif delivery.status == "failed" %}
 
                             <span class="mailing-delivery-badge mailing-delivery-failed">
                                 Ошибка
+                            </span>
+
+                            {% elif delivery.status == "processing" %}
+
+                            <span class="mailing-delivery-badge mailing-delivery-processing">
+                                Отправляется
+                            </span>
+
+                            {% elif delivery.status == "retry" %}
+
+                            <span class="mailing-delivery-badge mailing-delivery-retry">
+                                Повторная попытка
+                            </span>
+
+                            {% else %}
+
+                            <span class="mailing-delivery-badge mailing-delivery-pending">
+                                В очереди
                             </span>
 
                             {% endif %}

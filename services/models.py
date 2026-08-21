@@ -377,6 +377,17 @@ class MailingSubscription(Base):
 
 class MailingCampaign(Base):
     __tablename__ = "mailing_campaigns"
+    __table_args__ = (
+        UniqueConstraint(
+            "request_key",
+            name="uq_mailing_campaigns_request_key",
+        ),
+        Index(
+            "ix_mailing_campaigns_status_id",
+            "status",
+            "id",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -391,6 +402,16 @@ class MailingCampaign(Base):
     photo_url: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
+    )
+
+    telegram_photo_file_id: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    request_key: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
     )
 
     all_users: Mapped[bool] = mapped_column(
@@ -432,7 +453,7 @@ class MailingCampaign(Base):
     status: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
-        server_default=text("'sending'"),
+        server_default=text("'pending'"),
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -461,6 +482,16 @@ class MailingDelivery(Base):
         Index(
             "ix_mailing_deliveries_user_id",
             "user_id",
+        ),
+        Index(
+            "ix_mailing_deliveries_queue",
+            "status",
+            "next_attempt_at",
+            "id",
+        ),
+        CheckConstraint(
+            "attempt_count >= 0",
+            name="mailing_deliveries_attempt_count_check",
         ),
     )
 
@@ -493,6 +524,7 @@ class MailingDelivery(Base):
     status: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
+        server_default=text("'pending'"),
     )
 
     error_message: Mapped[str | None] = mapped_column(
@@ -502,6 +534,37 @@ class MailingDelivery(Base):
 
     sent_at: Mapped[datetime | None] = mapped_column(
         DateTime,
+        nullable=True,
+    )
+
+    attempt_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+
+    next_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    last_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    telegram_message_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        nullable=True,
+    )
+
+    photo_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    telegram_photo_message_id: Mapped[int | None] = mapped_column(
+        BigInteger,
         nullable=True,
     )
 

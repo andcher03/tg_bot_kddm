@@ -240,9 +240,10 @@ Telegram-бот и веб-панель используют одну базу д
 
 ### Планируемая инфраструктура
 
-- Linux VPS
-- Nginx
-- HTTPS
+- Windows Server
+- PostgreSQL 15+
+- три независимые службы: бот, Web Admin и worker рассылок
+- обратный прокси с HTTPS
 - собственный домен
 
 ---
@@ -386,11 +387,36 @@ python -m pip install -r requirements.txt
 python -m alembic upgrade head
 ```
 
+На Windows Server те же действия выполняются в PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m alembic upgrade head
+```
+
 Активируйте виртуальное окружение и запустите:
 
 ```bash
 python bot.py
 ```
+
+Для административных рассылок отдельным процессом должен постоянно работать
+worker. Он читает очередь из PostgreSQL и продолжает незавершённые доставки
+после перезапуска:
+
+```bash
+python mailing_worker.py
+```
+
+В production бот, Web Admin и worker запускаются как три независимые службы.
+Перед запуском любого из процессов выполните `python -m alembic upgrade head`.
+
+При старте каждый процесс ждёт готовности PostgreSQL и проверяет таблицу
+`alembic_version`. Если миграции не применены, процесс завершится с ошибкой и
+явной командой исправления. Это защищает приложение от запуска с устаревшей
+схемой. Миграции намеренно не применяются автоматически самим ботом.
 
 ---
 
@@ -464,6 +490,24 @@ TEST_DATABASE_URL=postgresql+asyncpg://user@localhost:5432/kddm_test
 `TEST_DATABASE_URL` не может указывать на ту же базу, что и `DATABASE_URL`.
 Изменения интеграционного теста выполняются в транзакции и откатываются.
 
+### Автоматическая проверка в GitHub
+
+Workflow `.github/workflows/ci.yml` запускается для каждого push и pull request
+в ветку `main`. GitHub поднимает PostgreSQL 15, создаёт две отдельные базы,
+применяет миграции Alembic, запускает Ruff и полный набор тестов. Параллельная
+задача на `windows-latest` проверяет установку зависимостей, синтаксис и тесты
+в окружении, соответствующем будущему Windows-серверу.
+
+Локально выполняется тот же основной набор проверок:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m compileall -q .
+ruff check .
+python -m alembic check
+python -m pytest -q
+```
+
 ---
 
 ## Статус проекта
@@ -496,9 +540,11 @@ TEST_DATABASE_URL=postgresql+asyncpg://user@localhost:5432/kddm_test
 
 Перед публичным развёртыванием Web Admin необходимо:
 
-- добавить авторизацию администратора;
-- закрыть административные маршруты от публичного доступа;
-- использовать HTTPS;
+- заменить локальные пароли администраторов на production-пароли;
+- выпустить новый токен Telegram-бота;
+- включить `WEB_ADMIN_COOKIE_SECURE=1`;
+- публиковать административную панель только через HTTPS;
+- не открывать PostgreSQL и внутренний порт Uvicorn в публичный интернет;
 - хранить токены и данные подключения к БД только в переменных окружения;
 - не публиковать `.env` и другие секреты в репозитории.
 

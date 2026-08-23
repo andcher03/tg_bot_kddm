@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -9,6 +10,7 @@ from web_admin.auth import (
     web_admin_auth_middleware,
 )
 from services.database import engine, ensure_database_ready
+from services.logging_config import setup_logging
 
 from web_admin.routers.auth import (
     router as auth_router,
@@ -34,6 +36,7 @@ from web_admin.routers.registrations import (
 
 
 BASE_DIR = Path(__file__).resolve().parent
+logger = logging.getLogger(__name__)
 
 
 class AdminStaticFiles(StaticFiles):
@@ -52,13 +55,22 @@ class AdminStaticFiles(StaticFiles):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await ensure_database_ready()
-    await cleanup_expired_sessions()
+    setup_logging(
+        "web_admin",
+        include_uvicorn=True,
+    )
+    logger.info("Web Admin запускается")
 
     try:
+        await ensure_database_ready()
+        await cleanup_expired_sessions()
         yield
+    except Exception:
+        logger.exception("Критическая ошибка Web Admin")
+        raise
     finally:
         await engine.dispose()
+        logger.info("Web Admin остановлен")
 
 
 app = FastAPI(

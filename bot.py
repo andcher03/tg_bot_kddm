@@ -21,6 +21,7 @@ from handlers.main_sections import router as main_sections_router
 from handlers.afisha import router as afisha_router
 from handlers.youth_map import router as youth_map_router
 from handlers.channel_members import router as channel_members_router
+from middlewares.logger import LoggerMiddleware
 
 from services.logging_config import setup_logging
 from services.database import engine, ensure_database_ready
@@ -29,11 +30,16 @@ from services.database import engine, ensure_database_ready
 from handlers.debug import router as debug_router
 
 
-setup_logging()
 logger = logging.getLogger(__name__)
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
+
+# Аудит пользовательских сообщений и callback-действий. В отличие от
+# старой версии middleware не делает отдельный запрос в PostgreSQL на каждое
+# действие пользователя.
+dp.message.outer_middleware(LoggerMiddleware())
+dp.callback_query.outer_middleware(LoggerMiddleware())
 
 
 # =========================================================
@@ -59,6 +65,8 @@ dp.include_router(debug_router)
 
 
 async def main():
+
+    setup_logging("bot")
 
     logger.info("Бот запускается")
 

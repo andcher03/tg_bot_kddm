@@ -11,5 +11,6 @@ venv/
 .DS_Store
 __pycache__/
 *.py[cod]
-logs
+logs/*
+!logs/.gitkeep
 bot_avatar.png

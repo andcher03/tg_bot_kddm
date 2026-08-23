@@ -6,8 +6,12 @@ from aiogram import Bot
 
 from config import BOT_TOKEN
 from services.database import engine, ensure_database_ready
+from services.logging_config import setup_logging
 from services.mailing_queue import PostgresMailingQueue
 from services.mailing_worker import MailingWorker
+
+
+logger = logging.getLogger(__name__)
 
 
 def positive_int(name: str, default: int) -> int:
@@ -35,6 +39,8 @@ def non_negative_float(name: str, default: float) -> float:
 
 
 async def main() -> None:
+    setup_logging("mailing_worker")
+    logger.info("Worker рассылок запускается")
     bot = None
 
     try:
@@ -61,19 +67,18 @@ async def main() -> None:
             ),
         )
         await worker.run_forever()
+    except Exception:
+        logger.exception("Критическая ошибка worker рассылок")
+        raise
     finally:
         if bot is not None:
             await bot.session.close()
 
         await engine.dispose()
+        logger.info("Worker рассылок остановлен")
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

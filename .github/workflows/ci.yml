@@ -86,8 +86,8 @@ jobs:
 
       - name: Проверить синтаксис и код
         run: |
-          python -m compileall -q .
-          ruff check .
+          python -m compileall -q bot.py mailing_worker.py config.py handlers keyboards middlewares migrations services states tests web_admin
+          python -m ruff check .
 
       - name: Применить миграции рабочей CI-базы
         run: |
@@ -134,8 +134,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Проверить Windows-совместимость
-        run: |
-          python -m compileall -q .
-          ruff check .
-          python -m pytest -q
+      - name: Проверить синтаксис в Windows
+        run: python -m compileall -q bot.py mailing_worker.py config.py handlers keyboards middlewares migrations services states tests web_admin
+
+      - name: Проверить код в Windows
+        run: python -m ruff check .
+
+      - name: Запустить тесты в Windows
+        run: python -m pytest -q

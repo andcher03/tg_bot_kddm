@@ -6,8 +6,8 @@ from zoneinfo import ZoneInfo
 from aiogram import Bot
 from sqlalchemy import text
 
-from config import BOT_TOKEN
 from services.database import SessionLocal
+from services.telegram_bot import create_telegram_bot
 
 
 MOSCOW_TZ = ZoneInfo("Europe/Moscow")
@@ -269,9 +269,7 @@ async def refresh_channel_member_count(
     own_bot = bot is None
 
     if own_bot:
-        bot = Bot(
-            token=BOT_TOKEN
-        )
+        bot = create_telegram_bot()
 
 
     try:

@@ -2,13 +2,11 @@ import asyncio
 import logging
 import os
 
-from aiogram import Bot
-
-from config import BOT_TOKEN
 from services.database import engine, ensure_database_ready
 from services.logging_config import setup_logging
 from services.mailing_queue import PostgresMailingQueue
 from services.mailing_worker import MailingWorker
+from services.telegram_bot import create_telegram_bot
 
 
 logger = logging.getLogger(__name__)
@@ -53,7 +51,7 @@ async def main() -> None:
                 300,
             ),
         )
-        bot = Bot(token=BOT_TOKEN)
+        bot = create_telegram_bot()
         worker = MailingWorker(
             bot=bot,
             queue=queue,

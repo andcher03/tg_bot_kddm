@@ -2,9 +2,8 @@ import asyncio
 import logging
 from contextlib import suppress
 
-from aiogram import Bot, Dispatcher
+from aiogram import Dispatcher
 
-from config import BOT_TOKEN
 from services.commands import set_default_commands
 from services.channel_stats_service import (
     channel_stats_reconciliation_loop,
@@ -25,6 +24,7 @@ from middlewares.logger import LoggerMiddleware
 
 from services.logging_config import setup_logging
 from services.database import engine, ensure_database_ready
+from services.telegram_bot import create_telegram_bot
 
 # ВСЕГДА ПОСЛЕДНИМ
 from handlers.debug import router as debug_router
@@ -32,7 +32,7 @@ from handlers.debug import router as debug_router
 
 logger = logging.getLogger(__name__)
 
-bot = Bot(BOT_TOKEN)
+bot = create_telegram_bot()
 dp = Dispatcher()
 
 # Аудит пользовательских сообщений и callback-действий. В отличие от

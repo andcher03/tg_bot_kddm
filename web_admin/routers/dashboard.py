@@ -2,12 +2,13 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
 from services.database import SessionLocal
 from services.channel_stats_service import (
+    get_channel_history,
     get_channel_stats,
     refresh_channel_member_count,
 )
@@ -203,3 +204,12 @@ async def dashboard(request: Request):
 async def dashboard_channel_stats():
 
     return await get_channel_stats()
+
+
+@router.get("/api/dashboard/channel-history")
+async def dashboard_channel_history(
+    days: int = Query(default=30, ge=7, le=365),
+):
+    return await get_channel_history(
+        days=days
+    )

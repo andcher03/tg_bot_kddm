@@ -746,6 +746,37 @@ class TelegramChannelState(Base):
     )
 
 
+class TelegramChannelDailyStat(Base):
+    __tablename__ = "telegram_channel_daily_stats"
+    __table_args__ = (
+        CheckConstraint(
+            "member_count >= 0",
+            name="telegram_channel_daily_stats_member_count_check",
+        ),
+    )
+
+    channel_id: Mapped[str] = mapped_column(
+        Text,
+        primary_key=True,
+    )
+
+    stat_date: Mapped[date] = mapped_column(
+        Date,
+        primary_key=True,
+    )
+
+    member_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
+
+
 class TelegramChannelMemberEvent(Base):
     __tablename__ = "telegram_channel_member_events"
     __table_args__ = (

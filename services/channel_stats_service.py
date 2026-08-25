@@ -1,6 +1,6 @@
 import asyncio
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot
@@ -173,6 +173,51 @@ async def _save_absolute_count(
 
             "today":
                 today,
+        }
+    )
+
+    await _save_daily_snapshot(
+        session,
+        snapshot_date=today,
+    )
+
+
+async def _save_daily_snapshot(
+    session,
+    *,
+    snapshot_date: date,
+):
+    """Сохраняет последнее известное число подписчиков за сутки."""
+
+    await session.execute(
+        text(
+            """
+            INSERT INTO telegram_channel_daily_stats (
+                channel_id,
+                stat_date,
+                member_count,
+                updated_at
+            )
+            SELECT
+                channel_id,
+                :snapshot_date,
+                member_count,
+                CURRENT_TIMESTAMP
+            FROM telegram_channel_state
+            WHERE channel_id = :channel_id
+
+            ON CONFLICT (channel_id, stat_date)
+            DO UPDATE SET
+                member_count = EXCLUDED.member_count,
+                updated_at = CURRENT_TIMESTAMP
+            """
+        ),
+        {
+            "channel_id":
+                _channel_key(),
+
+            "snapshot_date":
+                snapshot_date,
         }
     )
 
@@ -513,6 +558,12 @@ async def record_channel_member_event(
             )
 
 
+        await _save_daily_snapshot(
+            session,
+            snapshot_date=event_date,
+        )
+
+
         # Сохраняем сам event.
         await session.execute(
             text(
@@ -756,6 +807,70 @@ async def get_channel_stats():
 
         "configured":
             True,
+    }
+
+
+async def get_channel_history(
+    *,
+    days: int = 30,
+):
+    """Возвращает ежедневную историю подписчиков для графика."""
+
+    if not 1 <= days <= 365:
+        raise ValueError(
+            "days должен быть в диапазоне от 1 до 365"
+        )
+
+    if get_configured_channel_id() is None:
+        return {
+            "configured": False,
+            "days": days,
+            "points": [],
+        }
+
+    today = datetime.now(
+        MOSCOW_TZ
+    ).date()
+
+    first_date = today - timedelta(
+        days=days - 1
+    )
+
+    async with SessionLocal() as session:
+        result = await session.execute(
+            text(
+                """
+                SELECT
+                    stat_date,
+                    member_count
+                FROM telegram_channel_daily_stats
+                WHERE
+                    channel_id = :channel_id
+                    AND stat_date >= :first_date
+                ORDER BY stat_date ASC
+                """
+            ),
+            {
+                "channel_id":
+                    _channel_key(),
+
+                "first_date":
+                    first_date,
+            }
+        )
+
+        rows = result.mappings().all()
+
+    return {
+        "configured": True,
+        "days": days,
+        "points": [
+            {
+                "date": row["stat_date"].isoformat(),
+                "count": int(row["member_count"]),
+            }
+            for row in rows
+        ],
     }
 
 

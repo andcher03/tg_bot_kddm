@@ -2,171 +2,14 @@
 
 {% block title %}
 Главная — Молодёжь Казани
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    const countEl =
-        document.getElementById(
-            "channelMemberCount"
-        );
-
-    const changeEl =
-        document.getElementById(
-            "channelNetChange"
-        );
-
-    const arrowEl =
-        document.getElementById(
-            "channelNetArrow"
-        );
-
-    const valueEl =
-        document.getElementById(
-            "channelNetValue"
-        );
-
-    const lastEventEl =
-        document.getElementById(
-            "channelLastEvent"
-        );
+{% endblock %}
 
 
-    function renderNet(value) {
-
-        changeEl.classList.remove(
-            "dashboard-change-up",
-            "dashboard-change-down",
-            "dashboard-change-neutral"
-        );
-
-
-        if (value > 0) {
-
-            changeEl.classList.add(
-                "dashboard-change-up"
-            );
-
-            arrowEl.textContent = "↑";
-            valueEl.textContent = `+${value}`;
-
-        } else if (value < 0) {
-
-            changeEl.classList.add(
-                "dashboard-change-down"
-            );
-
-            arrowEl.textContent = "↓";
-            valueEl.textContent = String(value);
-
-        } else {
-
-            changeEl.classList.add(
-                "dashboard-change-neutral"
-            );
-
-            arrowEl.textContent = "—";
-            valueEl.textContent = "0";
-        }
-    }
-
-
-    function renderLastEvent(event) {
-
-        if (!event) {
-
-            lastEventEl.innerHTML =
-                '<span class="dashboard-channel-last-neutral">' +
-                'Последних изменений пока нет' +
-                '</span>';
-
-            return;
-        }
-
-
-        if (event.event_type === "join") {
-
-            lastEventEl.innerHTML =
-                '<span class="dashboard-channel-last-join">' +
-                '↑ Последнее изменение: подписка · ' +
-                event.time +
-                '</span>';
-
-        } else {
-
-            lastEventEl.innerHTML =
-                '<span class="dashboard-channel-last-leave">' +
-                '↓ Последнее изменение: отписка · ' +
-                event.time +
-                '</span>';
-        }
-    }
-
-
-    function render(data) {
-
-        if (
-            data.total !== null
-            && data.total !== undefined
-        ) {
-
-            countEl.textContent =
-                Number(data.total)
-                .toLocaleString("ru-RU");
-
-            countEl.classList.remove(
-                "dashboard-metric-value-muted"
-            );
-        }
-
-
-        renderNet(
-            Number(data.today || 0)
-        );
-
-        renderLastEvent(
-            data.last_event || null
-        );
-    }
-
-
-    async function refresh() {
-
-        try {
-
-            const response = await fetch(
-                "/api/dashboard/channel-stats",
-                {
-                    cache: "no-store"
-                }
-            );
-
-            if (!response.ok) {
-                return;
-            }
-
-            render(
-                await response.json()
-            );
-
-        } catch (error) {
-
-            console.debug(
-                "Channel live refresh skipped",
-                error
-            );
-        }
-    }
-
-
-    setInterval(
-        refresh,
-        3000
-    );
-});
-</script>
-
-
+{% block scripts %}
+<script
+    src="/static/dashboard.js?v=20260825-1"
+    defer
+></script>
 {% endblock %}
 
 
@@ -218,7 +61,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <!-- ПОДПИСЧИКИ КАНАЛА -->
 
-        <div class="dashboard-metric-card">
+        <button
+            type="button"
+            class="dashboard-metric-card dashboard-subscriber-card"
+            id="channelHistoryOpen"
+            aria-haspopup="dialog"
+            aria-controls="channelHistoryDialog"
+        >
 
             <div class="dashboard-metric-top">
 
@@ -328,12 +177,20 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
 
-            <span class="dashboard-live-indicator">
-                <i></i>
-                live
+            <span class="dashboard-metric-footer">
+
+                <span class="dashboard-live-indicator">
+                    <i></i>
+                    live
+                </span>
+
+                <span class="dashboard-metric-open-hint">
+                    Открыть график →
+                </span>
+
             </span>
 
-        </div>
+        </button>
 
 
 
@@ -758,5 +615,102 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
 
 </div>
+
+
+<dialog
+    class="channel-history-dialog"
+    id="channelHistoryDialog"
+    aria-labelledby="channelHistoryTitle"
+>
+
+    <div class="channel-history-modal">
+
+        <header class="channel-history-header">
+
+            <div>
+
+                <span class="channel-history-kicker">
+                    Telegram-канал
+                </span>
+
+                <h2 id="channelHistoryTitle">
+                    Динамика подписчиков
+                </h2>
+
+                <p>
+                    Последнее значение каждого календарного дня
+                </p>
+
+            </div>
+
+            <button
+                type="button"
+                class="channel-history-close"
+                id="channelHistoryClose"
+                aria-label="Закрыть график"
+            >
+                ×
+            </button>
+
+        </header>
+
+
+        <div
+            class="channel-history-periods"
+            aria-label="Период графика"
+        >
+
+            <button type="button" data-history-days="30" class="active">
+                30 дней
+            </button>
+
+            <button type="button" data-history-days="90">
+                90 дней
+            </button>
+
+            <button type="button" data-history-days="365">
+                1 год
+            </button>
+
+        </div>
+
+
+        <div
+            class="channel-history-summary"
+            id="channelHistorySummary"
+            hidden
+        >
+
+            <div>
+                <span>Сейчас</span>
+                <strong id="channelHistoryCurrent">—</strong>
+            </div>
+
+            <div>
+                <span>За период</span>
+                <strong id="channelHistoryChange">—</strong>
+            </div>
+
+        </div>
+
+
+        <div
+            class="channel-history-status"
+            id="channelHistoryStatus"
+        >
+            Загружаем историю…
+        </div>
+
+        <div
+            class="channel-history-chart"
+            id="channelHistoryChart"
+            role="img"
+            aria-label="График количества подписчиков по датам"
+            hidden
+        ></div>
+
+    </div>
+
+</dialog>
 
 {% endblock %}

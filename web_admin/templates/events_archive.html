@@ -93,7 +93,11 @@
 
 
             <div class="archive-badge">
-                Архив
+                {% if event.status == "archived" %}
+                    Архив
+                {% else %}
+                    Завершено
+                {% endif %}
             </div>
 
         </a>
@@ -101,7 +105,7 @@
         {% else %}
 
         <div class="empty-state">
-            В архиве пока нет мероприятий.
+            Завершённых и архивных мероприятий пока нет.
         </div>
 
         {% endfor %}

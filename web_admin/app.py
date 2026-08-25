@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 import logging
 from pathlib import Path
 
@@ -11,6 +12,10 @@ from web_admin.auth import (
 )
 from services.database import engine, ensure_database_ready
 from services.logging_config import setup_logging
+from services.event_lifecycle import (
+    archive_finished_events,
+    event_archiving_loop,
+)
 
 from web_admin.routers.auth import (
     router as auth_router,
@@ -61,14 +66,28 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Web Admin запускается")
 
+    archiving_task = None
+
     try:
         await ensure_database_ready()
         await cleanup_expired_sessions()
+        await archive_finished_events()
+        archiving_task = asyncio.create_task(
+            event_archiving_loop()
+        )
         yield
     except Exception:
         logger.exception("Критическая ошибка Web Admin")
         raise
     finally:
+        if archiving_task is not None:
+            archiving_task.cancel()
+
+            try:
+                await archiving_task
+            except asyncio.CancelledError:
+                pass
+
         await engine.dispose()
         logger.info("Web Admin остановлен")
 

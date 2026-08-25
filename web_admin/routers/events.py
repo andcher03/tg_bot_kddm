@@ -11,7 +11,7 @@ from fastapi import (
 
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from services.database import SessionLocal
 from services.models import (
@@ -29,6 +29,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates"
 )
+
+
+def archive_events_query(today: date | None = None):
+    current_date = today or date.today()
+
+    return (
+        select(Event)
+        .where(
+            or_(
+                Event.status == "archived",
+                Event.event_date < current_date,
+            )
+        )
+        .order_by(
+            Event.event_date.desc(),
+            Event.start_time.desc(),
+        )
+    )
 
 
 # =========================================================
@@ -140,14 +158,7 @@ async def events_archive_page(
     async with SessionLocal() as session:
 
         result = await session.execute(
-            select(Event)
-            .where(
-                Event.status == "archived"
-            )
-            .order_by(
-                Event.event_date.desc(),
-                Event.start_time.desc()
-            )
+            archive_events_query()
         )
 
         events = result.scalars().all()
@@ -321,6 +332,9 @@ async def event_detail_page(
 
             "average_rating":
                 average_rating,
+
+            "today":
+                date.today(),
         }
     )
 
@@ -378,6 +392,15 @@ async def restore_event(
             raise HTTPException(
                 status_code=404,
                 detail="Мероприятие не найдено"
+            )
+
+        if event.event_date < date.today():
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Завершённое мероприятие нельзя вернуть в публикацию. "
+                    "Сначала измените его дату."
+                ),
             )
 
         event.status = "active"

@@ -1789,6 +1789,7 @@ tbody tr:hover{ background: var(--canvas); }
 }
 
 .event-status-active{ background: var(--accent-soft); color: var(--accent-strong); }
+.event-status-finished{ background: var(--info-soft); color: var(--info); }
 .event-status-archived{ background: var(--canvas); color: var(--text-faint); }
 
 .event-detail-meta{

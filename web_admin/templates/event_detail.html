@@ -9,10 +9,14 @@
 
 
 <a
-    href="/events"
+    href="{% if event.status == 'archived' or event.event_date < today %}/events/archive{% else %}/events{% endif %}"
     class="back-link"
 >
-    ← К мероприятиям
+    {% if event.status == "archived" or event.event_date < today %}
+        ← К завершённым мероприятиям
+    {% else %}
+        ← К мероприятиям
+    {% endif %}
 </a>
 
 
@@ -33,6 +37,12 @@
 
                 <span class="event-status-badge event-status-archived">
                     Архив
+                </span>
+
+                {% elif event.event_date < today %}
+
+                <span class="event-status-badge event-status-finished">
+                    Завершено
                 </span>
 
                 {% elif event.status == "active" %}
@@ -111,7 +121,7 @@
             </form>
 
 
-            {% elif event.status == "archived" %}
+            {% elif event.status == "archived" and event.event_date >= today %}
 
             <form
                 method="post"

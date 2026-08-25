@@ -265,6 +265,92 @@
 
 
 
+        <!-- КОНКРЕТНЫЕ ПОЛЬЗОВАТЕЛИ -->
+
+        <div class="mailing-audience-section">
+
+            <div class="mailing-user-picker-heading">
+                <div>
+                    <h3>Выбор пользователей</h3>
+                    <p class="mailing-section-help">
+                        Найдите одного или нескольких получателей
+                    </p>
+                </div>
+
+                <span class="mailing-user-selected-count">
+                    Выбрано:
+                    <strong id="mailingUserSelectedCount">
+                        {{ selected_user_ids|length }}
+                    </strong>
+                </span>
+            </div>
+
+            <div class="mailing-user-search-field">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path>
+                </svg>
+                <input
+                    type="search"
+                    id="mailingUserSearch"
+                    placeholder="Имя, KZN ID, username, ВУЗ или Telegram ID"
+                    autocomplete="off"
+                    aria-label="Поиск конкретного пользователя"
+                >
+            </div>
+
+            <div
+                class="mailing-user-search-status"
+                id="mailingUserSearchStatus"
+                aria-live="polite"
+            >
+                Начните вводить имя или выберите пользователя из списка.
+            </div>
+
+            <div
+                class="mailing-user-search-results"
+                id="mailingUserSearchResults"
+            ></div>
+
+            <div
+                class="mailing-selected-users"
+                id="mailingSelectedUsers"
+            >
+                {% for user in selected_users %}
+                <div
+                    class="mailing-selected-user"
+                    data-user-id="{{ user.id }}"
+                    data-user-code="{{ user.user_code or '' }}"
+                    data-full-name="{{ user.full_name }}"
+                    data-username="{{ user.username or '' }}"
+                    data-university="{{ user.university or '' }}"
+                    data-telegram-id="{{ user.telegram_id }}"
+                >
+                    <input
+                        type="hidden"
+                        name="user_ids"
+                        value="{{ user.id }}"
+                    >
+                    <div>
+                        <strong>{{ user.full_name }}</strong>
+                        <span>
+                            {{ user.user_code or "Без KZN ID" }}
+                            {% if user.username %} · @{{ user.username }}{% endif %}
+                            {% if user.university %} · {{ user.university }}{% endif %}
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        class="mailing-selected-user-remove"
+                        aria-label="Убрать пользователя {{ user.full_name }}"
+                    >×</button>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+
+
         <!-- ВУЗЫ -->
 
         <div class="mailing-audience-section">
@@ -385,7 +471,7 @@
             type="submit"
             class="primary-button mailing-preview-button"
         >
-            Посчитать получателей
+            Посмотреть отправку
         </button>
 
     </div>
@@ -654,6 +740,15 @@
             {% endfor %}
 
 
+            {% for user_id in selected_user_ids %}
+            <input
+                type="hidden"
+                name="user_ids"
+                value="{{ user_id }}"
+            >
+            {% endfor %}
+
+
             {% if photo_url %}
             <input
                 type="hidden"
@@ -785,6 +880,199 @@ document.addEventListener("DOMContentLoaded", () => {
     const previewState = document.getElementById("mailingPreviewState");
     const editPreviewButton = document.getElementById("mailingEditPreviewButton");
     const returnPreviewButton = document.getElementById("mailingReturnPreviewButton");
+
+    const userSearch = document.getElementById("mailingUserSearch");
+    const userSearchStatus = document.getElementById("mailingUserSearchStatus");
+    const userSearchResults = document.getElementById("mailingUserSearchResults");
+    const selectedUsers = document.getElementById("mailingSelectedUsers");
+    const selectedUserCount = document.getElementById("mailingUserSelectedCount");
+
+    let userSearchTimer = null;
+
+
+    function selectedUserIds() {
+        return new Set(
+            [...selectedUsers.querySelectorAll("[data-user-id]")]
+                .map(item => String(item.dataset.userId))
+        );
+    }
+
+
+    function updateSelectedUserCount() {
+        const count = selectedUserIds().size;
+        selectedUserCount.textContent = count;
+        selectedUsers.classList.toggle("is-empty", count === 0);
+    }
+
+
+    function userSecondaryText(user) {
+        const parts = [user.user_code || "Без KZN ID"];
+
+        if (user.username) {
+            parts.push(`@${user.username}`);
+        }
+
+        if (user.university) {
+            parts.push(user.university);
+        }
+
+        return parts.join(" · ");
+    }
+
+
+    function addSelectedUser(user) {
+        const userId = String(user.id);
+
+        if (selectedUserIds().has(userId)) {
+            return;
+        }
+
+        const item = document.createElement("div");
+        item.className = "mailing-selected-user";
+        item.dataset.userId = userId;
+        item.dataset.userCode = user.user_code || "";
+        item.dataset.fullName = user.full_name || "";
+        item.dataset.username = user.username || "";
+        item.dataset.university = user.university || "";
+        item.dataset.telegramId = String(user.telegram_id || "");
+
+        const hiddenInput = document.createElement("input");
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "user_ids";
+        hiddenInput.value = userId;
+
+        const description = document.createElement("div");
+        const name = document.createElement("strong");
+        const meta = document.createElement("span");
+        name.textContent = user.full_name || "Без имени";
+        meta.textContent = userSecondaryText(user);
+        description.append(name, meta);
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "mailing-selected-user-remove";
+        remove.setAttribute(
+            "aria-label",
+            `Убрать пользователя ${user.full_name || ""}`
+        );
+        remove.textContent = "×";
+
+        item.append(hiddenInput, description, remove);
+        selectedUsers.append(item);
+        updateSelectedUserCount();
+    }
+
+
+    function removeSelectedUser(userId) {
+        selectedUsers
+            .querySelector(`[data-user-id="${CSS.escape(String(userId))}"]`)
+            ?.remove();
+
+        userSearchResults
+            .querySelectorAll('input[type="checkbox"]')
+            .forEach(checkbox => {
+                if (checkbox.value === String(userId)) {
+                    checkbox.checked = false;
+                }
+            });
+
+        updateSelectedUserCount();
+    }
+
+
+    function renderUserResults(users) {
+        userSearchResults.replaceChildren();
+
+        if (!users.length) {
+            userSearchStatus.textContent = "Пользователи не найдены.";
+            return;
+        }
+
+        const selected = selectedUserIds();
+
+        users.forEach(user => {
+            const label = document.createElement("label");
+            label.className = "mailing-user-result";
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = String(user.id);
+            checkbox.checked = selected.has(String(user.id));
+
+            const description = document.createElement("div");
+            const name = document.createElement("strong");
+            const meta = document.createElement("span");
+            name.textContent = user.full_name || "Без имени";
+            meta.textContent = `${userSecondaryText(user)} · Telegram ID ${user.telegram_id}`;
+            description.append(name, meta);
+
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) {
+                    addSelectedUser(user);
+                } else {
+                    removeSelectedUser(user.id);
+                }
+            });
+
+            label.append(checkbox, description);
+            userSearchResults.append(label);
+        });
+
+        userSearchStatus.textContent =
+            `Найдено: ${users.length}. Отметьте нужных получателей.`;
+    }
+
+
+    async function searchUsers() {
+        const query = userSearch.value.trim();
+        userSearchStatus.textContent = "Поиск пользователей…";
+
+        try {
+            const response = await fetch(
+                `/mailing/users/search?q=${encodeURIComponent(query)}`,
+                {
+                    headers: {"Accept": "application/json"}
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            renderUserResults(data.users || []);
+        } catch (error) {
+            userSearchResults.replaceChildren();
+            userSearchStatus.textContent =
+                "Не удалось выполнить поиск. Попробуйте ещё раз.";
+        }
+    }
+
+
+    selectedUsers?.addEventListener("click", event => {
+        const remove = event.target.closest(
+            ".mailing-selected-user-remove"
+        );
+
+        if (!remove) {
+            return;
+        }
+
+        const item = remove.closest("[data-user-id]");
+        removeSelectedUser(item.dataset.userId);
+    });
+
+
+    userSearch?.addEventListener("input", () => {
+        window.clearTimeout(userSearchTimer);
+        userSearchTimer = window.setTimeout(searchUsers, 250);
+    });
+
+
+    if (userSearch && selectedUsers && selectedUserCount) {
+        updateSelectedUserCount();
+        searchUsers();
+    }
 
 
     function showEditor() {

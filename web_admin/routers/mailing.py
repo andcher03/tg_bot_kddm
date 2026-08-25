@@ -10,6 +10,8 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from sqlalchemy import (
+    String,
+    cast,
     select,
     or_,
     text,
@@ -125,11 +127,32 @@ def parse_mailing_form(form):
             pass
 
 
+    selected_user_ids = []
+
+    for value in form.getlist("user_ids"):
+
+        try:
+
+            user_id = int(value)
+
+            if user_id > 0:
+                selected_user_ids.append(user_id)
+
+        except (TypeError, ValueError):
+
+            pass
+
+    selected_user_ids = list(
+        dict.fromkeys(selected_user_ids)
+    )
+
+
     return (
         message,
         all_users,
         selected_universities,
         selected_event_ids,
+        selected_user_ids,
     )
 
 
@@ -142,6 +165,7 @@ async def get_recipients(
     all_users,
     selected_universities,
     selected_event_ids,
+    selected_user_ids,
 ):
 
     if all_users:
@@ -154,6 +178,17 @@ async def get_recipients(
     else:
 
         conditions = []
+
+
+        # -------------------------
+        # КОНКРЕТНЫЕ ПОЛЬЗОВАТЕЛИ
+        # -------------------------
+
+        if selected_user_ids:
+
+            conditions.append(
+                User.id.in_(selected_user_ids)
+            )
 
 
         # -------------------------
@@ -214,6 +249,45 @@ async def get_recipients(
     result = await session.execute(query)
 
     return result.scalars().all()
+
+
+async def get_selected_users(session, selected_user_ids):
+
+    if not selected_user_ids:
+        return []
+
+    result = await session.execute(
+        select(User)
+        .where(User.id.in_(selected_user_ids))
+        .order_by(
+            User.full_name.asc(),
+            User.id.asc(),
+        )
+    )
+
+    return result.scalars().all()
+
+
+def mailing_users_search_query(search_query: str):
+
+    query = select(User)
+
+    if search_query:
+        search = f"%{search_query}%"
+        query = query.where(
+            or_(
+                User.full_name.ilike(search),
+                User.user_code.ilike(search),
+                User.username.ilike(search),
+                User.university.ilike(search),
+                cast(User.telegram_id, String).ilike(search),
+            )
+        )
+
+    return query.order_by(
+        User.full_name.asc(),
+        User.id.asc(),
+    ).limit(50)
 
 
 # =========================================================
@@ -311,6 +385,32 @@ def parse_request_key(form) -> str:
         ) from error
 
 
+@router.get("/mailing/users/search")
+async def mailing_users_search(
+    q: str | None = None,
+):
+    search_query = str(q or "").strip()[:100]
+    query = mailing_users_search_query(search_query)
+
+    async with SessionLocal() as session:
+        result = await session.execute(query)
+        users = result.scalars().all()
+
+    return {
+        "users": [
+            {
+                "id": user.id,
+                "user_code": user.user_code,
+                "full_name": user.full_name,
+                "username": user.username,
+                "university": user.university,
+                "telegram_id": user.telegram_id,
+            }
+            for user in users
+        ]
+    }
+
+
 # =========================================================
 # СТРАНИЦА РАССЫЛКИ
 # =========================================================
@@ -367,6 +467,12 @@ async def mailing_page(
             "selected_event_ids":
                 [],
 
+            "selected_user_ids":
+                [],
+
+            "selected_users":
+                [],
+
             "preview_users":
                 [],
 
@@ -405,6 +511,7 @@ async def mailing_preview(
         all_users,
         selected_universities,
         selected_event_ids,
+        selected_user_ids,
     ) = parse_mailing_form(form)
 
 
@@ -459,6 +566,15 @@ async def mailing_preview(
 
             selected_event_ids=
                 selected_event_ids,
+
+            selected_user_ids=
+                selected_user_ids,
+        )
+
+
+        selected_users = await get_selected_users(
+            session,
+            selected_user_ids,
         )
 
 
@@ -488,6 +604,12 @@ async def mailing_preview(
 
             "selected_event_ids":
                 selected_event_ids,
+
+            "selected_user_ids":
+                selected_user_ids,
+
+            "selected_users":
+                selected_users,
 
             "preview_users":
                 preview_users,
@@ -525,6 +647,7 @@ async def mailing_send(
         all_users,
         selected_universities,
         selected_event_ids,
+        selected_user_ids,
     ) = parse_mailing_form(form)
 
     request_key = parse_request_key(form)
@@ -557,6 +680,7 @@ async def mailing_send(
             all_users=all_users,
             selected_universities=selected_universities,
             selected_event_ids=selected_event_ids,
+            selected_user_ids=selected_user_ids,
         )
 
         if not recipients:

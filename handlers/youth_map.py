@@ -32,7 +32,7 @@ async def youth_map(message: Message):
     )
 
     if pdf_path.exists():
-        pdf = FSInputFile(pdf_path)
+        # pdf = FSInputFile(pdf_path)
 
         await message.answer_document(
             document = os.getenv("YOUTHMAP_FILE_ID"),

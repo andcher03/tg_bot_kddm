@@ -112,6 +112,7 @@ jobs:
     env:
       BOT_TOKEN: 0000000000:CI_TEST_TOKEN
       TELEGRAM_CHANNEL_ID: "@ci_test_channel"
+      YOUTHMAP_FILE_ID: ""
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/kddm_ci
       DATABASE_STARTUP_ATTEMPTS: 1
       WEB_ADMIN_COOKIE_SECURE: 0

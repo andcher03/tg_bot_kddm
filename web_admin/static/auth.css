@@ -33,6 +33,13 @@
    ВХОД
    ========================================= */
 
+.auth-page,
+.auth-page *,
+.auth-page *::before,
+.auth-page *::after{
+    box-sizing: border-box;
+}
+
 .auth-page{
     margin: 0;
     min-height: 100vh;
@@ -105,6 +112,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: 100%;
+    min-width: 0;
     margin-top: 24px;
 }
 
@@ -112,6 +121,8 @@
     display: flex;
     flex-direction: column;
     gap: 7px;
+    width: 100%;
+    min-width: 0;
 }
 
 .auth-field > span{
@@ -121,7 +132,9 @@
 }
 
 .auth-field input{
+    display: block;
     width: 100%;
+    min-width: 0;
     padding: 12px 13px;
 
     background: var(--surface);

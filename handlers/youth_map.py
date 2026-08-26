@@ -1,4 +1,7 @@
+import os
+
 from pathlib import Path
+
 
 from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
@@ -32,7 +35,7 @@ async def youth_map(message: Message):
         pdf = FSInputFile(pdf_path)
 
         await message.answer_document(
-            document=pdf,
+            document = os.getenv("YOUTHMAP_FILE_ID"),
             caption="PDF вариант молодежной карты Казани"
         )
     else:

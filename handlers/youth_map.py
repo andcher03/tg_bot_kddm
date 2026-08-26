@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 from aiogram import Router, F
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message
 
 from keyboards.youth_map import youth_map_keyboard
 

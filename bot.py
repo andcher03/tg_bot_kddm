@@ -20,7 +20,9 @@ from handlers.main_sections import router as main_sections_router
 from handlers.afisha import router as afisha_router
 from handlers.youth_map import router as youth_map_router
 from handlers.channel_members import router as channel_members_router
+from handlers.subscription import router as subscription_router
 from middlewares.logger import LoggerMiddleware
+from middlewares.subscription import SubscriptionMiddleware
 
 from services.logging_config import setup_logging
 from services.database import engine, ensure_database_ready
@@ -41,11 +43,18 @@ dp = Dispatcher()
 dp.message.outer_middleware(LoggerMiddleware())
 dp.callback_query.outer_middleware(LoggerMiddleware())
 
+# Проверка подписки выполняется после аудита, чтобы попытки доступа
+# неподписанных пользователей тоже попадали в журнал.
+subscription_middleware = SubscriptionMiddleware()
+dp.message.outer_middleware(subscription_middleware)
+dp.callback_query.outer_middleware(subscription_middleware)
+
 
 # =========================================================
 # ПОДКЛЮЧАЕМ РОУТЕРЫ
 # =========================================================
 
+dp.include_router(subscription_router)
 dp.include_router(start_router)
 dp.include_router(registration_router)
 dp.include_router(user_router)

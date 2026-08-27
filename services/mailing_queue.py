@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import json
 from typing import Sequence
 
 from sqlalchemy import select, text
@@ -32,8 +33,8 @@ class MailingJob:
     user_id: int | None
     telegram_id: int
     message: str
-    photo_url: str | None
-    telegram_photo_file_id: str | None
+    photo_urls: tuple[str, ...]
+    telegram_photo_file_ids: tuple[str, ...]
     attempt_count: int
     photo_sent: bool
 
@@ -43,7 +44,7 @@ async def enqueue_campaign(
     session,
     request_key: str,
     message: str,
-    photo_url: str | None,
+    photo_urls: Sequence[str],
     all_users: bool,
     universities: Sequence[str],
     event_ids: Sequence[int],
@@ -51,6 +52,17 @@ async def enqueue_campaign(
 ) -> EnqueueResult:
     if not request_key or len(request_key) > 64:
         raise ValueError("Некорректный ключ постановки рассылки в очередь.")
+
+    normalized_photo_urls = tuple(
+        dict.fromkeys(
+            str(photo_url).strip()
+            for photo_url in photo_urls
+            if photo_url and str(photo_url).strip()
+        )
+    )
+
+    if len(normalized_photo_urls) > 9:
+        raise ValueError("К рассылке можно прикрепить не более 9 фотографий.")
 
     unique_recipients = {
         int(user.telegram_id): user
@@ -62,7 +74,12 @@ async def enqueue_campaign(
         .values(
             request_key=request_key,
             message=message,
-            photo_url=photo_url,
+            photo_url=(
+                normalized_photo_urls[0]
+                if normalized_photo_urls
+                else None
+            ),
+            photo_urls=list(normalized_photo_urls),
             all_users=all_users,
             universities=list(universities),
             event_ids=list(event_ids),
@@ -215,6 +232,8 @@ class PostgresMailingQueue:
                             d.attempt_count,
                             d.photo_sent_at IS NOT NULL AS photo_sent,
                             c.message,
+                            c.photo_urls,
+                            c.telegram_photo_file_ids,
                             c.photo_url,
                             c.telegram_photo_file_id
                         FROM mailing_deliveries d
@@ -273,16 +292,35 @@ class PostgresMailingQueue:
                     {"campaign_id": row["campaign_id"]},
                 )
 
+                photo_urls = tuple(
+                    str(value)
+                    for value in (row["photo_urls"] or [])
+                    if str(value).strip()
+                )
+                if not photo_urls and row["photo_url"]:
+                    photo_urls = (str(row["photo_url"]),)
+
+                telegram_photo_file_ids = tuple(
+                    str(value)
+                    for value in (row["telegram_photo_file_ids"] or [])
+                    if str(value).strip()
+                )
+                if (
+                    not telegram_photo_file_ids
+                    and row["telegram_photo_file_id"]
+                ):
+                    telegram_photo_file_ids = (
+                        str(row["telegram_photo_file_id"]),
+                    )
+
                 return MailingJob(
                     delivery_id=int(row["delivery_id"]),
                     campaign_id=int(row["campaign_id"]),
                     user_id=row["user_id"],
                     telegram_id=int(row["telegram_id"]),
                     message=str(row["message"]),
-                    photo_url=row["photo_url"],
-                    telegram_photo_file_id=(
-                        row["telegram_photo_file_id"]
-                    ),
+                    photo_urls=photo_urls,
+                    telegram_photo_file_ids=telegram_photo_file_ids,
                     attempt_count=attempt_count,
                     photo_sent=bool(row["photo_sent"]),
                 )
@@ -292,7 +330,7 @@ class PostgresMailingQueue:
         *,
         job: MailingJob,
         telegram_photo_message_id: int,
-        telegram_photo_file_id: str | None,
+        telegram_photo_file_ids: Sequence[str],
     ) -> None:
         async with self.session_factory() as session:
             async with session.begin():
@@ -313,27 +351,37 @@ class PostgresMailingQueue:
                     },
                 )
 
-                if telegram_photo_file_id:
-                    await session.execute(
-                        text(
-                            """
-                            UPDATE mailing_campaigns
-                            SET telegram_photo_file_id = :file_id
-                            WHERE id = :campaign_id
-                            """
-                        ),
-                        {
-                            "campaign_id": job.campaign_id,
-                            "file_id": telegram_photo_file_id,
-                        },
-                    )
+                if telegram_photo_file_ids:
+                    file_ids = [
+                        str(file_id)
+                        for file_id in telegram_photo_file_ids
+                        if str(file_id).strip()
+                    ][:9]
+                    if file_ids:
+                        await session.execute(
+                            text(
+                                """
+                                UPDATE mailing_campaigns
+                                SET
+                                    telegram_photo_file_id = :first_file_id,
+                                    telegram_photo_file_ids =
+                                        CAST(:file_ids AS jsonb)
+                                WHERE id = :campaign_id
+                                """
+                            ),
+                            {
+                                "campaign_id": job.campaign_id,
+                                "first_file_id": file_ids[0],
+                                "file_ids": json.dumps(file_ids),
+                            },
+                        )
 
     async def mark_sent(
         self,
         *,
         job: MailingJob,
         telegram_message_id: int,
-        telegram_photo_file_id: str | None = None,
+        telegram_photo_file_ids: Sequence[str] = (),
     ) -> None:
         async with self.session_factory() as session:
             async with session.begin():
@@ -357,20 +405,30 @@ class PostgresMailingQueue:
                     },
                 )
 
-                if telegram_photo_file_id:
-                    await session.execute(
-                        text(
-                            """
-                            UPDATE mailing_campaigns
-                            SET telegram_photo_file_id = :file_id
-                            WHERE id = :campaign_id
-                            """
-                        ),
-                        {
-                            "campaign_id": job.campaign_id,
-                            "file_id": telegram_photo_file_id,
-                        },
-                    )
+                if telegram_photo_file_ids:
+                    file_ids = [
+                        str(file_id)
+                        for file_id in telegram_photo_file_ids
+                        if str(file_id).strip()
+                    ][:9]
+                    if file_ids:
+                        await session.execute(
+                            text(
+                                """
+                                UPDATE mailing_campaigns
+                                SET
+                                    telegram_photo_file_id = :first_file_id,
+                                    telegram_photo_file_ids =
+                                        CAST(:file_ids AS jsonb)
+                                WHERE id = :campaign_id
+                                """
+                            ),
+                            {
+                                "campaign_id": job.campaign_id,
+                                "first_file_id": file_ids[0],
+                                "file_ids": json.dumps(file_ids),
+                            },
+                        )
 
                 await self._refresh_campaign(session, job.campaign_id)
 

@@ -2101,7 +2101,13 @@ tbody tr:hover{ background: var(--canvas); }
     background: var(--accent-soft);
 }
 
-.mailing-dropzone.has-file{ padding: 12px; }
+.mailing-dropzone.has-file{
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
 
 .mailing-dropzone-empty{
     display: flex;
@@ -2131,23 +2137,40 @@ tbody tr:hover{ background: var(--canvas); }
 .mailing-dropzone-empty span{ color: var(--text-muted); font-size: 12px; }
 .mailing-dropzone-empty small{ color: var(--text-faint); font-size: 10px; }
 
-.mailing-selected-file{
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.mailing-selected-photos{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
     width: 100%;
 }
 
+.mailing-photo-item{
+    position: relative;
+    min-width: 0;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
 .mailing-selected-thumb{
-    width: 60px; height: 60px;
+    display: block;
+    width: 100%; height: 92px;
     object-fit: cover;
     border-radius: var(--radius-sm);
     background: var(--border);
 }
 
-.mailing-selected-info{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.mailing-selected-info strong{ font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mailing-selected-info span{ color: var(--text-muted); font-size: 11px; }
+.mailing-photo-item > span{
+    display: block;
+    margin-top: 6px;
+    padding-right: 24px;
+    color: var(--text-muted);
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 .mailing-remove-photo{
     display: flex;
@@ -2156,6 +2179,10 @@ tbody tr:hover{ background: var(--canvas); }
 
     width: 26px; height: 26px;
     flex-shrink: 0;
+
+    position: absolute;
+    top: 10px;
+    right: 10px;
 
     background: var(--danger-soft);
     color: var(--danger);
@@ -2651,6 +2678,48 @@ tbody tr:hover{ background: var(--canvas); }
     border-radius: 7px;
 }
 
+.telegram-media-grid{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    width: 320px;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 7px;
+    background: #e9edf0;
+}
+
+.telegram-media-grid-1{ grid-template-columns: 1fr; }
+
+.telegram-media-grid-5,
+.telegram-media-grid-6,
+.telegram-media-grid-7,
+.telegram-media-grid-8,
+.telegram-media-grid-9{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.telegram-media-grid .telegram-message-photo{
+    width: 100%;
+    height: 158px;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+.telegram-media-grid-1 .telegram-message-photo{
+    height: auto;
+    max-height: 420px;
+    object-fit: contain;
+}
+
+.telegram-media-grid-5 .telegram-message-photo,
+.telegram-media-grid-6 .telegram-message-photo,
+.telegram-media-grid-7 .telegram-message-photo,
+.telegram-media-grid-8 .telegram-message-photo,
+.telegram-media-grid-9 .telegram-message-photo{
+    height: 104px;
+}
+
 .telegram-message-caption{
     width: 100%;
     max-width: 320px;
@@ -2990,6 +3059,7 @@ tbody tr:hover{ background: var(--canvas); }
 }
 
 .mailing-history-photo{
+    position: relative;
     width: 96px; height: 84px;
     border-radius: var(--radius-sm);
     overflow: hidden;
@@ -2997,6 +3067,18 @@ tbody tr:hover{ background: var(--canvas); }
 }
 
 .mailing-history-photo img{ width: 100%; height: 100%; object-fit: cover; }
+
+.mailing-history-photo-count{
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    padding: 2px 6px;
+    color: #fff;
+    background: rgba(17, 24, 39, .72);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+}
 
 .mailing-history-photo-empty{
     display: flex;

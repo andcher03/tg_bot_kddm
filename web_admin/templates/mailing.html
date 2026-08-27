@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block content %}
+{% set photo_urls = photo_urls or [] %}
 
 <div class="page-header">
     <div>
@@ -60,15 +61,6 @@
     id="mailingForm"
 >
 
-    {% if photo_url %}
-    <input
-        type="hidden"
-        name="existing_photo_url"
-        value="{{ photo_url }}"
-        id="existingPhotoUrl"
-    >
-    {% endif %}
-
     {% if photo_error %}
     <div class="mailing-warning">
         {{ photo_error }}
@@ -105,16 +97,16 @@
         <div class="mailing-photo-block">
 
             <label class="mailing-photo-label">
-                Фотография
+                Фотографии
             </label>
 
             <p class="mailing-section-help">
-                Необязательно. Нажмите на поле или перетащите изображение прямо в него.
+                Необязательно. Добавьте до 9 изображений — по одному или сразу несколько.
             </p>
 
 
             <div
-                class="mailing-dropzone {% if photo_url %}has-file{% endif %}"
+                class="mailing-dropzone {% if photo_urls %}has-file{% endif %}"
                 id="mailingDropzone"
                 role="button"
                 tabindex="0"
@@ -123,82 +115,48 @@
 
                 <input
                     type="file"
-                    name="photo"
+                    name="photos"
                     id="mailingPhotoInput"
                     accept="image/jpeg,image/png,image/webp"
+                    multiple
                     hidden
                 >
 
-
                 <div
-                    class="mailing-dropzone-empty"
-                    id="mailingDropzoneEmpty"
-                    {% if photo_url %}hidden{% endif %}
+                    class="mailing-selected-photos"
+                    id="mailingSelectedPhotos"
+                    {% if not photo_urls %}hidden{% endif %}
                 >
-                    <div class="mailing-dropzone-icon" aria-hidden="true">
-                        +
-                    </div>
-
-                    <strong>
-                        Добавить фотографию
-                    </strong>
-
-                    <span>
-                        Нажмите или перетащите файл сюда
-                    </span>
-
-                    <small>
-                        JPG, PNG или WEBP · до 10 МБ
-                    </small>
-                </div>
-
-
-                <div
-                    class="mailing-selected-file"
-                    id="mailingSelectedFile"
-                    {% if not photo_url %}hidden{% endif %}
-                >
-
-                    <img
-                        id="mailingSelectedThumb"
-                        class="mailing-selected-thumb"
-                        {% if photo_url %}
-                        src="{{ photo_url }}"
-                        {% endif %}
-                        alt="Предпросмотр фотографии"
-                    >
-
-                    <div class="mailing-selected-info">
-
-                        <strong
-                            id="mailingSelectedName"
-                            title="{% if photo_url %}Загруженная фотография{% endif %}"
+                    {% for photo_url in photo_urls %}
+                    <div class="mailing-photo-item" data-existing-photo>
+                        <input
+                            type="hidden"
+                            name="existing_photo_urls"
+                            value="{{ photo_url }}"
                         >
-                            {% if photo_url %}
-                                Загруженная фотография
-                            {% endif %}
-                        </strong>
-
-                        <span id="mailingSelectedMeta">
-                            {% if photo_url %}
-                                Фото уже сохранено на сервере
-                            {% endif %}
-                        </span>
-
+                        <img
+                            class="mailing-selected-thumb"
+                            src="{{ photo_url }}"
+                            alt="Фотография {{ loop.index }}"
+                        >
+                        <span>Фото {{ loop.index }}</span>
+                        <button
+                            type="button"
+                            class="mailing-remove-photo"
+                            aria-label="Удалить фотографию {{ loop.index }}"
+                        >×</button>
                     </div>
-
-                    <button
-                        type="button"
-                        class="mailing-remove-photo"
-                        id="mailingRemovePhoto"
-                        aria-label="Удалить фотографию"
-                        title="Удалить фотографию"
-                    >
-                        ×
-                    </button>
-
+                    {% endfor %}
                 </div>
 
+                <div class="mailing-dropzone-empty" id="mailingDropzoneEmpty">
+                    <div class="mailing-dropzone-icon" aria-hidden="true">+</div>
+                    <strong id="mailingDropzoneTitle">
+                        {% if photo_urls %}Добавить ещё{% else %}Добавить фотографии{% endif %}
+                    </strong>
+                    <span>Нажмите или перетащите файлы сюда</span>
+                    <small>JPG, PNG или WEBP · до 10 МБ каждый · максимум 9</small>
+                </div>
             </div>
 
 
@@ -596,17 +554,21 @@
                     </div>
 
 
-                    {% if photo_url %}
+                    {% if photo_urls %}
 
                         {% if message|length <= 1024 %}
 
                         <div class="telegram-bubble telegram-bubble-media">
 
-                            <img
-                                src="{{ photo_url }}"
-                                alt="Фото рассылки"
-                                class="telegram-message-photo"
-                            >
+                            <div class="telegram-media-grid telegram-media-grid-{{ photo_urls|length }}">
+                                {% for photo_url in photo_urls %}
+                                <img
+                                    src="{{ photo_url }}"
+                                    alt="Фото рассылки {{ loop.index }}"
+                                    class="telegram-message-photo"
+                                >
+                                {% endfor %}
+                            </div>
 
                             {% if message %}
                             <div class="telegram-message-caption">{{ message }}</div>
@@ -622,11 +584,15 @@
 
                         <div class="telegram-bubble telegram-bubble-media telegram-bubble-photo-only">
 
-                            <img
-                                src="{{ photo_url }}"
-                                alt="Фото рассылки"
-                                class="telegram-message-photo"
-                            >
+                            <div class="telegram-media-grid telegram-media-grid-{{ photo_urls|length }}">
+                                {% for photo_url in photo_urls %}
+                                <img
+                                    src="{{ photo_url }}"
+                                    alt="Фото рассылки {{ loop.index }}"
+                                    class="telegram-message-photo"
+                                >
+                                {% endfor %}
+                            </div>
 
                             <div class="telegram-message-time telegram-message-time-on-photo">
                                 <span class="js-current-time">сейчас</span>
@@ -749,13 +715,13 @@
             {% endfor %}
 
 
-            {% if photo_url %}
+            {% for photo_url in photo_urls %}
             <input
                 type="hidden"
-                name="photo_url"
+                name="photo_urls"
                 value="{{ photo_url }}"
             >
-            {% endif %}
+            {% endfor %}
 
 
             <button
@@ -868,13 +834,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("mailingPhotoInput");
     const dropzone = document.getElementById("mailingDropzone");
     const emptyState = document.getElementById("mailingDropzoneEmpty");
-    const selectedState = document.getElementById("mailingSelectedFile");
-    const thumb = document.getElementById("mailingSelectedThumb");
-    const fileName = document.getElementById("mailingSelectedName");
-    const fileMeta = document.getElementById("mailingSelectedMeta");
-    const removeButton = document.getElementById("mailingRemovePhoto");
+    const dropzoneTitle = document.getElementById("mailingDropzoneTitle");
+    const selectedPhotos = document.getElementById("mailingSelectedPhotos");
     const errorBox = document.getElementById("mailingFileError");
-    const existingPhotoUrl = document.getElementById("existingPhotoUrl");
 
     const editorState = document.getElementById("mailingEditorState");
     const previewState = document.getElementById("mailingPreviewState");
@@ -1129,8 +1091,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     const maxSize = 10 * 1024 * 1024;
-
-    let previewObjectUrl = null;
+    const maxPhotos = 9;
+    let selectedFiles = [];
+    const previewObjectUrls = new Map();
 
 
     function formatBytes(bytes) {
@@ -1162,89 +1125,97 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function clearObjectUrl() {
-        if (previewObjectUrl) {
-            URL.revokeObjectURL(previewObjectUrl);
-            previewObjectUrl = null;
-        }
+    function fileKey(file) {
+        return `${file.name}:${file.size}:${file.lastModified}`;
     }
 
 
-    function resetPhoto() {
-        clearObjectUrl();
+    function existingPhotoCount() {
+        return selectedPhotos.querySelectorAll("[data-existing-photo]").length;
+    }
 
-        input.value = "";
 
-        if (existingPhotoUrl) {
-            existingPhotoUrl.value = "";
-        }
+    function currentPhotoCount() {
+        return existingPhotoCount() + selectedFiles.length;
+    }
 
-        thumb.removeAttribute("src");
-        fileName.textContent = "";
-        fileName.removeAttribute("title");
-        fileMeta.textContent = "";
 
-        selectedState.hidden = true;
-        emptyState.hidden = false;
+    function syncInputFiles() {
+        const transfer = new DataTransfer();
+        selectedFiles.forEach(file => transfer.items.add(file));
+        input.files = transfer.files;
+    }
 
-        dropzone.classList.remove(
-            "has-file",
-            "is-dragging"
+
+    function updatePhotoState() {
+        const count = currentPhotoCount();
+        selectedPhotos.hidden = count === 0;
+        dropzone.classList.toggle("has-file", count > 0);
+        dropzoneTitle.textContent = count >= maxPhotos
+            ? `Добавлено ${count} из ${maxPhotos}`
+            : count > 0
+                ? `Добавить ещё (${count} из ${maxPhotos})`
+                : "Добавить фотографии";
+    }
+
+
+    function createFileCard(file) {
+        const key = fileKey(file);
+        const card = document.createElement("div");
+        card.className = "mailing-photo-item";
+        card.dataset.fileKey = key;
+
+        const image = document.createElement("img");
+        image.className = "mailing-selected-thumb";
+        image.alt = file.name;
+        const objectUrl = URL.createObjectURL(file);
+        previewObjectUrls.set(key, objectUrl);
+        image.src = objectUrl;
+
+        const description = document.createElement("span");
+        description.textContent = `${file.name} · ${formatBytes(file.size)}`;
+        description.title = file.name;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "mailing-remove-photo";
+        remove.setAttribute("aria-label", `Удалить ${file.name}`);
+        remove.textContent = "×";
+
+        card.append(image, description, remove);
+        selectedPhotos.append(card);
+    }
+
+
+    function addFiles(files) {
+        clearError();
+        const knownKeys = new Set(selectedFiles.map(fileKey));
+        const candidates = [...files].filter(
+            file => !knownKeys.has(fileKey(file))
         );
 
-        clearError();
-    }
-
-
-    function setFile(file) {
-        clearError();
-
-        if (!allowedTypes.includes(file.type)) {
-            showError(
-                "Можно загрузить только JPG, PNG или WEBP."
-            );
-            return false;
+        if (currentPhotoCount() + candidates.length > maxPhotos) {
+            showError("К рассылке можно прикрепить не более 9 фотографий.");
+            return;
         }
 
-        if (file.size > maxSize) {
-            showError(
-                "Размер фотографии не должен превышать 10 МБ."
-            );
-            return false;
+        for (const file of candidates) {
+            if (!allowedTypes.includes(file.type)) {
+                showError("Можно загрузить только JPG, PNG или WEBP.");
+                return;
+            }
+            if (file.size > maxSize) {
+                showError("Размер каждой фотографии не должен превышать 10 МБ.");
+                return;
+            }
         }
 
-        clearObjectUrl();
-
-        previewObjectUrl = URL.createObjectURL(file);
-
-        thumb.src = previewObjectUrl;
-
-        fileName.textContent = file.name;
-        fileName.title = file.name;
-
-        const typeLabel =
-            file.type === "image/jpeg"
-                ? "JPG"
-                : file.type === "image/png"
-                    ? "PNG"
-                    : "WEBP";
-
-        fileMeta.textContent =
-            `${typeLabel} · ${formatBytes(file.size)}`;
-
-        emptyState.hidden = true;
-        selectedState.hidden = false;
-
-        dropzone.classList.add("has-file");
-
-        return true;
-    }
-
-
-    function putFileIntoInput(file) {
-        const transfer = new DataTransfer();
-        transfer.items.add(file);
-        input.files = transfer.files;
+        candidates.forEach(file => {
+            selectedFiles.push(file);
+            createFileCard(file);
+        });
+        syncInputFiles();
+        updatePhotoState();
     }
 
 
@@ -1252,9 +1223,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         dropzone.addEventListener("click", (event) => {
             if (
-                event.target === removeButton ||
-                removeButton.contains(event.target)
+                event.target === input ||
+                event.target.closest(".mailing-remove-photo")
             ) {
+                return;
+            }
+
+            if (currentPhotoCount() >= maxPhotos) {
+                showError("Уже добавлено максимальное количество: 9 фотографий.");
                 return;
             }
 
@@ -1268,21 +1244,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.key === " "
             ) {
                 event.preventDefault();
+                if (currentPhotoCount() >= maxPhotos) {
+                    showError("Уже добавлено максимальное количество: 9 фотографий.");
+                    return;
+                }
                 input.click();
             }
         });
 
 
         input.addEventListener("change", () => {
-            const file = input.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            if (!setFile(file)) {
-                input.value = "";
-            }
+            addFiles(input.files);
         });
 
 
@@ -1329,25 +1301,44 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const file = files[0];
-
-            if (setFile(file)) {
-                putFileIntoInput(file);
-            }
+            addFiles(files);
         });
     }
 
+    selectedPhotos?.addEventListener("click", event => {
+        const remove = event.target.closest(".mailing-remove-photo");
+        if (!remove) {
+            return;
+        }
 
-    if (removeButton) {
-        removeButton.addEventListener(
-            "click",
-            (event) => {
-                event.preventDefault();
-                event.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
+        const card = remove.closest(".mailing-photo-item");
+        const key = card.dataset.fileKey;
 
-                resetPhoto();
+        if (key) {
+            selectedFiles = selectedFiles.filter(
+                file => fileKey(file) !== key
+            );
+            const objectUrl = previewObjectUrls.get(key);
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                previewObjectUrls.delete(key);
             }
-        );
+            syncInputFiles();
+        }
+
+        card.remove();
+        clearError();
+        updatePhotoState();
+    });
+
+    window.addEventListener("beforeunload", () => {
+        previewObjectUrls.forEach(url => URL.revokeObjectURL(url));
+    });
+
+    if (dropzone && selectedPhotos) {
+        updatePhotoState();
     }
 
 

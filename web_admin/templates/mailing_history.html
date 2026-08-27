@@ -125,6 +125,7 @@
     <div class="mailing-history-list">
 
         {% for campaign in campaigns %}
+        {% set campaign_photos = campaign.photo_urls or ([campaign.photo_url] if campaign.photo_url else []) %}
 
         <a
     href="/mailing/history/{{ campaign.id }}"
@@ -133,14 +134,20 @@
 
     <!-- ФОТО -->
 
-    {% if campaign.photo_url %}
+    {% if campaign_photos %}
 
     <div class="mailing-history-photo">
 
         <img
-            src="{{ campaign.photo_url }}"
+            src="{{ campaign_photos[0] }}"
             alt="Фото рассылки"
         >
+
+        {% if campaign_photos|length > 1 %}
+        <span class="mailing-history-photo-count">
+            +{{ campaign_photos|length - 1 }}
+        </span>
+        {% endif %}
 
     </div>
 

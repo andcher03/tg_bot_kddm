@@ -387,6 +387,16 @@ class MailingCampaign(Base):
             "status",
             "id",
         ),
+        CheckConstraint(
+            "jsonb_typeof(photo_urls) = 'array' "
+            "AND jsonb_array_length(photo_urls) <= 9",
+            name="ck_mailing_campaigns_photo_urls_array",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(telegram_photo_file_ids) = 'array' "
+            "AND jsonb_array_length(telegram_photo_file_ids) <= 9",
+            name="ck_mailing_campaigns_photo_file_ids_array",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -404,9 +414,21 @@ class MailingCampaign(Base):
         nullable=True,
     )
 
+    photo_urls: Mapped[list] = mapped_column(
+        JSONB,
+        nullable=False,
+        server_default=text("'[]'::jsonb"),
+    )
+
     telegram_photo_file_id: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
+    )
+
+    telegram_photo_file_ids: Mapped[list] = mapped_column(
+        JSONB,
+        nullable=False,
+        server_default=text("'[]'::jsonb"),
     )
 
     request_key: Mapped[str] = mapped_column(

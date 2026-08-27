@@ -41,6 +41,16 @@ class FakeBot:
             photo=[SimpleNamespace(file_id="telegram-file-id")],
         )
 
+    async def send_media_group(self, **kwargs):
+        self.calls.append(("media_group", kwargs))
+        return [
+            SimpleNamespace(
+                message_id=200 + index,
+                photo=[SimpleNamespace(file_id=f"telegram-file-{index}")],
+            )
+            for index, _ in enumerate(kwargs["media"], start=1)
+        ]
+
 
 def make_job(**overrides):
     values = {
@@ -49,8 +59,8 @@ def make_job(**overrides):
         "user_id": 3,
         "telegram_id": 4,
         "message": "Тестовое сообщение",
-        "photo_url": None,
-        "telegram_photo_file_id": None,
+        "photo_urls": (),
+        "telegram_photo_file_ids": (),
         "attempt_count": 1,
         "photo_sent": False,
     }
@@ -83,8 +93,8 @@ async def test_long_photo_message_persists_photo_before_text():
     queue = FakeQueue(
         make_job(
             message="x" * 1025,
-            photo_url="/static/uploads/mailing/test.jpg",
-            telegram_photo_file_id="cached-file-id",
+            photo_urls=("/static/uploads/mailing/test.jpg",),
+            telegram_photo_file_ids=("cached-file-id",),
         )
     )
     bot = FakeBot()
@@ -93,8 +103,8 @@ async def test_long_photo_message_persists_photo_before_text():
     assert await worker.process_one() is True
     assert [name for name, _ in bot.calls] == ["photo", "message"]
     assert [name for name, _ in queue.calls] == ["photo", "sent"]
-    assert queue.calls[0][1]["telegram_photo_file_id"] == (
-        "telegram-file-id"
+    assert queue.calls[0][1]["telegram_photo_file_ids"] == (
+        "telegram-file-id",
     )
 
 
@@ -103,8 +113,8 @@ async def test_resumed_long_message_does_not_send_photo_twice():
     queue = FakeQueue(
         make_job(
             message="x" * 1025,
-            photo_url="/static/uploads/mailing/test.jpg",
-            telegram_photo_file_id="cached-file-id",
+            photo_urls=("/static/uploads/mailing/test.jpg",),
+            telegram_photo_file_ids=("cached-file-id",),
             photo_sent=True,
         )
     )
@@ -120,7 +130,7 @@ async def test_resumed_long_message_does_not_send_photo_twice():
 async def test_missing_photo_is_permanent_delivery_error():
     queue = FakeQueue(
         make_job(
-            photo_url="/static/uploads/mailing/missing.jpg",
+            photo_urls=("/static/uploads/mailing/missing.jpg",),
         )
     )
     worker = MailingWorker(bot=FakeBot(), queue=queue)
@@ -133,3 +143,49 @@ async def test_missing_photo_is_permanent_delivery_error():
 def test_unexpected_errors_use_bounded_backoff():
     assert retry_delay_for_error(RuntimeError("temporary"), 1) == 2
     assert retry_delay_for_error(RuntimeError("temporary"), 10) == 60
+
+
+@pytest.mark.asyncio
+async def test_multiple_photos_are_sent_as_telegram_album():
+    queue = FakeQueue(
+        make_job(
+            photo_urls=("one.jpg", "two.jpg", "three.jpg"),
+            telegram_photo_file_ids=("file-1", "file-2", "file-3"),
+        )
+    )
+    bot = FakeBot()
+    worker = MailingWorker(bot=bot, queue=queue)
+
+    assert await worker.process_one() is True
+    assert [name for name, _ in bot.calls] == ["media_group"]
+
+    media = bot.calls[0][1]["media"]
+    assert len(media) == 3
+    assert media[0].caption == "Тестовое сообщение"
+    assert media[1].caption is None
+    assert queue.calls[0][1]["telegram_photo_file_ids"] == (
+        "telegram-file-1",
+        "telegram-file-2",
+        "telegram-file-3",
+    )
+
+
+@pytest.mark.asyncio
+async def test_long_album_is_persisted_before_separate_text():
+    queue = FakeQueue(
+        make_job(
+            message="x" * 1025,
+            photo_urls=("one.jpg", "two.jpg"),
+            telegram_photo_file_ids=("file-1", "file-2"),
+        )
+    )
+    bot = FakeBot()
+    worker = MailingWorker(bot=bot, queue=queue)
+
+    assert await worker.process_one() is True
+    assert [name for name, _ in bot.calls] == ["media_group", "message"]
+    assert [name for name, _ in queue.calls] == ["photo", "sent"]
+    assert queue.calls[0][1]["telegram_photo_file_ids"] == (
+        "telegram-file-1",
+        "telegram-file-2",
+    )

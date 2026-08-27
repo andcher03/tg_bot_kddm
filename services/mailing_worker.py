@@ -8,8 +8,12 @@ from aiogram.exceptions import (
     TelegramRetryAfter,
     TelegramServerError,
 )
-from aiogram.types import FSInputFile
+from aiogram.types import BufferedInputFile, InputMediaPhoto
 
+from services.mailing_images import (
+    MailingImageError,
+    normalize_mailing_photo,
+)
 from services.mailing_media import resolve_mailing_photo_path
 from services.mailing_queue import MailingJob, PostgresMailingQueue
 
@@ -21,7 +25,7 @@ class MailingMediaError(RuntimeError):
 @dataclass(frozen=True)
 class SendOutcome:
     telegram_message_id: int
-    telegram_photo_file_id: str | None = None
+    telegram_photo_file_ids: tuple[str, ...] = ()
 
 
 def retry_delay_for_error(
@@ -50,6 +54,14 @@ def telegram_photo_file_id(message) -> str | None:
         return None
 
     return photos[-1].file_id
+
+
+def telegram_photo_file_ids(messages) -> tuple[str, ...]:
+    return tuple(
+        file_id
+        for message in messages
+        if (file_id := telegram_photo_file_id(message))
+    )
 
 
 class MailingWorker:
@@ -88,15 +100,15 @@ class MailingWorker:
             await self.queue.mark_sent(
                 job=job,
                 telegram_message_id=outcome.telegram_message_id,
-                telegram_photo_file_id=(
-                    outcome.telegram_photo_file_id
+                telegram_photo_file_ids=(
+                    outcome.telegram_photo_file_ids
                 ),
             )
 
         return True
 
     async def _send(self, job: MailingJob) -> SendOutcome:
-        if not job.photo_url:
+        if not job.photo_urls:
             message = await self.bot.send_message(
                 chat_id=job.telegram_id,
                 text=job.message,
@@ -105,31 +117,57 @@ class MailingWorker:
                 telegram_message_id=message.message_id,
             )
 
+        photos = self._telegram_photos(job)
+
         if len(job.message) <= 1024:
-            photo = self._telegram_photo(job)
-            message = await self.bot.send_photo(
-                chat_id=job.telegram_id,
-                photo=photo,
-                caption=job.message,
-            )
+            if len(photos) == 1:
+                message = await self.bot.send_photo(
+                    chat_id=job.telegram_id,
+                    photo=photos[0],
+                    caption=job.message,
+                )
+                messages = [message]
+            else:
+                messages = await self.bot.send_media_group(
+                    chat_id=job.telegram_id,
+                    media=[
+                        InputMediaPhoto(
+                            media=photo,
+                            caption=job.message if index == 0 else None,
+                        )
+                        for index, photo in enumerate(photos)
+                    ],
+                )
+
             return SendOutcome(
-                telegram_message_id=message.message_id,
-                telegram_photo_file_id=telegram_photo_file_id(message),
+                telegram_message_id=messages[-1].message_id,
+                telegram_photo_file_ids=telegram_photo_file_ids(messages),
             )
 
         if not job.photo_sent:
-            photo_message = await self.bot.send_photo(
-                chat_id=job.telegram_id,
-                photo=self._telegram_photo(job),
-            )
-            photo_file_id = telegram_photo_file_id(photo_message)
+            if len(photos) == 1:
+                photo_message = await self.bot.send_photo(
+                    chat_id=job.telegram_id,
+                    photo=photos[0],
+                )
+                photo_messages = [photo_message]
+            else:
+                photo_messages = await self.bot.send_media_group(
+                    chat_id=job.telegram_id,
+                    media=[
+                        InputMediaPhoto(media=photo)
+                        for photo in photos
+                    ],
+                )
+
+            photo_file_ids = telegram_photo_file_ids(photo_messages)
             await self.queue.mark_photo_sent(
                 job=job,
-                telegram_photo_message_id=photo_message.message_id,
-                telegram_photo_file_id=photo_file_id,
+                telegram_photo_message_id=photo_messages[-1].message_id,
+                telegram_photo_file_ids=photo_file_ids,
             )
         else:
-            photo_file_id = job.telegram_photo_file_id
+            photo_file_ids = job.telegram_photo_file_ids
 
         text_message = await self.bot.send_message(
             chat_id=job.telegram_id,
@@ -137,21 +175,38 @@ class MailingWorker:
         )
         return SendOutcome(
             telegram_message_id=text_message.message_id,
-            telegram_photo_file_id=photo_file_id,
+            telegram_photo_file_ids=photo_file_ids,
         )
 
-    def _telegram_photo(self, job: MailingJob):
-        if job.telegram_photo_file_id:
-            return job.telegram_photo_file_id
+    def _telegram_photos(self, job: MailingJob):
+        if (
+            job.telegram_photo_file_ids
+            and len(job.telegram_photo_file_ids) == len(job.photo_urls)
+        ):
+            return list(job.telegram_photo_file_ids)
 
-        photo_path = resolve_mailing_photo_path(job.photo_url)
+        photos = []
+        for photo_url in job.photo_urls:
+            photo_path = resolve_mailing_photo_path(photo_url)
 
-        if photo_path is None:
-            raise MailingMediaError(
-                "Файл фотографии рассылки не найден."
+            if photo_path is None:
+                raise MailingMediaError(
+                    "Один из файлов фотографий рассылки не найден."
+                )
+
+            try:
+                content = normalize_mailing_photo(photo_path.read_bytes())
+            except MailingImageError as error:
+                raise MailingMediaError(str(error)) from error
+
+            photos.append(
+                BufferedInputFile(
+                    content,
+                    filename=f"{photo_path.stem}.jpg",
+                )
             )
 
-        return FSInputFile(photo_path)
+        return photos
 
     async def run_forever(self) -> None:
         await self.queue.recover_stale_deliveries()

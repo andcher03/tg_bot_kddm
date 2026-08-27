@@ -18,6 +18,10 @@ from sqlalchemy import (
 )
 
 from services.database import SessionLocal
+from services.mailing_images import (
+    MailingImageError,
+    normalize_mailing_photo,
+)
 from services.mailing_media import (
     MAILING_UPLOAD_DIR,
     resolve_mailing_photo_path,
@@ -55,6 +59,7 @@ templates = Jinja2Templates(
 # =========================================================
 
 UPLOAD_DIR = MAILING_UPLOAD_DIR
+MAX_MAILING_PHOTOS = 9
 
 UPLOAD_DIR.mkdir(
     parents=True,
@@ -294,79 +299,65 @@ def mailing_users_search_query(search_query: str):
 # СОХРАНЕНИЕ ФОТО
 # =========================================================
 
-async def save_uploaded_photo(form):
-
-    photo = form.get("photo")
-
-    if not photo:
-        return None, None
-
-
-    filename = getattr(
-        photo,
-        "filename",
-        None
-    )
-
-    if not filename:
-        return None, None
-
-
-    content_type = getattr(
-        photo,
-        "content_type",
-        None
-    )
-
-
-    extensions = {
-        "image/jpeg": ".jpg",
-        "image/png": ".png",
-        "image/webp": ".webp",
+async def save_uploaded_photos(form, existing_count: int = 0):
+    allowed_content_types = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
     }
 
+    photos = [
+        photo
+        for photo in form.getlist("photos")
+        if getattr(photo, "filename", None)
+    ]
 
-    if content_type not in extensions:
+    if existing_count + len(photos) > MAX_MAILING_PHOTOS:
+        return [], "К рассылке можно прикрепить не более 9 фотографий."
 
-        return (
-            None,
-            "Можно загрузить только JPG, PNG или WEBP."
+    prepared_photos = []
+    for photo in photos:
+        content_type = getattr(photo, "content_type", None)
+        if content_type not in allowed_content_types:
+            return [], "Можно загрузить только JPG, PNG или WEBP."
+
+        try:
+            prepared_photos.append(
+                normalize_mailing_photo(await photo.read())
+            )
+        except MailingImageError as error:
+            return [], str(error)
+
+    photo_urls = []
+    for content in prepared_photos:
+        new_filename = f"{uuid4().hex}.jpg"
+        (UPLOAD_DIR / new_filename).write_bytes(content)
+        photo_urls.append(f"/static/uploads/mailing/{new_filename}")
+
+    return photo_urls, None
+
+
+def normalized_photo_urls(values) -> list[str]:
+    return list(
+        dict.fromkeys(
+            str(value).strip()
+            for value in values
+            if value and str(value).strip()
         )
-
-
-    content = await photo.read()
-
-
-    # Максимум 10 МБ
-    if len(content) > 10 * 1024 * 1024:
-
-        return (
-            None,
-            "Размер фотографии не должен превышать 10 МБ."
-        )
-
-
-    new_filename = (
-        f"{uuid4().hex}"
-        f"{extensions[content_type]}"
     )
 
 
-    file_path = (
-        UPLOAD_DIR / new_filename
-    )
+def validate_photo_urls(photo_urls: list[str]) -> str | None:
+    if len(photo_urls) > MAX_MAILING_PHOTOS:
+        return "К рассылке можно прикрепить не более 9 фотографий."
 
+    if any(
+        resolve_mailing_photo_path(photo_url) is None
+        for photo_url in photo_urls
+    ):
+        return "Одна из фотографий рассылки не найдена."
 
-    file_path.write_bytes(content)
-
-
-    photo_url = (
-        "/static/uploads/"
-        f"mailing/{new_filename}"
-    )
-
-
-    return photo_url, None
+    return None
 
 
 # =========================================================
@@ -479,8 +470,8 @@ async def mailing_page(
             "recipient_count":
                 None,
 
-            "photo_url":
-                None,
+            "photo_urls":
+                [],
 
             "photo_error":
                 None,
@@ -526,25 +517,19 @@ async def mailing_preview(
         )
 
 
-    # Если фото уже было загружено
-    photo_url = str(
-        form.get(
-            "existing_photo_url"
-        )
-        or ""
-    ) or None
-
-
-    # Если выбрали новое фото —
-    # заменяем старое
-    new_photo_url, photo_error = (
-        await save_uploaded_photo(form)
+    photo_urls = normalized_photo_urls(
+        form.getlist("existing_photo_urls")
     )
+    photo_error = validate_photo_urls(photo_urls)
 
-
-    if new_photo_url:
-
-        photo_url = new_photo_url
+    if photo_error:
+        photo_urls = []
+    else:
+        new_photo_urls, photo_error = await save_uploaded_photos(
+            form,
+            existing_count=len(photo_urls),
+        )
+        photo_urls.extend(new_photo_urls)
 
 
     async with SessionLocal() as session:
@@ -617,8 +602,8 @@ async def mailing_preview(
             "recipient_count":
                 recipient_count,
 
-            "photo_url":
-                photo_url,
+            "photo_urls":
+                photo_urls,
 
             "photo_error":
                 photo_error,
@@ -651,7 +636,7 @@ async def mailing_send(
     ) = parse_mailing_form(form)
 
     request_key = parse_request_key(form)
-    photo_url = str(form.get("photo_url") or "").strip() or None
+    photo_urls = normalized_photo_urls(form.getlist("photo_urls"))
 
     if not message:
         raise HTTPException(
@@ -665,13 +650,11 @@ async def mailing_send(
             detail="Текст рассылки превышает 4096 символов.",
         )
 
-    if (
-        photo_url
-        and resolve_mailing_photo_path(photo_url) is None
-    ):
+    photo_error = validate_photo_urls(photo_urls)
+    if photo_error:
         raise HTTPException(
             status_code=400,
-            detail="Фотография рассылки не найдена.",
+            detail=photo_error,
         )
 
     async with SessionLocal() as session:
@@ -693,7 +676,7 @@ async def mailing_send(
             session=session,
             request_key=request_key,
             message=message,
-            photo_url=photo_url,
+            photo_urls=photo_urls,
             all_users=all_users,
             universities=selected_universities,
             event_ids=selected_event_ids,
@@ -725,6 +708,7 @@ async def mailing_history_page(
                     id,
                     message,
                     photo_url,
+                    photo_urls,
                     all_users,
                     universities,
                     event_ids,
@@ -795,6 +779,7 @@ async def mailing_history_detail_page(
                     id,
                     message,
                     photo_url,
+                    photo_urls,
                     all_users,
                     universities,
                     event_ids,
@@ -975,7 +960,7 @@ async def repeat_mailing_campaign(
         campaign_result = await session.execute(
             text(
                 """
-                SELECT id, message, photo_url
+                SELECT id, message, photo_url, photo_urls
                 FROM mailing_campaigns
                 WHERE id = :campaign_id
                 """
@@ -1007,10 +992,11 @@ async def repeat_mailing_campaign(
             )
 
         message = str(source_campaign["message"] or "")
-        photo_url = (
-            str(source_campaign["photo_url"] or "").strip()
-            or None
+        photo_urls = normalized_photo_urls(
+            source_campaign["photo_urls"] or []
         )
+        if not photo_urls and source_campaign["photo_url"]:
+            photo_urls = [str(source_campaign["photo_url"])]
 
         if not message:
             raise HTTPException(
@@ -1027,20 +1013,18 @@ async def repeat_mailing_campaign(
                 ),
             )
 
-        if (
-            photo_url
-            and resolve_mailing_photo_path(photo_url) is None
-        ):
+        photo_error = validate_photo_urls(photo_urls)
+        if photo_error:
             raise HTTPException(
                 status_code=400,
-                detail="Фотография исходной рассылки не найдена.",
+                detail=photo_error,
             )
 
         enqueue_result = await enqueue_campaign(
             session=session,
             request_key=request_key,
             message=message,
-            photo_url=photo_url,
+            photo_urls=photo_urls,
             all_users=False,
             universities=[],
             event_ids=[],

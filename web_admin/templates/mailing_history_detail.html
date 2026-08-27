@@ -6,6 +6,7 @@
 
 
 {% block content %}
+{% set campaign_photos = campaign.photo_urls or ([campaign.photo_url] if campaign.photo_url else []) %}
 
 <div class="mailing-detail-page">
 
@@ -184,17 +185,21 @@
                         </div>
 
 
-                        {% if campaign.photo_url %}
+                        {% if campaign_photos %}
 
                             {% if campaign.message|length <= 1024 %}
 
                             <div class="telegram-bubble telegram-bubble-media">
 
-                                <img
-                                    src="{{ campaign.photo_url }}"
-                                    alt="Фото рассылки"
-                                    class="telegram-message-photo"
-                                >
+                                <div class="telegram-media-grid telegram-media-grid-{{ campaign_photos|length }}">
+                                    {% for photo_url in campaign_photos %}
+                                    <img
+                                        src="{{ photo_url }}"
+                                        alt="Фото рассылки {{ loop.index }}"
+                                        class="telegram-message-photo"
+                                    >
+                                    {% endfor %}
+                                </div>
 
                                 {% if campaign.message %}
                                 <div class="telegram-message-caption">{{ campaign.message }}</div>
@@ -212,11 +217,15 @@
 
                             <div class="telegram-bubble telegram-bubble-media telegram-bubble-photo-only">
 
-                                <img
-                                    src="{{ campaign.photo_url }}"
-                                    alt="Фото рассылки"
-                                    class="telegram-message-photo"
-                                >
+                                <div class="telegram-media-grid telegram-media-grid-{{ campaign_photos|length }}">
+                                    {% for photo_url in campaign_photos %}
+                                    <img
+                                        src="{{ photo_url }}"
+                                        alt="Фото рассылки {{ loop.index }}"
+                                        class="telegram-message-photo"
+                                    >
+                                    {% endfor %}
+                                </div>
 
                                 <div class="telegram-message-time telegram-message-time-on-photo">
                                     {% if campaign.created_at %}

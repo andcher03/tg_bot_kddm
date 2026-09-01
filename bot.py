@@ -19,6 +19,7 @@ from handlers.events import router as events_router
 from handlers.main_sections import router as main_sections_router
 from handlers.afisha import router as afisha_router
 from handlers.youth_map import router as youth_map_router
+from handlers.youth_organizations import router as youth_organizations_router
 from handlers.channel_members import router as channel_members_router
 from handlers.subscription import router as subscription_router
 from middlewares.logger import LoggerMiddleware
@@ -62,6 +63,7 @@ dp.include_router(channel_router)
 dp.include_router(profile_router)
 dp.include_router(events_router)
 dp.include_router(main_sections_router)
+dp.include_router(youth_organizations_router)
 dp.include_router(afisha_router)
 dp.include_router(youth_map_router)
 

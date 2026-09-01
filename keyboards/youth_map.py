@@ -12,6 +12,12 @@ def youth_map_keyboard():
                     text="🌐 Открыть карту",
                     url="https://yandex.ru/maps/?um=constructor%3Afef308ce117fdf669220581a494652d1065236fcb79f683c336e1fae9826e7c5&source=constructorLink"
                 )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏠 Главное меню",
+                    callback_data="youth_map:main_menu",
+                )
             ]
         ]
     )

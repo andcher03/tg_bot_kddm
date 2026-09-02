@@ -13,6 +13,8 @@ from keyboards.moved_to_kazan import (
     consultations_keyboard,
     moved_to_kazan_menu,
     moved_to_kazan_page_keyboard,
+    service_phone_details_keyboard,
+    service_phones_keyboard,
     student_medicine_details_keyboard,
     student_medicine_keyboard,
 )
@@ -65,7 +67,9 @@ MOVED_TO_KAZAN_PAGES = {
     "emergency": {
         "title": "☎️ Телефоны экстренных служб",
         "text": (
-            "Здесь появятся телефоны городских и экстренных служб."
+            "Здесь собраны важные номера экстренных, бытовых и "
+            "дорожных служб Казани, а также телефоны доверия.\n\n"
+            "Выберите нужный раздел:"
         ),
         "photo": None,
     },
@@ -170,6 +174,78 @@ CONSULTATION_PAGES = {
                 "https://vk.ru/dobrovoletskzn",
             ),
         ),
+    },
+}
+
+SERVICE_PHONE_PAGES = {
+    "emergency": {
+        "title": "🚨 Телефоны экстренных служб",
+        "text": (
+            "Единая служба спасения (МЧС), пожарная охрана — "
+            "<code>101</code>\n"
+            "Полиция — <code>102</code>\n"
+            "Скорая помощь — <code>103</code>\n"
+            "Экстренный канал помощи с мобильных телефонов — "
+            "<code>112</code>"
+        ),
+        "photo": "web_admin/static/bot_emergency_services.png",
+    },
+    "utilities": {
+        "title": "🏠 Телефоны жилищно-бытовых служб",
+        "text": (
+            "Решаем проблемы с газом, отоплением, электричеством "
+            "и управляющей компанией.\n\n"
+            "<b>Газовая служба</b>\n"
+            "Экстренный номер: <code>104</code>\n"
+            "Контакт-центр по вопросам расчёта за газ:\n"
+            "<code>+7 (843) 292-44-62</code>\n"
+            "<code>+7 (843) 292-58-85</code>\n"
+            "<code>+7 (843) 222-05-55</code>\n\n"
+            "<b>Водоканал</b>\n"
+            "Аварийно-диспетчерская служба: "
+            "<code>+7 (843) 231-62-60</code>\n\n"
+            "<b>Электросети</b>\n"
+            "<code>+7 (800) 200-08-78</code>\n\n"
+            "<b>Теплосеть</b>\n"
+            "<code>+7 (843) 211-61-68</code>\n"
+            "<code>+7 (843) 211-17-17</code> — «Казэнерго»\n"
+            "<code>+7 (800) 234-82-43</code> — «Татэнерго»\n\n"
+            "<b>УК «ПЖКХ»</b>\n"
+            "<code>+7 (843) 260-02-40</code>\n\n"
+            "<b>Госжилинспекция Татарстана</b>\n"
+            "<code>+7 (843) 555-69-01</code>\n\n"
+            "<b>МУП «Городское благоустройство»</b>\n"
+            "<code>+7 (843) 555-07-96</code>\n\n"
+            "<b>Единая дежурно-диспетчерская служба Казани</b>\n"
+            "<code>+7 (843) 236-41-23</code> — контакт-центр "
+            "системы «Открытая Казань»\n"
+            "<code>+7 (843) 222-72-22</code> — ЕДДС"
+        ),
+        "photo": "web_admin/static/bot_utility_services.png",
+    },
+    "road": {
+        "title": "🚗 Телефоны дорожных служб",
+        "text": (
+            "Разбираемся с происшествиями на дороге.\n\n"
+            "Комитет транспорта: <code>+7 (843) 223-28-28</code>\n\n"
+            "Госавтоинспекция по РТ: "
+            "<code>+7 (843) 533-38-88</code>"
+        ),
+        "photo": "web_admin/static/bot_road_services.png",
+    },
+    "trust": {
+        "title": "🤍 Телефоны доверия",
+        "text": (
+            "Звонить на телефон доверия стоит, когда вам тяжело, "
+            "страшно, одиноко или больно. На линии работают "
+            "профильные специалисты.\n\n"
+            "Телефон центра психолого-педагогической помощи детям "
+            "и молодёжи «Доверие»: <code>+7 (843) 598-33-73</code>\n\n"
+            "Телефон доверия Министерства внутренних дел Республики "
+            "Татарстан (круглосуточно): "
+            "<code>+7 (843) 291-20-02</code>"
+        ),
+        "photo": None,
     },
 }
 
@@ -389,6 +465,61 @@ async def consultation_details(callback: CallbackQuery):
     )
 
 
+@router.callback_query(
+    F.data.startswith("moved_to_kazan:service_phone:")
+)
+async def service_phone_details(callback: CallbackQuery):
+    page_key = callback.data.removeprefix(
+        "moved_to_kazan:service_phone:"
+    )
+    page = SERVICE_PHONE_PAGES.get(page_key)
+
+    if page is None:
+        await callback.answer(
+            "Раздел пока недоступен.",
+            show_alert=True,
+        )
+        return
+
+    await callback.answer()
+    text = f"<b>{page['title']}</b>\n\n{page['text']}"
+    keyboard = service_phone_details_keyboard()
+    photo = page.get("photo")
+    photo_path = PROJECT_ROOT / photo if photo else None
+
+    if photo_path and photo_path.is_file():
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=FSInputFile(photo_path),
+            caption=text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return
+
+    if photo_path:
+        logger.warning(
+            "Не найдено изображение раздела телефонов %s: %s",
+            page_key,
+            photo_path,
+        )
+
+    if callback.message.photo:
+        await callback.message.delete()
+        await callback.message.answer(
+            text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return
+
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+
+
 @router.callback_query(F.data.startswith("moved_to_kazan:"))
 async def moved_to_kazan_page(callback: CallbackQuery):
     page_key = callback.data.removeprefix("moved_to_kazan:")
@@ -408,6 +539,8 @@ async def moved_to_kazan_page(callback: CallbackQuery):
         keyboard = student_medicine_keyboard()
     elif page_key == "consultations":
         keyboard = consultations_keyboard()
+    elif page_key == "emergency":
+        keyboard = service_phones_keyboard()
     else:
         keyboard = moved_to_kazan_page_keyboard(
             _placeholder_links(page_key)

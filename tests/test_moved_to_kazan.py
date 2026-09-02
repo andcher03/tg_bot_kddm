@@ -2,16 +2,20 @@ from handlers.main_sections import (
     CONSULTATION_PAGES,
     MOVED_TO_KAZAN_PAGES,
     MOVED_TO_KAZAN_TEXT,
+    SERVICE_PHONE_PAGES,
     STUDENT_MEDICINE_DETAILS_TEXT,
     _placeholder_links,
 )
 from keyboards.moved_to_kazan import (
     CONSULTATION_BUTTONS,
     MOVED_TO_KAZAN_BUTTONS,
+    SERVICE_PHONE_BUTTONS,
     consultation_details_keyboard,
     consultations_keyboard,
     moved_to_kazan_menu,
     moved_to_kazan_page_keyboard,
+    service_phone_details_keyboard,
+    service_phones_keyboard,
     student_medicine_details_keyboard,
     student_medicine_keyboard,
 )
@@ -60,7 +64,7 @@ def test_placeholder_pages_have_two_links_and_back_button():
         "mfc",
     }
 
-    for page_key in ("emergency", "mfc"):
+    for page_key in ("mfc",):
         links = _placeholder_links(page_key)
         keyboard = moved_to_kazan_page_keyboard(links)
 
@@ -160,3 +164,62 @@ def test_consultation_links_match_supplied_sources():
     assert "https://vk.ru/app5619682_-221293346" in legal_links.values()
     assert "https://vk.ru/molparlamentkzn" in legal_links.values()
     assert "https://vk.ru/dobrovoletskzn" in volunteer_links.values()
+
+
+def test_service_phones_page_contains_four_requested_buttons():
+    page = MOVED_TO_KAZAN_PAGES["emergency"]
+    keyboard = service_phones_keyboard()
+
+    assert "важные номера экстренных" in page["text"]
+    assert len(SERVICE_PHONE_BUTTONS) == 4
+    assert [
+        row[0].callback_data
+        for row in keyboard.inline_keyboard
+    ] == [
+        "moved_to_kazan:service_phone:emergency",
+        "moved_to_kazan:service_phone:utilities",
+        "moved_to_kazan:service_phone:road",
+        "moved_to_kazan:service_phone:trust",
+        "moved_to_kazan:back",
+    ]
+
+
+def test_service_phone_pages_use_supplied_images():
+    assert SERVICE_PHONE_PAGES["emergency"]["photo"] == (
+        "web_admin/static/bot_emergency_services.png"
+    )
+    assert SERVICE_PHONE_PAGES["utilities"]["photo"] == (
+        "web_admin/static/bot_utility_services.png"
+    )
+    assert SERVICE_PHONE_PAGES["road"]["photo"] == (
+        "web_admin/static/bot_road_services.png"
+    )
+    assert SERVICE_PHONE_PAGES["trust"]["photo"] is None
+
+
+def test_service_phone_pages_have_only_back_button():
+    assert set(SERVICE_PHONE_PAGES) == {
+        "emergency",
+        "utilities",
+        "road",
+        "trust",
+    }
+
+    keyboard = service_phone_details_keyboard()
+
+    assert len(keyboard.inline_keyboard) == 1
+    assert keyboard.inline_keyboard[0][0].text == "⬅️ Назад"
+    assert (
+        keyboard.inline_keyboard[0][0].callback_data
+        == "moved_to_kazan:emergency"
+    )
+
+
+def test_service_phone_messages_fit_telegram_limits():
+    for page in SERVICE_PHONE_PAGES.values():
+        text = f"<b>{page['title']}</b>\n\n{page['text']}"
+
+        if page["photo"]:
+            assert len(text) <= 1024
+        else:
+            assert len(text) <= 4096

@@ -38,6 +38,25 @@ CONSULTATION_BUTTONS = (
     ),
 )
 
+SERVICE_PHONE_BUTTONS = (
+    (
+        "🚨 Телефоны экстренных служб",
+        "moved_to_kazan:service_phone:emergency",
+    ),
+    (
+        "🏠 Телефоны жилищно-бытовых служб",
+        "moved_to_kazan:service_phone:utilities",
+    ),
+    (
+        "🚗 Телефоны дорожных служб",
+        "moved_to_kazan:service_phone:road",
+    ),
+    (
+        "🤍 Телефоны доверия",
+        "moved_to_kazan:service_phone:trust",
+    ),
+)
+
 
 def moved_to_kazan_menu() -> InlineKeyboardMarkup:
     buttons = [
@@ -156,3 +175,38 @@ def consultation_details_keyboard(
     )
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def service_phones_keyboard() -> InlineKeyboardMarkup:
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=text,
+                callback_data=callback_data,
+            )
+        ]
+        for text, callback_data in SERVICE_PHONE_BUTTONS
+    ]
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data="moved_to_kazan:back",
+            )
+        ]
+    )
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def service_phone_details_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+            InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data="moved_to_kazan:emergency",
+            )
+            ]
+        ]
+    )

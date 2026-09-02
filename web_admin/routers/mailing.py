@@ -32,20 +32,12 @@ from services.models import (
     Event,
     Registration,
 )
+from services.universities import UNIVERSITY_NAMES
 
 
 router = APIRouter()
 
-UNIVERSITIES = [
-    "КФУ",
-    "КНИТУ-КАИ",
-    "КНИТУ",
-    "КГЭУ",
-    "КГАСУ",
-    "КазГМУ",
-    "Университет управления ТИСБИ",
-    "Другое",
-]
+UNIVERSITIES = list(UNIVERSITY_NAMES)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

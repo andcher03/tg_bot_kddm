@@ -9,6 +9,7 @@ from services.registration_service import RegistrationService
 from services.menu_service import show_main_menu
 from services.review_service import ReviewService
 from services.mailing_service import MailingService
+from services.universities import UNIVERSITIES_BY_CALLBACK
 
 from keyboards.profile import profile_menu, edit_profile_menu, profile_back_keyboard
 from keyboards.registration import (
@@ -270,19 +271,7 @@ async def save_university(
     callback: CallbackQuery,
     state: FSMContext
 ):
-    universities = {
-        "uni_kfu": "КФУ",
-        "uni_kai": "КНИТУ-КАИ",
-        "uni_khti": "КНИТУ",
-        "uni_kgeu": "КГЭУ",
-        "uni_kgasu": "КГАСУ",
-        "uni_kgmu": "КазГМУ",
-        "uni_tisbi": "Университет управления ТИСБИ",
-        "uni_other": "Другое",
-        "uni_none": "Я не студент",
-    }
-
-    university = universities.get(callback.data)
+    university = UNIVERSITIES_BY_CALLBACK.get(callback.data)
 
     if not university:
         await callback.answer("Не удалось определить университет", show_alert=True)

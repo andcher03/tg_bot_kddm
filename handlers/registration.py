@@ -16,6 +16,7 @@ from services.postgres_user_service import PostgresUserService
 from services.menu_service import show_main_menu
 from services.registration_service import RegistrationService
 from services.postgres_event_service import PostgresEventService
+from services.universities import UNIVERSITIES_BY_CALLBACK
 
 
 
@@ -26,19 +27,6 @@ registration_service = RegistrationService()
 event_service = PostgresEventService()
 
 PERSONAL_DATA_CONSENT_VERSION = "2026-09-02"
-
-
-UNIVERSITIES = {
-    "uni_kfu": "КФУ",
-    "uni_kai": "КНИТУ-КАИ",
-    "uni_khti": "КНИТУ",
-    "uni_kgeu": "КГЭУ",
-    "uni_kgasu": "КГАСУ",
-    "uni_kgmu": "КазГМУ",
-    "uni_tisbi": "Университет управления ТИСБИ",
-    "uni_other": "Другое",
-    "uni_none": "Я не студент",
-}
 
 
 @router.callback_query(
@@ -79,7 +67,7 @@ async def education(
 
     await callback.answer()
 
-    university = UNIVERSITIES.get(
+    university = UNIVERSITIES_BY_CALLBACK.get(
         callback.data
     )
 

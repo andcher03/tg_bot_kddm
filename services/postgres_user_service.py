@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 
 from services.database import SessionLocal
@@ -37,7 +39,10 @@ class PostgresUserService:
         telegram_id: int,
         username: str,
         full_name: str,
-        university: str
+        university: str,
+        personal_data_consent_at: datetime | None = None,
+        personal_data_consent_document: str | None = None,
+        personal_data_consent_version: str | None = None,
     ):
         async with SessionLocal() as session:
 
@@ -58,6 +63,13 @@ class PostgresUserService:
                 full_name=full_name,
                 university=university,
                 role="user",
+                personal_data_consent_at=personal_data_consent_at,
+                personal_data_consent_document=(
+                    personal_data_consent_document
+                ),
+                personal_data_consent_version=(
+                    personal_data_consent_version
+                ),
             )
 
             session.add(user)

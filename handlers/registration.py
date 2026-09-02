@@ -1,8 +1,16 @@
+from datetime import datetime, timezone
+
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from states.registration import RegistrationState
+
+from keyboards.registration import (
+    PERSONAL_DATA_CONSENT_CALLBACK,
+    PERSONAL_DATA_CONSENT_URL,
+    university_keyboard,
+)
 
 from services.postgres_user_service import PostgresUserService
 from services.menu_service import show_main_menu
@@ -17,6 +25,8 @@ users = PostgresUserService()
 registration_service = RegistrationService()
 event_service = PostgresEventService()
 
+PERSONAL_DATA_CONSENT_VERSION = "2026-09-02"
+
 
 UNIVERSITIES = {
     "uni_kfu": "КФУ",
@@ -29,6 +39,33 @@ UNIVERSITIES = {
     "uni_other": "Другое",
     "uni_none": "Я не студент",
 }
+
+
+@router.callback_query(
+    RegistrationState.consent,
+    F.data == PERSONAL_DATA_CONSENT_CALLBACK,
+)
+async def accept_personal_data_consent(
+    callback: CallbackQuery,
+    state: FSMContext,
+):
+    await callback.answer("Согласие принято")
+
+    await state.update_data(
+        personal_data_consent_at=(
+            datetime.now(timezone.utc).isoformat()
+        ),
+        personal_data_consent_document=PERSONAL_DATA_CONSENT_URL,
+        personal_data_consent_version=PERSONAL_DATA_CONSENT_VERSION,
+    )
+    await state.set_state(RegistrationState.education)
+
+    await callback.message.edit_text(
+        "✅ <b>Согласие получено</b>\n\n"
+        "Теперь выберите ваш ВУЗ:",
+        parse_mode="HTML",
+        reply_markup=university_keyboard(),
+    )
 
 
 @router.callback_query(
@@ -64,6 +101,15 @@ async def education(
         "event_id"
     )
 
+    consent_at_raw = data.get(
+        "personal_data_consent_at"
+    )
+    consent_at = (
+        datetime.fromisoformat(consent_at_raw)
+        if consent_at_raw
+        else None
+    )
+
     # дальше создаём пользователя / регистрацию
 
     # и только потом:
@@ -77,7 +123,14 @@ async def education(
         telegram_id=telegram_id,
         username=username,
         full_name=full_name,
-        university=university
+        university=university,
+        personal_data_consent_at=consent_at,
+        personal_data_consent_document=data.get(
+            "personal_data_consent_document"
+        ),
+        personal_data_consent_version=data.get(
+            "personal_data_consent_version"
+        ),
     )
 
     await state.clear()

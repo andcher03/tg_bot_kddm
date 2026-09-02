@@ -16,7 +16,7 @@ SUPPORT_AND_BENEFITS_BUTTONS = (
 )
 
 PSYCHOLOGICAL_CENTER_URL = (
-    "https://example.com/support/psychological-center-doverie"
+    "https://vk.com/doverie_kzn"
 )
 
 

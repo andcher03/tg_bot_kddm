@@ -73,6 +73,21 @@ class User(Base):
         server_default=text("CURRENT_TIMESTAMP"),
     )
 
+    personal_data_consent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    personal_data_consent_document: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
+    personal_data_consent_version: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
     registrations: Mapped[list["Registration"]] = relationship(
         back_populates="user"
     )

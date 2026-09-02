@@ -1,6 +1,6 @@
 from handlers.main_sections import (
     GRANTS_AND_CONTESTS_PAGES,
-    _grants_placeholder_links,
+    GRANTS_AND_CONTESTS_TEXT,
 )
 from keyboards.grants_and_contests import (
     GRANTS_AND_CONTESTS_BUTTONS,
@@ -24,19 +24,41 @@ def test_grants_menu_contains_pages_and_main_menu_button():
     ]
 
 
-def test_grants_pages_have_placeholder_links_and_back_button():
+def test_grants_section_contains_requested_intro():
+    assert "Участвуй в конкурсах для студентов" in (
+        GRANTS_AND_CONTESTS_TEXT
+    )
+    assert "придумал проект → защитил → получил финансирование" in (
+        GRANTS_AND_CONTESTS_TEXT
+    )
+
+
+def test_grants_pages_have_requested_links_and_back_button():
     assert set(GRANTS_AND_CONTESTS_PAGES) == {
         "kddm_contests",
         "grants",
     }
 
-    for page_key in GRANTS_AND_CONTESTS_PAGES:
-        links = _grants_placeholder_links(page_key)
-        keyboard = grants_and_contests_page_keyboard(links)
+    contests = GRANTS_AND_CONTESTS_PAGES["kddm_contests"]
+    contests_keyboard = grants_and_contests_page_keyboard(
+        contests["links"]
+    )
+    grants = GRANTS_AND_CONTESTS_PAGES["grants"]
+    grants_keyboard = grants_and_contests_page_keyboard(
+        grants["links"]
+    )
 
-        assert len(links) == 2
-        assert keyboard.inline_keyboard[0][0].url.endswith("/1")
-        assert keyboard.inline_keyboard[1][0].url.endswith("/2")
-        assert keyboard.inline_keyboard[2][0].callback_data == (
-            "grants_and_contests:back"
-        )
+    assert "Лучший молодой преподаватель Казани" in contests["text"]
+    assert "Доброволец года" in contests["text"]
+    assert len(contests_keyboard.inline_keyboard) == 1
+    assert contests_keyboard.inline_keyboard[0][0].callback_data == (
+        "grants_and_contests:back"
+    )
+
+    assert "Гранты Росмолодёжи" in grants["text"]
+    assert grants_keyboard.inline_keyboard[0][0].url == (
+        "https://fadm.gov.ru/directions/grant/"
+    )
+    assert grants_keyboard.inline_keyboard[1][0].callback_data == (
+        "grants_and_contests:back"
+    )

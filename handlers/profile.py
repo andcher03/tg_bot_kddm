@@ -11,7 +11,10 @@ from services.review_service import ReviewService
 from services.mailing_service import MailingService
 
 from keyboards.profile import profile_menu, edit_profile_menu, profile_back_keyboard
-from keyboards.registration import university_keyboard
+from keyboards.registration import (
+    personal_data_consent_keyboard,
+    university_keyboard,
+)
 
 from states.profile import ProfileState
 from states.registration import RegistrationState
@@ -51,16 +54,17 @@ async def profile(
         )
 
         await state.set_state(
-            RegistrationState.education
+            RegistrationState.consent
         )
 
         await message.answer(
-            "👤 <b>Мой профиль</b>\n\n"
-            "Для доступа к персональному профилю "
-            "нужно пройти короткую регистрацию.\n\n"
-            "Выберите ваш университет:",
+            "🔐 <b>Согласие на обработку персональных данных</b>\n\n"
+            "Перед регистрацией ознакомьтесь с документом "
+            "по ссылке ниже.\n\n"
+            "Нажимая «Согласен, продолжить», вы подтверждаете "
+            "своё согласие на обработку персональных данных.",
             parse_mode="HTML",
-            reply_markup=university_keyboard()
+            reply_markup=personal_data_consent_keyboard()
         )
 
         return

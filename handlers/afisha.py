@@ -5,7 +5,7 @@ from aiogram.types import (
     ReplyKeyboardRemove,
 )
 from states.registration import RegistrationState
-from keyboards.registration import university_keyboard
+from keyboards.registration import personal_data_consent_keyboard
 
 from keyboards.afisha import (
     afisha_menu,
@@ -216,16 +216,17 @@ async def register_event(
         )
 
         await state.set_state(
-            RegistrationState.education
+            RegistrationState.consent
         )
 
         await callback.message.edit_text(
-            "🎓 <b>Для регистрации на мероприятие "
-            "нужно создать профиль.</b>\n\n"
-            "Это займёт несколько секунд.\n\n"
-            "Выберите ваш ВУЗ:",
+            "🔐 <b>Согласие на обработку персональных данных</b>\n\n"
+            "Для создания профиля и регистрации на мероприятие "
+            "ознакомьтесь с документом по ссылке ниже.\n\n"
+            "Нажимая «Согласен, продолжить», вы подтверждаете "
+            "своё согласие на обработку персональных данных.",
             parse_mode="HTML",
-            reply_markup=university_keyboard()
+            reply_markup=personal_data_consent_keyboard()
         )
 
         return

@@ -4,7 +4,6 @@ from handlers.main_sections import (
     MOVED_TO_KAZAN_TEXT,
     SERVICE_PHONE_PAGES,
     STUDENT_MEDICINE_DETAILS_TEXT,
-    _placeholder_links,
 )
 from keyboards.moved_to_kazan import (
     CONSULTATION_BUTTONS,
@@ -56,7 +55,7 @@ def test_moved_to_kazan_intro_contains_requested_text():
     assert "О чём хочешь узнать больше?" in MOVED_TO_KAZAN_TEXT
 
 
-def test_placeholder_pages_have_two_links_and_back_button():
+def test_mfc_page_has_only_back_button():
     assert set(MOVED_TO_KAZAN_PAGES) == {
         "clinics",
         "consultations",
@@ -64,17 +63,20 @@ def test_placeholder_pages_have_two_links_and_back_button():
         "mfc",
     }
 
-    for page_key in ("mfc",):
-        links = _placeholder_links(page_key)
-        keyboard = moved_to_kazan_page_keyboard(links)
+    keyboard = moved_to_kazan_page_keyboard(())
 
-        assert len(links) == 2
-        assert keyboard.inline_keyboard[0][0].url.endswith("/1")
-        assert keyboard.inline_keyboard[1][0].url.endswith("/2")
-        assert (
-            keyboard.inline_keyboard[2][0].callback_data
-            == "moved_to_kazan:back"
-        )
+    assert len(keyboard.inline_keyboard) == 1
+    assert (
+        keyboard.inline_keyboard[0][0].callback_data
+        == "moved_to_kazan:back"
+    )
+
+
+def test_mfc_page_contains_temporary_message():
+    text = MOVED_TO_KAZAN_PAGES["mfc"]["text"]
+
+    assert "Стоим в очереди МФЦ" in text
+    assert "Скоро вернёмся!" in text
 
 
 def test_student_medicine_page_uses_image_and_details_button():

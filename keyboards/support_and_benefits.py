@@ -15,6 +15,17 @@ SUPPORT_AND_BENEFITS_BUTTONS = (
     ),
 )
 
+YOUNG_SCIENTIST_BUTTONS = (
+    (
+        "🎓 Конкурс именных стипендий мэра",
+        "support_and_benefits:scientists:mayor_scholarship",
+    ),
+    (
+        "🔬 Премия имени Е. К. Завойского",
+        "support_and_benefits:scientists:zavoysky_prize",
+    ),
+)
+
 PSYCHOLOGICAL_CENTER_URL = (
     "https://vk.com/doverie_kzn"
 )
@@ -62,6 +73,47 @@ def support_and_benefits_page_keyboard(
             InlineKeyboardButton(
                 text="⬅️ Назад",
                 callback_data="support_and_benefits:back",
+            )
+        ]
+    )
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def young_scientists_keyboard() -> InlineKeyboardMarkup:
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=text,
+                callback_data=callback_data,
+            )
+        ]
+        for text, callback_data in YOUNG_SCIENTIST_BUTTONS
+    ]
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data="support_and_benefits:back",
+            )
+        ]
+    )
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def young_scientist_program_keyboard(
+    links: tuple[tuple[str, str], ...],
+) -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text=text, url=url)]
+        for text, url in links
+    ]
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data="support_and_benefits:young_scientists",
             )
         ]
     )

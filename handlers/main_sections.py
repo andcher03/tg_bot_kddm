@@ -2,9 +2,11 @@ import logging
 from pathlib import Path
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     CallbackQuery,
     FSInputFile,
+    InputMediaPhoto,
     Message,
 )
 
@@ -25,6 +27,8 @@ from keyboards.grants_and_contests import (
 from keyboards.support_and_benefits import (
     support_and_benefits_menu,
     support_and_benefits_page_keyboard,
+    young_scientist_program_keyboard,
+    young_scientists_keyboard,
 )
 from services.menu_service import hide_reply_keyboard, show_main_menu
 
@@ -33,6 +37,10 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_YOUNG_SCIENTIST_ALBUMS: dict[
+    tuple[int, int],
+    tuple[int, ...],
+] = {}
 
 
 MOVED_TO_KAZAN_TEXT = (
@@ -305,6 +313,60 @@ SUPPORT_AND_BENEFITS_PAGES = {
     },
 }
 
+YOUNG_SCIENTIST_PROGRAMS = {
+    "mayor_scholarship": {
+        "title": "🎓 Конкурс именных стипендий мэра",
+        "text": (
+            "Для получения стипендии необходимо придумать и оформить "
+            "научно-исследовательский проект по одному из направлений "
+            "на выбор.\n\n"
+            "Участвовать в конкурсе могут студенты, аспиранты, "
+            "ординаторы, специалисты по работе с молодёжью и участники "
+            "молодёжных общественных объединений. Победители получат "
+            "до 50 тысяч рублей.\n\n"
+            "Для участия в конкурсе необходимо подать заявку на почту "
+            "<code>kazankddm@yandex.ru</code>. Форму заявки можно найти "
+            "в положении.\n\n"
+            "Заявочная кампания продлится до 31 октября включительно."
+        ),
+        "images": tuple(
+            f"web_admin/static/{number}_stip.png"
+            for number in range(1, 6)
+        ),
+        "links": (
+            (
+                "📄 Положение",
+                "https://disk.yandex.ru/i/5WKZg_ZrjO-nyQ",
+            ),
+            (
+                "📝 Подать заявку через АИС «Молодёжь России»",
+                "https://myrosmol.ru/events/"
+                "b8f34b48-bf9f-4c80-a169-11104102732b",
+            ),
+        ),
+    },
+    "zavoysky_prize": {
+        "title": "🔬 Премия имени Е. К. Завойского",
+        "text": (
+            "Премия ежегодно вручается за открытия в "
+            "физико-математической сфере. Участниками могут стать "
+            "аспиранты и молодые учёные вузов и "
+            "научно-исследовательских учреждений Казани в возрасте "
+            "до 35 лет. Приз — до 100 000 рублей.\n\n"
+            "Приём заявок продлится до 20 сентября. Документы "
+            "необходимо отправить на электронную почту "
+            "<code>kazankddm@yandex.ru</code>."
+        ),
+        "images": ("web_admin/static/prem_zav.png",),
+        "links": (
+            (
+                "📄 Положение",
+                "https://disk.yandex.ru/i/CLt5ElZrNEIqqw",
+            ),
+        ),
+    },
+}
+
 GRANTS_AND_CONTESTS_TEXT = (
     "🏆 <b>Гранты и конкурсы для студентов</b>\n\n"
     "Участвуй в конкурсах для студентов, молодых педагогов и "
@@ -384,6 +446,30 @@ async def _show_support_and_benefits_menu(message: Message) -> None:
         parse_mode="HTML",
         reply_markup=support_and_benefits_menu(),
     )
+
+
+async def _delete_young_scientist_album(
+    callback: CallbackQuery,
+) -> None:
+    album_key = (
+        callback.message.chat.id,
+        callback.message.message_id,
+    )
+    message_ids = _YOUNG_SCIENTIST_ALBUMS.pop(album_key, ())
+    if not message_ids:
+        return
+
+    try:
+        await callback.bot.delete_messages(
+            chat_id=callback.message.chat.id,
+            message_ids=message_ids,
+        )
+    except TelegramBadRequest as error:
+        logger.warning(
+            "Не удалось удалить альбом поддержки учёных %s: %s",
+            message_ids,
+            error,
+        )
 
 
 async def _show_grants_and_contests_menu(message: Message) -> None:
@@ -608,6 +694,78 @@ async def support_and_benefits_main_menu(callback: CallbackQuery):
     await show_main_menu(callback.bot, callback.from_user.id)
 
 
+@router.callback_query(
+    F.data.startswith("support_and_benefits:scientists:")
+)
+async def young_scientist_program(callback: CallbackQuery):
+    page_key = callback.data.removeprefix(
+        "support_and_benefits:scientists:"
+    )
+    page = YOUNG_SCIENTIST_PROGRAMS.get(page_key)
+
+    if page is None:
+        await callback.answer(
+            "Раздел пока недоступен.",
+            show_alert=True,
+        )
+        return
+
+    await callback.answer()
+
+    text = f"<b>{page['title']}</b>\n\n{page['text']}"
+    keyboard = young_scientist_program_keyboard(page["links"])
+    image_paths = [PROJECT_ROOT / image for image in page["images"]]
+    missing_images = [path for path in image_paths if not path.is_file()]
+
+    if missing_images:
+        logger.warning(
+            "Не найдены изображения раздела поддержки учёных %s: %s",
+            page_key,
+            ", ".join(map(str, missing_images)),
+        )
+        if callback.message.photo:
+            await callback.message.delete()
+            await callback.message.answer(
+                text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+            return
+
+        await callback.message.edit_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return
+
+    await callback.message.delete()
+
+    if len(image_paths) == 1:
+        await callback.message.answer_photo(
+            photo=FSInputFile(image_paths[0]),
+            caption=text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return
+
+    album_messages = await callback.message.answer_media_group(
+        media=[
+            InputMediaPhoto(media=FSInputFile(image_path))
+            for image_path in image_paths
+        ]
+    )
+    details_message = await callback.message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    _YOUNG_SCIENTIST_ALBUMS[
+        (details_message.chat.id, details_message.message_id)
+    ] = tuple(message.message_id for message in album_messages)
+
+
 @router.callback_query(F.data.startswith("support_and_benefits:"))
 async def support_and_benefits_page(callback: CallbackQuery):
     page_key = callback.data.removeprefix("support_and_benefits:")
@@ -622,17 +780,40 @@ async def support_and_benefits_page(callback: CallbackQuery):
 
     await callback.answer()
 
-    text = f"<b>{page['title']}</b>\n\n{page['text']}"
-    keyboard = support_and_benefits_page_keyboard(
-        page["links"]
-    )
-    photo = page.get("photo")
+    if page_key == "young_scientists":
+        await _delete_young_scientist_album(callback)
 
-    if photo:
+    text = f"<b>{page['title']}</b>\n\n{page['text']}"
+    if page_key == "young_scientists":
+        keyboard = young_scientists_keyboard()
+    else:
+        keyboard = support_and_benefits_page_keyboard(
+            page["links"]
+        )
+    photo = page.get("photo")
+    photo_path = PROJECT_ROOT / photo if photo else None
+
+    if photo_path and photo_path.is_file():
         await callback.message.delete()
         await callback.message.answer_photo(
-            photo=FSInputFile(Path(photo)),
+            photo=FSInputFile(photo_path),
             caption=text,
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return
+
+    if photo_path:
+        logger.warning(
+            "Не найдено изображение раздела поддержки %s: %s",
+            page_key,
+            photo_path,
+        )
+
+    if callback.message.photo:
+        await callback.message.delete()
+        await callback.message.answer(
+            text,
             parse_mode="HTML",
             reply_markup=keyboard,
         )

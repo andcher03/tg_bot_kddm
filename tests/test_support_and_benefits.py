@@ -1,12 +1,24 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+
 from handlers.main_sections import (
+    PROJECT_ROOT,
     SUPPORT_AND_BENEFITS_PAGES,
     SUPPORT_AND_BENEFITS_TEXT,
+    YOUNG_SCIENTIST_PROGRAMS,
+    _delete_young_scientist_album,
+    _YOUNG_SCIENTIST_ALBUMS,
 )
 from keyboards.support_and_benefits import (
     PSYCHOLOGICAL_CENTER_URL,
     SUPPORT_AND_BENEFITS_BUTTONS,
+    YOUNG_SCIENTIST_BUTTONS,
     support_and_benefits_menu,
     support_and_benefits_page_keyboard,
+    young_scientist_program_keyboard,
+    young_scientists_keyboard,
 )
 
 
@@ -43,9 +55,7 @@ def test_support_pages_have_requested_links_and_back_button():
         families["links"]
     )
     scientists = SUPPORT_AND_BENEFITS_PAGES["young_scientists"]
-    scientists_keyboard = support_and_benefits_page_keyboard(
-        scientists["links"]
-    )
+    scientists_keyboard = young_scientists_keyboard()
 
     assert "Молодёжный жилищный конкурс" in families["text"]
     assert families_keyboard.inline_keyboard[0][0].url == (
@@ -58,7 +68,86 @@ def test_support_pages_have_requested_links_and_back_button():
     assert "стипендий Мэра Казани" in scientists["text"]
     assert "Завойского" in scientists["text"]
     assert "Арбузовых" in scientists["text"]
-    assert len(scientists_keyboard.inline_keyboard) == 1
+    assert len(scientists_keyboard.inline_keyboard) == 3
     assert scientists_keyboard.inline_keyboard[0][0].callback_data == (
+        "support_and_benefits:scientists:mayor_scholarship"
+    )
+    assert scientists_keyboard.inline_keyboard[1][0].callback_data == (
+        "support_and_benefits:scientists:zavoysky_prize"
+    )
+    assert scientists_keyboard.inline_keyboard[2][0].callback_data == (
         "support_and_benefits:back"
     )
+
+
+def test_young_scientist_programs_have_images_text_and_links():
+    assert len(YOUNG_SCIENTIST_BUTTONS) == 2
+    assert set(YOUNG_SCIENTIST_PROGRAMS) == {
+        "mayor_scholarship",
+        "zavoysky_prize",
+    }
+
+    scholarship = YOUNG_SCIENTIST_PROGRAMS["mayor_scholarship"]
+    scholarship_keyboard = young_scientist_program_keyboard(
+        scholarship["links"]
+    )
+    assert scholarship["images"] == tuple(
+        f"web_admin/static/{number}_stip.png"
+        for number in range(1, 6)
+    )
+    assert "до 31 октября включительно" in scholarship["text"]
+    assert "<code>kazankddm@yandex.ru</code>" in scholarship["text"]
+    assert scholarship_keyboard.inline_keyboard[0][0].url == (
+        "https://disk.yandex.ru/i/5WKZg_ZrjO-nyQ"
+    )
+    assert scholarship_keyboard.inline_keyboard[1][0].url == (
+        "https://myrosmol.ru/events/"
+        "b8f34b48-bf9f-4c80-a169-11104102732b"
+    )
+
+    zavoysky = YOUNG_SCIENTIST_PROGRAMS["zavoysky_prize"]
+    zavoysky_keyboard = young_scientist_program_keyboard(
+        zavoysky["links"]
+    )
+    assert zavoysky["images"] == ("web_admin/static/prem_zav.png",)
+    assert "до 20 сентября" in zavoysky["text"]
+    assert "<code>kazankddm@yandex.ru</code>" in zavoysky["text"]
+    assert zavoysky_keyboard.inline_keyboard[0][0].url == (
+        "https://disk.yandex.ru/i/CLt5ElZrNEIqqw"
+    )
+
+    for program in YOUNG_SCIENTIST_PROGRAMS.values():
+        for image in program["images"]:
+            assert (PROJECT_ROOT / image).is_file()
+
+    for keyboard in (scholarship_keyboard, zavoysky_keyboard):
+        assert keyboard.inline_keyboard[-1][0].callback_data == (
+            "support_and_benefits:young_scientists"
+        )
+
+
+def test_young_scientist_callback_data_fits_telegram_limit():
+    for _, callback_data in YOUNG_SCIENTIST_BUTTONS:
+        assert len(callback_data.encode()) <= 64
+
+
+@pytest.mark.asyncio
+async def test_young_scientist_album_is_deleted_on_back():
+    album_key = (12345, 900)
+    _YOUNG_SCIENTIST_ALBUMS[album_key] = (895, 896, 897, 898, 899)
+    bot = SimpleNamespace(delete_messages=AsyncMock())
+    callback = SimpleNamespace(
+        bot=bot,
+        message=SimpleNamespace(
+            chat=SimpleNamespace(id=album_key[0]),
+            message_id=album_key[1],
+        ),
+    )
+
+    await _delete_young_scientist_album(callback)
+
+    bot.delete_messages.assert_awaited_once_with(
+        chat_id=album_key[0],
+        message_ids=(895, 896, 897, 898, 899),
+    )
+    assert album_key not in _YOUNG_SCIENTIST_ALBUMS

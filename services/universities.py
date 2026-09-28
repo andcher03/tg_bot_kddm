@@ -11,6 +11,9 @@ UNIVERSITY_OPTIONS = (
     ("uni_tisbi", "ТИСБИ", "🎓"),
     ("uni_pgufksit", "ПГУФКСиТ", "🏅"),
     ("uni_kazgik", "КазГИК", "🎭"),
+    ("uni_kiu", "КИУ", "🎓"),
+    ("uni_kki_ruk", "ККИ РУК", "🎓"),
+    ("uni_kyui", "КЮИ", "⚖️"),
 )
 
 UNIVERSITIES_BY_CALLBACK = {

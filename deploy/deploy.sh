@@ -34,6 +34,28 @@ restart_services() {
     done
 }
 
+fetch_origin_main() {
+    local attempt
+    local max_attempts=4
+
+    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+        log "Получение origin/main, попытка $attempt из $max_attempts"
+        if runuser -u kddm -- git \
+            -c http.version=HTTP/1.1 \
+            -C "$APP_DIR" \
+            fetch --prune --no-tags origin main; then
+            return 0
+        fi
+
+        if [[ "$attempt" -lt "$max_attempts" ]]; then
+            log "GitHub прервал загрузку. Повтор через $((attempt * 5)) сек."
+            sleep "$((attempt * 5))"
+        fi
+    done
+
+    fail "Не удалось получить origin/main после $max_attempts попыток."
+}
+
 if [[ $# -ne 1 ]]; then
     fail "Ожидался SHA commit в единственном аргументе."
 fi
@@ -89,7 +111,7 @@ if [[ -n "$(runuser -u kddm -- git -C "$APP_DIR" status --porcelain --untracked-
 fi
 
 log "Получение commit $TARGET_SHA"
-runuser -u kddm -- git -C "$APP_DIR" fetch --prune origin main
+fetch_origin_main
 runuser -u kddm -- git -C "$APP_DIR" cat-file -e "${TARGET_SHA}^{commit}"
 runuser -u kddm -- git -C "$APP_DIR" merge-base --is-ancestor "$TARGET_SHA" origin/main
 

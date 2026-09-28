@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -31,10 +32,12 @@ from keyboards.support_and_benefits import (
     young_scientists_keyboard,
 )
 from services.menu_service import hide_reply_keyboard, show_main_menu
+from services.settings_service import SettingsService
 
 
 router = Router()
 logger = logging.getLogger(__name__)
+settings_service = SettingsService()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _YOUNG_SCIENTIST_ALBUMS: dict[
@@ -472,6 +475,70 @@ async def _delete_young_scientist_album(
         )
 
 
+def _parse_cached_photo_file_ids(
+    value: str | None,
+    expected_count: int,
+) -> tuple[str, ...]:
+    if not value:
+        return ()
+
+    try:
+        file_ids = json.loads(value)
+    except (TypeError, json.JSONDecodeError):
+        return ()
+
+    if (
+        not isinstance(file_ids, list)
+        or len(file_ids) != expected_count
+        or not all(isinstance(file_id, str) and file_id for file_id in file_ids)
+    ):
+        return ()
+
+    return tuple(file_ids)
+
+
+async def _cached_young_scientist_photos(
+    page_key: str,
+    expected_count: int,
+) -> tuple[str, ...]:
+    try:
+        value = await settings_service.get(
+            f"young_scientist_photos:{page_key}:v1"
+        )
+    except Exception:
+        logger.exception(
+            "Не удалось прочитать кеш изображений %s",
+            page_key,
+        )
+        return ()
+
+    return _parse_cached_photo_file_ids(value, expected_count)
+
+
+async def _cache_young_scientist_photos(
+    page_key: str,
+    messages: list[Message],
+) -> None:
+    file_ids = [
+        message.photo[-1].file_id
+        for message in messages
+        if message.photo
+    ]
+    if len(file_ids) != len(messages):
+        return
+
+    try:
+        await settings_service.set(
+            f"young_scientist_photos:{page_key}:v1",
+            json.dumps(file_ids),
+        )
+    except Exception:
+        logger.exception(
+            "Не удалось сохранить кеш изображений %s",
+            page_key,
+        )
+
+
 async def _show_grants_and_contests_menu(message: Message) -> None:
     if message.photo:
         await message.delete()
@@ -739,23 +806,77 @@ async def young_scientist_program(callback: CallbackQuery):
         )
         return
 
+    cached_photos = await _cached_young_scientist_photos(
+        page_key,
+        len(image_paths),
+    )
     await callback.message.delete()
 
     if len(image_paths) == 1:
-        await callback.message.answer_photo(
-            photo=FSInputFile(image_paths[0]),
-            caption=text,
-            parse_mode="HTML",
-            reply_markup=keyboard,
-        )
+        try:
+            photo_message = await callback.message.answer_photo(
+                photo=(
+                    cached_photos[0]
+                    if cached_photos
+                    else FSInputFile(image_paths[0])
+                ),
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+        except TelegramBadRequest:
+            if not cached_photos:
+                raise
+            logger.warning(
+                "Telegram отклонил кеш изображения %s; загружаем файл",
+                page_key,
+            )
+            cached_photos = ()
+            photo_message = await callback.message.answer_photo(
+                photo=FSInputFile(image_paths[0]),
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+
+        if not cached_photos:
+            await _cache_young_scientist_photos(
+                page_key,
+                [photo_message],
+            )
         return
 
-    album_messages = await callback.message.answer_media_group(
-        media=[
-            InputMediaPhoto(media=FSInputFile(image_path))
-            for image_path in image_paths
-        ]
-    )
+    try:
+        album_messages = await callback.message.answer_media_group(
+            media=[
+                InputMediaPhoto(media=photo)
+                for photo in (
+                    cached_photos
+                    or tuple(FSInputFile(path) for path in image_paths)
+                )
+            ]
+        )
+    except TelegramBadRequest:
+        if not cached_photos:
+            raise
+        logger.warning(
+            "Telegram отклонил кеш альбома %s; загружаем файлы",
+            page_key,
+        )
+        cached_photos = ()
+        album_messages = await callback.message.answer_media_group(
+            media=[
+                InputMediaPhoto(media=FSInputFile(image_path))
+                for image_path in image_paths
+            ]
+        )
+
+    if not cached_photos:
+        await _cache_young_scientist_photos(
+            page_key,
+            album_messages,
+        )
+
     details_message = await callback.message.answer(
         text,
         parse_mode="HTML",

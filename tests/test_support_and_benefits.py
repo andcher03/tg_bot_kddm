@@ -8,6 +8,7 @@ from handlers.main_sections import (
     SUPPORT_AND_BENEFITS_PAGES,
     SUPPORT_AND_BENEFITS_TEXT,
     YOUNG_SCIENTIST_PROGRAMS,
+    _parse_cached_photo_file_ids,
     _delete_young_scientist_album,
     _YOUNG_SCIENTIST_ALBUMS,
 )
@@ -129,6 +130,24 @@ def test_young_scientist_programs_have_images_text_and_links():
 def test_young_scientist_callback_data_fits_telegram_limit():
     for _, callback_data in YOUNG_SCIENTIST_BUTTONS:
         assert len(callback_data.encode()) <= 64
+
+
+@pytest.mark.parametrize(
+    ("value", "expected_count", "expected"),
+    [
+        ('["first", "second"]', 2, ("first", "second")),
+        ('["first"]', 2, ()),
+        ('{"photo": "first"}', 1, ()),
+        ("not-json", 1, ()),
+        (None, 1, ()),
+    ],
+)
+def test_cached_photo_file_ids_are_validated(
+    value,
+    expected_count,
+    expected,
+):
+    assert _parse_cached_photo_file_ids(value, expected_count) == expected
 
 
 @pytest.mark.asyncio

@@ -12,6 +12,7 @@ from services.channel_stats_service import (
     get_channel_stats,
     refresh_channel_member_count,
 )
+from services.quiz_data import QUIZ_CODE
 
 
 router = APIRouter()
@@ -45,6 +46,17 @@ async def dashboard(request: Request):
             users_result
             .mappings()
             .one()
+        )
+
+        quiz_completions_count = await session.scalar(
+            text(
+                """
+                SELECT COUNT(*)
+                FROM quiz_participations
+                WHERE quiz_code = :quiz_code
+                """
+            ),
+            {"quiz_code": QUIZ_CODE},
         )
 
 
@@ -187,6 +199,9 @@ async def dashboard(request: Request):
 
             "users_today":
                 users_stats["today"] or 0,
+
+            "quiz_completions_count":
+                quiz_completions_count or 0,
 
             "latest_mailing":
                 latest_mailing,

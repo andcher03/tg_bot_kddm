@@ -99,6 +99,26 @@ class User(Base):
     )
 
 
+class QuizParticipation(Base):
+    __tablename__ = "quiz_participations"
+
+    quiz_code: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    first_completed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
+
+
 class Event(Base):
     __tablename__ = "events"
 

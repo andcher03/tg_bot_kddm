@@ -9,6 +9,12 @@ def user_menu():
         keyboard=[
             [
                 KeyboardButton(
+                    text="🧩 Пройти тест",
+                    style="success",
+                ),
+            ],
+            [
+                KeyboardButton(
                     text="👤 Мой профиль"
                 ),
                 KeyboardButton(

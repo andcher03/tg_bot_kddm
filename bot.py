@@ -22,6 +22,7 @@ from handlers.youth_map import router as youth_map_router
 from handlers.youth_organizations import router as youth_organizations_router
 from handlers.channel_members import router as channel_members_router
 from handlers.subscription import router as subscription_router
+from handlers.quiz import router as quiz_router
 from middlewares.logger import LoggerMiddleware
 from middlewares.subscription import SubscriptionMiddleware
 
@@ -58,6 +59,7 @@ dp.callback_query.outer_middleware(subscription_middleware)
 dp.include_router(subscription_router)
 dp.include_router(start_router)
 dp.include_router(registration_router)
+dp.include_router(quiz_router)
 dp.include_router(user_router)
 dp.include_router(channel_router)
 dp.include_router(profile_router)

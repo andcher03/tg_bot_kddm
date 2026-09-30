@@ -9,7 +9,7 @@ def user_menu():
         keyboard=[
             [
                 KeyboardButton(
-                    text="🧩 Пройти тест",
+                    text="🧩 Какая ты аномалия в Казани?",
                     style="success",
                 ),
             ],

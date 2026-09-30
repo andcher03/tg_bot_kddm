@@ -35,7 +35,7 @@ users = PostgresUserService()
 quiz_service = QuizService()
 settings_service = SettingsService()
 
-QUIZ_BUTTON_TEXT = "🧩 Пройти тест"
+QUIZ_BUTTON_TEXT = "🧩 Какая ты аномалия в Казани?"
 QUIZ_PHOTO_CACHE_VERSION = "v1"
 
 

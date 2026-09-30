@@ -115,5 +115,5 @@ def test_every_question_allows_return_to_main_menu():
 
 def test_quiz_is_first_green_main_menu_button():
     first_button = user_menu().keyboard[0][0]
-    assert first_button.text == "🧩 Пройти тест"
+    assert first_button.text == "🧩 Какая ты аномалия в Казани?"
     assert first_button.style == "success"

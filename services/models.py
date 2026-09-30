@@ -101,18 +101,29 @@ class User(Base):
 
 class QuizParticipation(Base):
     __tablename__ = "quiz_participations"
+    __table_args__ = (
+        Index(
+            "ix_quiz_participations_quiz_code",
+            "quiz_code",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+    )
 
     quiz_code: Mapped[str] = mapped_column(
         String(64),
-        primary_key=True,
+        nullable=False,
     )
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True,
+        nullable=False,
     )
 
-    first_completed_at: Mapped[datetime] = mapped_column(
+    completed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=text("CURRENT_TIMESTAMP"),

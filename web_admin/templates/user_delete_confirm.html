@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+Удаление пользователя — Молодёжь Казани
+{% endblock %}
+
+
+{% block content %}
+
+<a href="/users/{{ user.id }}" class="back-link">
+    ← Вернуться к пользователю
+</a>
+
+
+<div class="user-delete-card">
+
+    <span class="user-delete-label">
+        Необратимое действие
+    </span>
+
+    <h1>
+        Удалить пользователя?
+    </h1>
+
+    <p>
+        Вы собираетесь удалить
+        <strong>{{ user.full_name }}</strong>
+        ({{ user.user_code }}).
+    </p>
+
+    <p class="user-delete-warning">
+        Вместе с профилем будут удалены регистрации на мероприятия,
+        отзывы, подписки на рассылки и прохождения теста. История уже
+        отправленных рассылок сохранится без ссылки на пользователя.
+    </p>
+
+    {% if delete_error %}
+
+    <div class="error-notice" role="alert">
+        Пользователя не удалось удалить из-за связанных данных.
+        Обновите страницу и повторите попытку.
+    </div>
+
+    {% endif %}
+
+    <div class="user-delete-actions">
+
+        <a
+            href="/users/{{ user.id }}"
+            class="cancel-button"
+        >
+            Отмена
+        </a>
+
+        <form
+            method="post"
+            action="/users/{{ user.id }}/delete"
+        >
+            <button type="submit" class="danger-button">
+                Да, удалить пользователя
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

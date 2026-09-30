@@ -33,6 +33,7 @@ def test_editor_can_access_working_sections(path):
         "/mailing",
         "/mailing/history/1",
         "/api/users",
+        "/users/12/delete",
     ],
 )
 def test_editor_cannot_access_admin_sections(path):

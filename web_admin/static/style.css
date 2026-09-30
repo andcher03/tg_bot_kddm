@@ -282,12 +282,77 @@ nav a:hover{
     font: inherit;
     font-size: 13px;
     font-weight: 700;
+    text-decoration: none;
 
     cursor: pointer;
     transition: background .15s ease;
 }
 
 .danger-button:hover{ background: #F6D8D5; }
+
+.table-danger-link{
+    color: var(--danger);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.table-danger-link:hover{ text-decoration: underline; }
+
+.success-notice,
+.error-notice{
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.success-notice{
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.error-notice{
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.user-delete-card{
+    max-width: 620px;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.user-delete-card h1{ margin: 8px 0 14px; }
+.user-delete-card p{ line-height: 1.55; }
+
+.user-delete-label{
+    color: var(--danger);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+}
+
+.user-delete-warning{
+    margin: 18px 0;
+    padding: 14px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-radius: var(--radius-sm);
+}
+
+.user-delete-actions{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.user-delete-actions form{ margin: 0; }
 
 .mailing-repeat-close{
     display: inline-flex;

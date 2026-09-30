@@ -45,6 +45,14 @@
 
 </form>
 
+{% if deleted %}
+
+<div class="success-notice" role="status">
+    Пользователь и связанные с ним данные удалены.
+</div>
+
+{% endif %}
+
 <div class="table-container">
 
     <table>
@@ -58,6 +66,7 @@
                 <th>Telegram</th>
                 <th>Username</th>
                 <th>Дата регистрации</th>
+                <th>Действия</th>
             </tr>
         </thead>
 
@@ -113,12 +122,21 @@
                     {% endif %}
                 </td>
 
+                <td>
+                    <a
+                        href="/users/{{ user.id }}/delete"
+                        class="table-danger-link"
+                    >
+                        Удалить
+                    </a>
+                </td>
+
             </tr>
 
             {% else %}
 
             <tr>
-                <td colspan="7">
+                <td colspan="8">
                     Пользователей пока нет.
                 </td>
             </tr>

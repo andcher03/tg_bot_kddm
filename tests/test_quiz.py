@@ -4,6 +4,7 @@ import pytest
 
 from keyboards.quiz import quiz_question_keyboard
 from keyboards.user_menu import user_menu
+from services.models import QuizParticipation
 from services.quiz_data import (
     BACKROOMS,
     LAKE,
@@ -22,6 +23,14 @@ from services.quiz_data import (
 def test_quiz_has_seven_questions_and_six_results():
     assert len(QUESTIONS) == 7
     assert len(RESULTS) == 6
+
+
+def test_each_quiz_completion_can_be_stored_separately():
+    primary_key_columns = {
+        column.name
+        for column in QuizParticipation.__table__.primary_key.columns
+    }
+    assert primary_key_columns == {"id"}
 
 
 def test_each_result_appears_once_in_every_question():

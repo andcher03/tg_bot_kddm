@@ -9,6 +9,7 @@ class QuizService:
         self,
         telegram_id: int,
         quiz_code: str,
+        result_id: str,
     ) -> bool:
         async with SessionLocal() as session:
             user_id = await session.scalar(
@@ -24,6 +25,7 @@ class QuizService:
                 QuizParticipation(
                     quiz_code=quiz_code,
                     user_id=user_id,
+                    result_id=result_id,
                 )
             )
             await session.commit()

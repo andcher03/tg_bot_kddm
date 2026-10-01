@@ -13,6 +13,7 @@ from services.channel_stats_service import (
     refresh_channel_member_count,
 )
 from services.quiz_data import QUIZ_CODE
+from services.quiz_stats_service import get_quiz_statistics
 
 
 router = APIRouter()
@@ -228,3 +229,8 @@ async def dashboard_channel_history(
     return await get_channel_history(
         days=days
     )
+
+
+@router.get("/api/dashboard/quiz-statistics")
+async def dashboard_quiz_statistics():
+    return await get_quiz_statistics()

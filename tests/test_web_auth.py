@@ -33,6 +33,7 @@ def test_editor_can_access_working_sections(path):
         "/mailing",
         "/mailing/history/1",
         "/api/users",
+        "/api/dashboard/quiz-statistics",
         "/users/12/delete",
     ],
 )

@@ -260,6 +260,7 @@ async def answer_quiz_question(
         await quiz_service.record_completion(
             callback.from_user.id,
             QUIZ_CODE,
+            result_id,
         )
     except Exception:
         logger.exception(

@@ -7,7 +7,7 @@
 
 {% block scripts %}
 <script
-    src="/static/dashboard.js?v=20260825-1"
+    src="/static/dashboard.js?v=20261001-1"
     defer
 ></script>
 {% endblock %}
@@ -262,7 +262,13 @@
 
         <!-- ПРОХОЖДЕНИЯ ТЕСТА -->
 
-        <div class="dashboard-metric-card">
+        <button
+            type="button"
+            class="dashboard-metric-card dashboard-subscriber-card"
+            id="quizStatisticsOpen"
+            aria-haspopup="dialog"
+            aria-controls="quizStatisticsDialog"
+        >
 
             <div class="dashboard-metric-top">
 
@@ -277,7 +283,10 @@
             </div>
 
 
-            <strong class="dashboard-metric-value">
+            <strong
+                class="dashboard-metric-value"
+                id="quizCompletionsCount"
+            >
                 {{ quiz_completions_count }}
             </strong>
 
@@ -294,7 +303,14 @@
 
             </div>
 
-        </div>
+            <span class="dashboard-metric-footer">
+                <span></span>
+                <span class="dashboard-metric-open-hint">
+                    Открыть статистику →
+                </span>
+            </span>
+
+        </button>
 
     </div>
 
@@ -745,6 +761,120 @@
             aria-label="График количества подписчиков по датам"
             hidden
         ></div>
+
+    </div>
+
+</dialog>
+
+
+<dialog
+    class="channel-history-dialog quiz-statistics-dialog"
+    id="quizStatisticsDialog"
+    aria-labelledby="quizStatisticsTitle"
+>
+
+    <div class="channel-history-modal quiz-statistics-modal">
+
+        <header class="channel-history-header">
+
+            <div>
+
+                <span class="channel-history-kicker">
+                    Тест
+                </span>
+
+                <h2 id="quizStatisticsTitle">
+                    Статистика прохождений
+                </h2>
+
+                <p>
+                    Результаты и история всех завершённых прохождений
+                </p>
+
+            </div>
+
+            <button
+                type="button"
+                class="channel-history-close"
+                id="quizStatisticsClose"
+                aria-label="Закрыть статистику"
+            >
+                ×
+            </button>
+
+        </header>
+
+
+        <div
+            class="quiz-statistics-status"
+            id="quizStatisticsStatus"
+        >
+            Загружаем статистику…
+        </div>
+
+
+        <div
+            class="quiz-statistics-content"
+            id="quizStatisticsContent"
+            hidden
+        >
+
+            <section class="quiz-statistics-section">
+
+                <div class="quiz-statistics-section-header">
+                    <div>
+                        <span>Всего прохождений</span>
+                        <strong id="quizStatisticsTotal">0</strong>
+                    </div>
+
+                    <h3>Распределение результатов</h3>
+                </div>
+
+                <div
+                    class="quiz-result-chart"
+                    id="quizResultChart"
+                    role="img"
+                    aria-label="Диаграмма количества прохождений по результатам"
+                ></div>
+
+            </section>
+
+
+            <section class="quiz-statistics-section">
+
+                <div class="quiz-statistics-section-header">
+                    <h3>Кто прошёл тест</h3>
+                </div>
+
+                <div class="quiz-history-table-wrap">
+
+                    <table class="quiz-history-table">
+
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Дата и время</th>
+                                <th>Результат</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="quizHistoryRows"></tbody>
+
+                    </table>
+
+                </div>
+
+                <p
+                    class="quiz-history-empty"
+                    id="quizHistoryEmpty"
+                    hidden
+                >
+                    Завершённых прохождений пока нет.
+                </p>
+
+            </section>
+
+        </div>
 
     </div>
 

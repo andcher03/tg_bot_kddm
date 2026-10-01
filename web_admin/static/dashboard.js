@@ -13,6 +13,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const historySummary = document.getElementById("channelHistorySummary");
     const historyCurrent = document.getElementById("channelHistoryCurrent");
     const historyChange = document.getElementById("channelHistoryChange");
+    const quizOpenButton = document.getElementById("quizStatisticsOpen");
+    const quizDialog = document.getElementById("quizStatisticsDialog");
+    const quizCloseButton = document.getElementById("quizStatisticsClose");
+    const quizStatus = document.getElementById("quizStatisticsStatus");
+    const quizContent = document.getElementById("quizStatisticsContent");
+    const quizTotal = document.getElementById("quizStatisticsTotal");
+    const quizCount = document.getElementById("quizCompletionsCount");
+    const quizChart = document.getElementById("quizResultChart");
+    const quizRows = document.getElementById("quizHistoryRows");
+    const quizEmpty = document.getElementById("quizHistoryEmpty");
 
     if (!countEl || !changeEl || !arrowEl || !valueEl || !lastEventEl) {
         return;
@@ -274,6 +284,138 @@ document.addEventListener("DOMContentLoaded", () => {
                 button.classList.add("active");
                 loadHistory(Number(button.dataset.historyDays));
             });
+        });
+    }
+
+    function renderQuizChart(distribution, total) {
+        const maxCount = Math.max(
+            1,
+            ...distribution.map((item) => Number(item.count || 0))
+        );
+        const chartRows = distribution.map((item) => {
+            const row = document.createElement("div");
+            const heading = document.createElement("div");
+            const label = document.createElement("span");
+            const count = document.createElement("strong");
+            const percentage = document.createElement("span");
+            const track = document.createElement("div");
+            const bar = document.createElement("div");
+            const value = Number(item.count || 0);
+
+            row.className = "quiz-result-row";
+            heading.className = "quiz-result-heading";
+            label.className = "quiz-result-label";
+            count.className = "quiz-result-count";
+            percentage.className = "quiz-result-percentage";
+            track.className = "quiz-result-track";
+            bar.className = "quiz-result-bar";
+
+            label.textContent = item.label;
+            count.textContent = value.toLocaleString("ru-RU");
+            percentage.textContent = `${new Intl.NumberFormat("ru-RU", {
+                maximumFractionDigits: 1
+            }).format(total ? (value / total) * 100 : 0)}%`;
+            count.append(" · ", percentage);
+            bar.style.width = `${(value / maxCount) * 100}%`;
+            bar.title = `${item.label}: ${value.toLocaleString("ru-RU")}`;
+
+            heading.append(label, count);
+            track.append(bar);
+            row.append(heading, track);
+            return row;
+        });
+
+        quizChart.replaceChildren(...chartRows);
+    }
+
+    function renderQuizHistory(completions) {
+        const tableRows = completions.map((completion) => {
+            const row = document.createElement("tr");
+            const userCell = document.createElement("td");
+            const userLink = document.createElement("a");
+            const userName = document.createElement("strong");
+            const userDetails = document.createElement("span");
+            const timeCell = document.createElement("td");
+            const time = document.createElement("time");
+            const resultCell = document.createElement("td");
+
+            userLink.className = "quiz-history-user";
+            userLink.href = `/users/${completion.user_id}`;
+            userName.textContent = completion.full_name;
+            userDetails.textContent = completion.username
+                ? `@${completion.username}`
+                : (completion.user_code || "Без username");
+            userLink.append(userName, userDetails);
+            userCell.append(userLink);
+
+            time.dateTime = completion.completed_at;
+            time.textContent = completion.completed_at_label;
+            timeCell.append(time);
+
+            resultCell.textContent = completion.result_label;
+            if (!completion.result_id) {
+                resultCell.className = "quiz-history-result-muted";
+            }
+
+            row.append(userCell, timeCell, resultCell);
+            return row;
+        });
+
+        quizRows.replaceChildren(...tableRows);
+        quizEmpty.hidden = completions.length > 0;
+    }
+
+    async function loadQuizStatistics() {
+        quizStatus.hidden = false;
+        quizStatus.textContent = "Загружаем статистику…";
+        quizContent.hidden = true;
+
+        try {
+            const response = await fetch("/api/dashboard/quiz-statistics", {
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const total = Number(data.total || 0);
+
+            quizTotal.textContent = total.toLocaleString("ru-RU");
+            quizCount.textContent = total.toLocaleString("ru-RU");
+            renderQuizChart(data.distribution || [], total);
+            renderQuizHistory(data.completions || []);
+            quizStatus.hidden = true;
+            quizContent.hidden = false;
+        } catch (error) {
+            console.error("Quiz statistics loading failed", error);
+            quizStatus.textContent = (
+                "Не удалось загрузить статистику. Попробуйте ещё раз."
+            );
+        }
+    }
+
+    if (quizOpenButton && quizDialog && quizCloseButton) {
+        quizOpenButton.addEventListener("click", () => {
+            quizDialog.showModal();
+            loadQuizStatistics();
+        });
+
+        quizCloseButton.addEventListener("click", () => quizDialog.close());
+
+        quizDialog.addEventListener("click", (event) => {
+            const rect = quizDialog.getBoundingClientRect();
+            const inside = (
+                event.clientX >= rect.left
+                && event.clientX <= rect.right
+                && event.clientY >= rect.top
+                && event.clientY <= rect.bottom
+            );
+
+            if (!inside) {
+                quizDialog.close();
+            }
         });
     }
 

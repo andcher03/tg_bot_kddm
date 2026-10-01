@@ -102,9 +102,19 @@ class User(Base):
 class QuizParticipation(Base):
     __tablename__ = "quiz_participations"
     __table_args__ = (
+        CheckConstraint(
+            "result_id IS NULL OR result_id IN "
+            "('route', 'backrooms', 'station', 'song', 'lake', 'tubeteika')",
+            name="ck_quiz_participations_result_id",
+        ),
         Index(
             "ix_quiz_participations_quiz_code",
             "quiz_code",
+        ),
+        Index(
+            "ix_quiz_participations_quiz_result",
+            "quiz_code",
+            "result_id",
         ),
     )
 
@@ -121,6 +131,11 @@ class QuizParticipation(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+    )
+
+    result_id: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
     )
 
     completed_at: Mapped[datetime] = mapped_column(

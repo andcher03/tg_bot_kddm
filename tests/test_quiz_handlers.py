@@ -9,7 +9,7 @@ from handlers.quiz import (
     restart_quiz,
     start_quiz,
 )
-from services.quiz_data import QUIZ_CODE
+from services.quiz_data import QUIZ_CODE, ROUTE
 from states.quiz import QuizState
 from states.registration import RegistrationState
 
@@ -63,7 +63,7 @@ async def test_registered_user_starts_with_first_question(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_final_answer_records_only_completion_fact(monkeypatch):
+async def test_final_answer_records_completion_with_result(monkeypatch):
     record_completion = AsyncMock(return_value=True)
     cached_quiz_photo = AsyncMock(return_value=None)
     cache_quiz_photo = AsyncMock()
@@ -94,7 +94,7 @@ async def test_final_answer_records_only_completion_fact(monkeypatch):
     await answer_quiz_question(callback, state)
 
     state.clear.assert_awaited_once_with()
-    record_completion.assert_awaited_once_with(123, QUIZ_CODE)
+    record_completion.assert_awaited_once_with(123, QUIZ_CODE, ROUTE)
     send_kwargs = callback.message.answer_photo.await_args.kwargs
     assert "Ваш результат" in send_kwargs["caption"]
     assert send_kwargs["photo"].path.name == "route.png"

@@ -93,6 +93,7 @@ async def test_quiz_statistics_returns_distribution_and_history(
     result = await quiz_stats_service.get_quiz_statistics()
 
     assert result["total"] == 3
+    assert result["results_total"] == 2
     assert result["distribution"][0]["result_id"] == "route"
     assert result["distribution"][0]["count"] == 2
     assert all(

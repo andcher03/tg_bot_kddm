@@ -97,6 +97,9 @@ async def get_quiz_statistics() -> dict:
 
     return {
         "total": sum(raw_distribution.values()),
+        "results_total": sum(
+            item["count"] for item in distribution
+        ),
         "distribution": distribution,
         "completions": completions,
     }

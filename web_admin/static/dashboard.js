@@ -381,10 +381,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
             const total = Number(data.total || 0);
+            const resultsTotal = Number(data.results_total || 0);
 
             quizTotal.textContent = total.toLocaleString("ru-RU");
             quizCount.textContent = total.toLocaleString("ru-RU");
-            renderQuizChart(data.distribution || [], total);
+            renderQuizChart(data.distribution || [], resultsTotal);
             renderQuizHistory(data.completions || []);
             quizStatus.hidden = true;
             quizContent.hidden = false;

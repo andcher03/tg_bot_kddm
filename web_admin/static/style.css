@@ -4401,7 +4401,7 @@ a.dashboard-activity-card:hover{
     .event-detail-stats,
     .mailing-detail-stats,
     .form-row{
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .events-list{ grid-template-columns: 1fr; }
@@ -4452,4 +4452,655 @@ a.dashboard-activity-card:hover{
     }
 
     .review-export-button{ width: 100%; }
+}
+
+
+/* =========================================
+   МОБИЛЬНАЯ ВЕРСИЯ АДМИН-ПАНЕЛИ
+   ========================================= */
+
+.mobile-topbar,
+.mobile-menu-close,
+.mobile-nav-overlay{
+    display: none;
+}
+
+@media (max-width: 900px){
+    body{
+        min-width: 0;
+        overflow-x: hidden;
+    }
+
+    body.mobile-nav-open{
+        overflow: hidden;
+    }
+
+    .mobile-topbar{
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) 34px;
+        align-items: center;
+        gap: 10px;
+        min-height: 60px;
+        padding: max(9px, env(safe-area-inset-top)) 14px 9px;
+        background: rgba(18, 24, 26, .96);
+        border-bottom: 1px solid var(--ink-line);
+        backdrop-filter: blur(14px);
+    }
+
+    .mobile-menu-toggle{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        background: transparent;
+        border: 1px solid var(--ink-line);
+        border-radius: 11px;
+        cursor: pointer;
+    }
+
+    .mobile-menu-toggle span{
+        width: 17px;
+        height: 2px;
+        background: #fff;
+        border-radius: 2px;
+    }
+
+    .mobile-topbar-brand{
+        overflow: hidden;
+        color: #fff;
+        font-family: var(--font-display);
+        font-size: 14px;
+        font-weight: 800;
+        text-align: center;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-topbar-avatar{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        background: rgba(255, 255, 255, .1);
+        color: #fff;
+        border-radius: 10px;
+        font-family: var(--font-display);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .mobile-nav-overlay{
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        background: rgba(15, 23, 20, .55);
+        border: 0;
+        backdrop-filter: blur(2px);
+        cursor: pointer;
+    }
+
+    .mobile-nav-overlay:not([hidden]){
+        display: block;
+    }
+
+    .sidebar{
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 1000;
+        width: min(84vw, 320px);
+        height: 100dvh;
+        padding: max(22px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+        overflow-y: auto;
+        transform: translateX(-102%);
+        transition: transform .22s ease;
+        box-shadow: 18px 0 50px rgba(0, 0, 0, .22);
+    }
+
+    body.mobile-nav-open .sidebar{
+        transform: translateX(0);
+    }
+
+    .mobile-menu-close{
+        position: absolute;
+        top: max(14px, env(safe-area-inset-top));
+        right: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        background: rgba(255, 255, 255, .06);
+        color: #fff;
+        border: 1px solid var(--ink-line);
+        border-radius: 50%;
+        font: inherit;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .sidebar .logo{
+        padding-right: 44px;
+    }
+
+    .sidebar nav a{
+        min-height: 44px;
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .sidebar-logout-button{
+        min-height: 42px;
+    }
+
+    .content{
+        width: 100%;
+        min-width: 0;
+        margin-left: 0;
+        padding: 24px 20px 48px;
+    }
+
+    .page-header,
+    .dashboard-header{
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .page-actions,
+    .event-detail-actions{
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-updated{
+        align-items: flex-start;
+    }
+
+    .dashboard-page,
+    .mailing-form,
+    .event-create-card,
+    .profile-card,
+    .user-delete-card{
+        width: 100%;
+        max-width: none;
+    }
+
+    .event-detail-actions{
+        margin-top: 4px;
+    }
+
+    .mailing-detail-page{
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filter-search{
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 700px){
+    h1{ font-size: 26px; }
+    h2{ font-size: 18px; }
+
+    .content{
+        padding: 20px 14px calc(40px + env(safe-area-inset-bottom));
+    }
+
+    .page-header{
+        margin-bottom: 22px;
+    }
+
+    .page-actions > *,
+    .event-detail-actions > *,
+    .event-submit > *,
+    .event-edit-actions > *,
+    .user-delete-actions > *,
+    .mailing-form-actions > *,
+    .mailing-preview-heading-actions > *{
+        flex: 1 1 150px;
+    }
+
+    .primary-button,
+    .primary-link-button,
+    .secondary-link-button,
+    .cancel-button,
+    .reset-button,
+    .danger-button,
+    .restore-button,
+    .edit-event-button,
+    .mailing-preview-button,
+    .mailing-send-button,
+    .mailing-history-button,
+    .mailing-return-preview-button,
+    .mailing-edit-preview-button,
+    .mailing-repeat-button,
+    .mailing-repeat-cancel{
+        min-height: 44px;
+    }
+
+    .search-form,
+    .reviews-filter,
+    .registrations-search-form,
+    .registration-users-search,
+    .reviews-search-form,
+    .review-users-search{
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .search-form input[type="text"],
+    .search-form button,
+    .search-form .reset-button,
+    .reviews-filter select,
+    .reviews-filter button,
+    .registrations-search-field,
+    .catalog-search-field,
+    .registrations-search-form > .primary-button,
+    .registrations-search-form > .secondary-link-button,
+    .reviews-search-form > .primary-button,
+    .reviews-search-form > .secondary-link-button,
+    .registration-users-search > .primary-button,
+    .review-users-search > .primary-button{
+        width: 100%;
+        flex-basis: auto;
+    }
+
+    .content input,
+    .content select,
+    .content textarea{
+        font-size: 16px;
+    }
+
+    .event-create-card,
+    .mailing-card,
+    .user-delete-card,
+    .event-info-card,
+    .profile-card{
+        padding: 18px 16px;
+    }
+
+    .event-submit,
+    .event-edit-actions,
+    .user-delete-actions,
+    .mailing-form-actions,
+    .mailing-preview-toolbar,
+    .mailing-preview-heading-actions,
+    .mailing-detail-heading-actions{
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .radio-group{
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .radio-option{
+        min-height: 44px;
+        border-radius: var(--radius-sm);
+    }
+
+    .dashboard-metrics,
+    .dashboard-activity-grid,
+    .event-detail-stats,
+    .mailing-detail-stats,
+    .form-row,
+    .mailing-options-grid,
+    .mailing-selected-users{
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-metric-card{
+        min-height: 158px;
+        padding: 19px;
+    }
+
+    .dashboard-activity-card,
+    .dashboard-activity-card-top,
+    .dashboard-activity-footer,
+    .dashboard-event-meta,
+    .dashboard-review-links{
+        min-width: 0;
+    }
+
+    .dashboard-activity-card h3,
+    .dashboard-event-meta span,
+    .dashboard-review-text{
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-mailing-card{
+        grid-template-columns: 1fr;
+        padding: 14px;
+    }
+
+    .dashboard-mailing-media{
+        width: 100%;
+        height: 170px;
+    }
+
+    .dashboard-card-arrow{
+        display: none;
+    }
+
+    .dashboard-mailing-message{
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    .dashboard-mailing-stats{
+        gap: 10px 16px;
+    }
+
+    .dashboard-section-header{
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .registration-stats,
+    .review-stats,
+    .mailing-history-summary{
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card,
+    .mailing-history-summary-card{
+        min-width: 0;
+    }
+
+    .registration-detail-hero,
+    .review-detail-hero{
+        padding: 18px 16px;
+    }
+
+    .registration-detail-main h1,
+    .review-detail-main h1{
+        font-size: 24px;
+    }
+
+    .registration-participants-header,
+    .review-list-header{
+        padding: 18px 16px;
+    }
+
+    .registration-search-reset,
+    .review-search-reset{
+        align-self: flex-end;
+    }
+
+    .registration-event-card,
+    .review-event-card,
+    .event-card,
+    .dashboard-activity-card,
+    .mailing-history-card{
+        padding: 18px 16px;
+    }
+
+    .registration-event-card-top,
+    .review-event-card-top,
+    .event-detail-topline,
+    .registration-detail-topline,
+    .review-detail-topline{
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .review-event-card-footer{
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mailing-history-card{
+        grid-template-columns: 1fr;
+    }
+
+    .mailing-history-photo{
+        width: 100%;
+        height: 160px;
+    }
+
+    .mailing-history-card-stats{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        width: 100%;
+    }
+
+    .mailing-card-header,
+    .mailing-user-picker-heading,
+    .mailing-repeat-panel-header{
+        align-items: flex-start;
+    }
+
+    .mailing-dropzone{
+        min-height: 130px;
+        padding: 18px 14px;
+    }
+
+    .mailing-telegram-heading{
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .telegram-preview-header{
+        padding-inline: 12px;
+    }
+
+    .telegram-header-actions{
+        display: none;
+    }
+
+    .telegram-message-column{
+        max-width: calc(100% - 18px);
+    }
+
+    .mailing-recipients-details summary{
+        min-height: 48px;
+        padding: 13px 14px;
+    }
+
+    .profile-row{
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 13px 0;
+    }
+
+    .profile-row strong{
+        overflow-wrap: anywhere;
+    }
+
+    .channel-history-dialog,
+    .quiz-statistics-dialog{
+        width: calc(100% - 12px);
+        max-height: calc(100dvh - 12px);
+        margin: auto;
+    }
+
+    .channel-history-modal,
+    .quiz-statistics-modal{
+        max-height: calc(100dvh - 12px);
+        padding: 20px 14px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .channel-history-header{
+        gap: 12px;
+    }
+
+    .channel-history-header h2{
+        font-size: 21px;
+    }
+
+    .channel-history-close{
+        width: 40px;
+        height: 40px;
+    }
+
+    .channel-history-summary{
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .channel-history-chart{
+        margin-inline: -4px;
+        overflow-x: auto;
+    }
+
+    .channel-history-chart svg{
+        min-width: 620px;
+    }
+
+    .quiz-result-heading{
+        gap: 10px;
+    }
+
+    .quiz-result-label{
+        overflow-wrap: anywhere;
+    }
+
+    .table-container,
+    .registration-participants-table-wrap,
+    .quiz-history-table-wrap,
+    .mailing-users-table{
+        max-height: none;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+    }
+
+    table.responsive-table{
+        display: block;
+        width: 100%;
+        min-width: 0 !important;
+    }
+
+    table.responsive-table thead{
+        display: none;
+    }
+
+    table.responsive-table tbody{
+        display: grid;
+        gap: 10px;
+        width: 100%;
+    }
+
+    table.responsive-table tbody tr{
+        display: block;
+        width: 100%;
+        padding: 8px 13px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+    }
+
+    table.responsive-table tbody tr:hover{
+        background: var(--surface);
+    }
+
+    table.responsive-table tbody td{
+        display: grid;
+        grid-template-columns: minmax(92px, 35%) minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--border);
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    table.responsive-table tbody td:last-child{
+        border-bottom: 0;
+    }
+
+    table.responsive-table tbody td::before{
+        content: attr(data-label);
+        color: var(--text-faint);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .25px;
+        text-transform: uppercase;
+    }
+
+    table.responsive-table .responsive-empty-row td{
+        display: block;
+        padding: 22px 8px;
+        text-align: center;
+    }
+
+    table.responsive-table .responsive-empty-row td::before{
+        content: none;
+    }
+
+    .registration-user-cell{
+        min-width: 0;
+    }
+
+    .quiz-history-table time{
+        white-space: normal;
+    }
+
+    #mailingPreviewState .mailing-users-table th,
+    #mailingPreviewState .mailing-users-table td{
+        padding: 9px 0;
+    }
+
+    .mailing-detail-deliveries table{
+        table-layout: auto;
+    }
+}
+
+@media (max-width: 390px){
+    .content{
+        padding-inline: 10px;
+    }
+
+    .mobile-topbar{
+        padding-inline: 10px;
+    }
+
+    .dashboard-metric-card,
+    .dashboard-activity-card,
+    .registration-event-card,
+    .review-event-card,
+    .event-card{
+        border-radius: 13px;
+    }
+
+    .review-event-card-footer,
+    .mailing-history-card-stats{
+        grid-template-columns: 1fr;
+    }
+
+    table.responsive-table tbody td{
+        grid-template-columns: 84px minmax(0, 1fr);
+        gap: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce){
+    .sidebar{
+        transition: none;
+    }
 }

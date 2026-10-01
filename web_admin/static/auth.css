@@ -329,6 +329,32 @@
 
 
 @media (max-width: 560px){
-    .auth-shell{ padding: 16px; }
-    .auth-card{ padding: 25px 20px; }
+    .auth-shell{
+        align-items: stretch;
+        min-height: 100dvh;
+        padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    }
+
+    .auth-card{
+        align-self: center;
+        padding: 25px 20px;
+        border-radius: 14px;
+    }
+
+    .auth-heading{
+        margin-top: 22px;
+    }
+
+    .auth-heading h1{
+        font-size: 24px;
+    }
+
+    .auth-field input{
+        min-height: 46px;
+        font-size: 16px;
+    }
+
+    .auth-submit{
+        min-height: 46px;
+    }
 }

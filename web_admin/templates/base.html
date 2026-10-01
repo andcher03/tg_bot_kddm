@@ -18,12 +18,12 @@
 
     <link
         rel="stylesheet"
-        href="/static/style.css?v=20260827-1"
+        href="/static/style.css?v=20261001-2"
     >
 
     <link
         rel="stylesheet"
-        href="/static/auth.css?v=20260821-1"
+        href="/static/auth.css?v=20261001-1"
     >
 
 </head>
@@ -33,7 +33,52 @@
 
     {% set auth_user = request.state.auth_user %}
 
-    <aside class="sidebar">
+    <header class="mobile-topbar">
+
+        <button
+            type="button"
+            class="mobile-menu-toggle"
+            id="mobileMenuToggle"
+            aria-label="Открыть меню"
+            aria-controls="adminSidebar"
+            aria-expanded="false"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <a
+            href="{% if auth_user.role == 'editor' %}/events{% else %}/{% endif %}"
+            class="mobile-topbar-brand"
+        >
+            Молодёжь Казани
+        </a>
+
+        <span class="mobile-topbar-avatar" aria-hidden="true">
+            {{ auth_user.display_name[:1]|upper }}
+        </span>
+
+    </header>
+
+    <button
+        type="button"
+        class="mobile-nav-overlay"
+        id="mobileNavOverlay"
+        aria-label="Закрыть меню"
+        hidden
+    ></button>
+
+    <aside class="sidebar" id="adminSidebar">
+
+        <button
+            type="button"
+            class="mobile-menu-close"
+            id="mobileMenuClose"
+            aria-label="Закрыть меню"
+        >
+            ×
+        </button>
 
         <div class="logo">
             Бот Молодёжь Казани
@@ -139,6 +184,8 @@
 
     {% block scripts %}
     {% endblock %}
+
+    <script src="/static/base.js?v=20261001-1" defer></script>
 
 </body>
 

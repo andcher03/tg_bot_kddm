@@ -9,6 +9,7 @@ from aiogram.types import (
 from services.postgres_event_service import PostgresEventService
 from services.registration_service import RegistrationService
 from services.event_confirmation import respond_to_confirmation
+from services.bot_analytics_service import track_registration_response
 
 router = Router()
 
@@ -230,6 +231,14 @@ async def handle_event_confirmation(
         expected_registration_timestamp=registration_timestamp,
         confirm=confirm,
     )
+
+    if result in {"confirmed", "declined"}:
+        track_registration_response(
+            telegram_id=callback.from_user.id,
+            callback_id=callback.id,
+            registration_id=registration_id,
+            confirmed=result == "confirmed",
+        )
 
     messages = {
         "confirmed": "✅ Участие подтверждено. Ждём вас на мероприятии!",

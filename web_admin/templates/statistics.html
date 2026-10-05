@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}
+Статистика — Молодёжь Казани
+{% endblock %}
+
+{% block content %}
+<section class="admin-page-panel statistics-page" aria-labelledby="statisticsTitle">
+    <header class="page-header statistics-header">
+        <div>
+            <h1 id="statisticsTitle">Статистика</h1>
+            <p class="subtitle">Использование кнопок и сценариев бота</p>
+        </div>
+    </header>
+
+    <form class="statistics-filters" method="get" action="/statistics">
+        <label>
+            <span>С</span>
+            <input type="date" name="date_from" value="{{ date_from }}">
+        </label>
+        <label>
+            <span>По</span>
+            <input type="date" name="date_to" value="{{ date_to }}">
+        </label>
+        <label class="statistics-category-filter">
+            <span>Категория</span>
+            <select name="category">
+                {% for key, label in categories %}
+                <option value="{{ key }}" {% if key == category %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="primary-button" type="submit">Применить</button>
+    </form>
+
+    <div class="statistics-summary-grid">
+        <article class="statistics-summary-card">
+            <span>Всего действий</span>
+            <strong>{{ actions }}</strong>
+            <small>нажатия кнопок и переходы в выбранном диапазоне</small>
+        </article>
+        <article class="statistics-summary-card">
+            <span>Уникальных пользователей</span>
+            <strong>{{ unique_users }}</strong>
+            <small>анонимные идентификаторы, без списка пользователей</small>
+        </article>
+    </div>
+
+    <section class="statistics-section" aria-labelledby="activityChartTitle">
+        <div class="statistics-section-heading">
+            <div>
+                <h2 id="activityChartTitle">Активность по дням</h2>
+                <p>Количество отслеживаемых действий за день, московское время</p>
+            </div>
+        </div>
+        {% if actions %}
+        <div class="statistics-chart-scroll">
+            <div class="statistics-bar-chart" role="img" aria-label="График активности по дням">
+                {% for day in days %}
+                <div class="statistics-bar-column" title="{{ day.date.strftime('%d.%m.%Y') }}: {{ day.actions }} действий">
+                    <span class="statistics-bar-value">{{ day.actions }}</span>
+                    <div class="statistics-bar-track">
+                        <span class="statistics-bar" style="height: {{ day.height }}%"></span>
+                    </div>
+                    <time>{{ day.date.strftime("%d.%m") }}</time>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="statistics-empty">За выбранный период пока нет данных. События начнут собираться после обновления бота.</div>
+        {% endif %}
+    </section>
+
+    <section class="statistics-section" aria-labelledby="buttonRankingTitle">
+        <div class="statistics-section-heading">
+            <div>
+                <h2 id="buttonRankingTitle">Кнопки и разделы</h2>
+                <p>Нажатия и доля от всех действий с учётом фильтров</p>
+            </div>
+        </div>
+        {% if ranking %}
+        <div class="statistics-ranking-list">
+            {% for item in ranking %}
+            <article class="statistics-ranking-row">
+                <div class="statistics-ranking-labels">
+                    <strong>{{ item.label }}</strong>
+                    <span>{{ category_labels.get(item.category, "Другое") }}</span>
+                </div>
+                <div class="statistics-ranking-numbers">
+                    <strong>{{ item.actions }}</strong>
+                    <span>{{ "%.1f"|format(item.percent) }}%</span>
+                </div>
+                <div class="statistics-ranking-track" aria-hidden="true">
+                    <span style="width: {{ item.percent }}%"></span>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="statistics-empty">Кнопки появятся здесь после первых действий пользователей.</div>
+        {% endif %}
+    </section>
+
+    <section class="statistics-section" aria-labelledby="registrationFunnelTitle">
+        <div class="statistics-section-heading">
+            <div>
+                <h2 id="registrationFunnelTitle">Воронка регистрации на мероприятие</h2>
+                <p>Учитываются пользователи, прошедшие шаги для одного и того же мероприятия по порядку</p>
+            </div>
+        </div>
+        {% if not funnel_available %}
+        <div class="statistics-empty">Чтобы посмотреть воронку, выберите все категории, «Мероприятия» или «Регистрация».</div>
+        {% elif funnel %}
+        <div class="statistics-funnel">
+            <article class="statistics-funnel-step">
+                <span>1</span>
+                <div><strong>Открыли мероприятие</strong><small>просмотрели карточку</small></div>
+                <b>{{ funnel.opened }}</b>
+            </article>
+            <div class="statistics-funnel-connector"><span>{{ "%.1f"|format(funnel.started_percent) }}%</span></div>
+            <article class="statistics-funnel-step">
+                <span>2</span>
+                <div><strong>Начали регистрацию</strong><small>нажали «Зарегистрироваться»</small></div>
+                <b>{{ funnel.started }}</b>
+            </article>
+            <div class="statistics-funnel-connector"><span>{{ "%.1f"|format(funnel.confirmed_percent) }}%</span></div>
+            <article class="statistics-funnel-step">
+                <span>3</span>
+                <div><strong>Подтвердили участие</strong><small>нажали кнопку подтверждения</small></div>
+                <b>{{ funnel.confirmed }}</b>
+            </article>
+        </div>
+        {% else %}
+        <div class="statistics-empty">Данные воронки появятся после действий пользователей с мероприятиями.</div>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

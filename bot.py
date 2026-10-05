@@ -25,11 +25,13 @@ from handlers.channel_members import router as channel_members_router
 from handlers.subscription import router as subscription_router
 from handlers.quiz import router as quiz_router
 from middlewares.logger import LoggerMiddleware
+from middlewares.analytics import AnalyticsMiddleware
 from middlewares.subscription import SubscriptionMiddleware
 
 from services.logging_config import setup_logging
 from services.database import engine, ensure_database_ready
 from services.telegram_bot import create_telegram_bot
+from services.bot_analytics_service import bot_analytics
 
 # ВСЕГДА ПОСЛЕДНИМ
 from handlers.debug import router as debug_router
@@ -45,6 +47,8 @@ dp = Dispatcher()
 # действие пользователя.
 dp.message.outer_middleware(LoggerMiddleware())
 dp.callback_query.outer_middleware(LoggerMiddleware())
+dp.message.outer_middleware(AnalyticsMiddleware())
+dp.callback_query.outer_middleware(AnalyticsMiddleware())
 
 # Проверка подписки выполняется после аудита, чтобы попытки доступа
 # неподписанных пользователей тоже попадали в журнал.
@@ -86,12 +90,14 @@ async def main():
 
     stats_task = None
     event_confirmation_task = None
+    analytics_task = None
 
     try:
 
         # Windows может запустить службу бота раньше PostgreSQL.
         # Ждём готовности базы и проверяем, что применены все миграции.
         await ensure_database_ready()
+        analytics_task = asyncio.create_task(bot_analytics.run())
 
         await set_default_commands(bot)
 
@@ -156,6 +162,10 @@ async def main():
 
 
     finally:
+
+        if analytics_task is not None:
+            await bot_analytics.stop()
+            await analytics_task
 
         if stats_task is not None:
 

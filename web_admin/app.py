@@ -38,6 +38,9 @@ from web_admin.routers.events import (
 from web_admin.routers.registrations import (
     router as registrations_router,
 )
+from web_admin.routers.statistics import (
+    router as statistics_router,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -120,6 +123,9 @@ app.include_router(
 # Затем рабочие разделы.
 app.include_router(
     dashboard_router
+)
+app.include_router(
+    statistics_router
 )
 app.include_router(
     users_router

@@ -933,3 +933,43 @@ Index(
     TelegramChannelMemberEvent.occurred_at.desc(),
     TelegramChannelMemberEvent.id.desc(),
 )
+
+
+class BotAnalyticsEvent(Base):
+    __tablename__ = "bot_analytics_events"
+    __table_args__ = (
+        Index("ix_bot_analytics_events_created_at", "created_at"),
+        Index(
+            "ix_bot_analytics_events_category_created",
+            "category",
+            "created_at",
+        ),
+        Index(
+            "ix_bot_analytics_events_action_created",
+            "action_key",
+            "created_at",
+        ),
+        Index(
+            "ix_bot_analytics_events_funnel",
+            "event_id",
+            "actor_hash",
+            "action_key",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    update_key: Mapped[str] = mapped_column(
+        String(128), nullable=False, unique=True
+    )
+    actor_hash: Mapped[str] = mapped_column(CHAR(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    action_key: Mapped[str] = mapped_column(String(120), nullable=False)
+    label: Mapped[str] = mapped_column(String(180), nullable=False)
+    event_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    registration_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )

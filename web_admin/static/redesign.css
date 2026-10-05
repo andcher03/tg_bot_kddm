@@ -494,3 +494,165 @@ tbody tr:hover { background: rgba(234, 242, 248, .58); }
         backdrop-filter: blur(24px) saturate(155%);
     }
 }
+
+.users-mobile-list { display: none; }
+
+@media (max-width: 900px) {
+    html,
+    body {
+        width: 100%;
+        min-width: 0;
+        overflow-x: clip;
+    }
+
+    .content {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin-inline: 0;
+    }
+
+    .content > *,
+    .admin-page-panel,
+    .dashboard-page,
+    .mailing-detail-page,
+    .dashboard-overview-panel,
+    .dashboard-activity-panel {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .admin-page-panel > *,
+    .dashboard-overview-panel > *,
+    .dashboard-activity-panel > * {
+        min-width: 0;
+    }
+
+    .table-container,
+    .registration-participants-table-wrap,
+    .mailing-users-table {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 700px) {
+    .admin-page-panel { padding: 14px; }
+
+    .dashboard-metrics,
+    .dashboard-activity-grid,
+    .admin-page-panel .events-list,
+    .admin-page-panel .registration-events-grid,
+    .admin-page-panel .review-events-grid,
+    .registration-events-grid,
+    .review-events-grid,
+    .events-list,
+    .event-detail-stats,
+    .mailing-detail-stats,
+    .form-row,
+    .mailing-options-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .users-desktop-table { display: none; }
+    .users-mobile-list { display: grid; gap: 9px; }
+
+    .user-mobile-card {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.82);
+        border-radius: 15px;
+        background: rgba(255,255,255,.68);
+        box-shadow: 0 6px 22px rgba(45,67,91,.07), inset 0 1px 0 rgba(255,255,255,.8);
+        -webkit-backdrop-filter: blur(20px) saturate(150%);
+        backdrop-filter: blur(20px) saturate(150%);
+    }
+
+    .user-mobile-card summary {
+        display: flex;
+        min-height: 54px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 15px;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.35;
+        list-style: none;
+        cursor: pointer;
+        overflow-wrap: anywhere;
+    }
+
+    .user-mobile-card summary::-webkit-details-marker { display: none; }
+    .user-mobile-chevron {
+        width: 9px;
+        height: 9px;
+        flex: 0 0 9px;
+        border-right: 2px solid var(--text-muted);
+        border-bottom: 2px solid var(--text-muted);
+        transform: rotate(45deg) translateY(-2px);
+        transition: transform .16s ease;
+    }
+    .user-mobile-card[open] .user-mobile-chevron {
+        transform: rotate(225deg) translate(-2px, -1px);
+    }
+    .user-mobile-card[open] summary {
+        border-bottom: 1px solid rgba(160,178,194,.3);
+    }
+
+    .user-mobile-details {
+        display: grid;
+        gap: 0;
+        margin: 0;
+        padding: 5px 15px 0;
+    }
+    .user-mobile-details > div {
+        display: grid;
+        grid-template-columns: minmax(90px, .8fr) minmax(0, 1.2fr);
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(160,178,194,.24);
+    }
+    .user-mobile-details dt {
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .user-mobile-details dd {
+        min-width: 0;
+        margin: 0;
+        color: var(--text);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+    .user-mobile-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 15px 14px;
+    }
+    .user-mobile-actions .secondary-link-button {
+        min-height: 40px;
+        padding: 9px 12px;
+        font-size: 12px;
+    }
+    .users-mobile-empty {
+        padding: 24px 16px;
+        border: 1px solid rgba(255,255,255,.78);
+        border-radius: 15px;
+        background: rgba(255,255,255,.62);
+        color: var(--text-muted);
+        text-align: center;
+    }
+}
+
+@media (max-width: 390px) {
+    .admin-page-panel { padding: 11px; }
+    .user-mobile-details > div { grid-template-columns: 82px minmax(0, 1fr); gap: 8px; }
+    .user-mobile-actions { align-items: stretch; flex-direction: column; }
+    .user-mobile-actions .table-danger-link { align-self: flex-start; }
+}

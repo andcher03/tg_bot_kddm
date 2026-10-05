@@ -55,7 +55,7 @@
 
 {% endif %}
 
-<div class="table-container">
+<div class="table-container users-desktop-table">
 
     <table>
 
@@ -149,6 +149,36 @@
 
     </table>
 
+</div>
+
+<div class="users-mobile-list" aria-label="Список пользователей">
+    {% for user in users %}
+    <details class="user-mobile-card">
+        <summary>
+            <span>{{ user.full_name }}</span>
+            <span class="user-mobile-chevron" aria-hidden="true"></span>
+        </summary>
+
+        <dl class="user-mobile-details">
+            <div><dt>ID</dt><dd>{{ user.id }}</dd></div>
+            <div><dt>KZN ID</dt><dd>{{ user.user_code }}</dd></div>
+            <div><dt>ВУЗ</dt><dd>{{ user.university or "—" }}</dd></div>
+            <div><dt>Telegram ID</dt><dd>{{ user.telegram_id }}</dd></div>
+            <div><dt>Username</dt><dd>{% if user.username %}@{{ user.username }}{% else %}—{% endif %}</dd></div>
+            <div>
+                <dt>Дата регистрации</dt>
+                <dd>{% if user.created_at %}{{ user.created_at.strftime("%d.%m.%Y %H:%M") }}{% else %}—{% endif %}</dd>
+            </div>
+        </dl>
+
+        <div class="user-mobile-actions">
+            <a href="/users/{{ user.id }}" class="secondary-link-button">Открыть профиль</a>
+            <a href="/users/{{ user.id }}/delete" class="table-danger-link">Удалить</a>
+        </div>
+    </details>
+    {% else %}
+    <div class="users-mobile-empty">Пользователей пока нет.</div>
+    {% endfor %}
 </div>
 
 </section>

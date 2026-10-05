@@ -904,6 +904,13 @@ tbody tr:hover{ background: var(--canvas); }
     font-size: 10px;
 }
 
+.registration-event-total small{
+    margin-top: 4px;
+    color: var(--accent-strong);
+    font-size: 10px;
+    font-weight: 700;
+}
+
 .registration-card-action{
     display: inline-flex;
     align-items: center;
@@ -1147,6 +1154,21 @@ tbody tr:hover{ background: var(--canvas); }
     border-radius: 999px;
     font-size: 9px;
     font-weight: 700;
+}
+
+.registration-status-badge--success{
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+.registration-status-badge--waiting{
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.registration-status-badge--danger{
+    background: var(--danger-soft);
+    color: var(--danger);
 }
 
 .registration-table-empty{

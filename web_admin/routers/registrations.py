@@ -7,6 +7,7 @@ from sqlalchemy import String, cast, func, or_, select
 
 from services.database import SessionLocal
 from services.models import Event, Registration, User
+from services.registration_status import confirmation_status_color
 
 
 router = APIRouter()
@@ -32,10 +33,44 @@ def registrations_word(count: int) -> str:
     return "регистраций"
 
 
+def confirmation_status_label(
+    registration_status: str,
+    confirmation_status: str,
+) -> str:
+    if registration_status == "cancelled":
+        return {
+            "declined": "Отказался",
+            "expired": "Не подтвердил вовремя",
+        }.get(confirmation_status, "Регистрация снята")
+
+    return {
+        "not_requested": "Ожидает запроса",
+        "sending": "Отправляется",
+        "pending": "Ожидает ответа",
+        "confirmed": "Подтвердил участие",
+        "declined": "Отказался",
+        "expired": "Не подтвердил вовремя",
+        "delivery_failed": "Запрос не доставлен",
+    }.get(confirmation_status, confirmation_status)
+
+
 def active_events_query(search_query: str):
     registrations_count = (
         select(func.count(Registration.id))
-        .where(Registration.event_id == Event.id)
+        .where(
+            Registration.event_id == Event.id,
+            Registration.status.in_(("registered", "confirmed")),
+        )
+        .correlate(Event)
+        .scalar_subquery()
+    )
+    confirmed_count = (
+        select(func.count(Registration.id))
+        .where(
+            Registration.event_id == Event.id,
+            Registration.status.in_(("registered", "confirmed")),
+            Registration.confirmation_status == "confirmed",
+        )
         .correlate(Event)
         .scalar_subquery()
     )
@@ -44,6 +79,7 @@ def active_events_query(search_query: str):
         select(
             Event,
             registrations_count.label("registrations_count"),
+            confirmed_count.label("confirmed_count"),
         )
         .where(
             Event.status == "active",
@@ -90,11 +126,16 @@ async def registrations_page(
                 "place": event.place,
                 "category": event.category,
                 "registrations_count": registrations_count,
+                "confirmed_count": confirmed_count,
+                "pending_count": max(
+                    registrations_count - confirmed_count,
+                    0,
+                ),
                 "registrations_word": registrations_word(
                     registrations_count
                 ),
             }
-            for event, registrations_count in result.all()
+            for event, registrations_count, confirmed_count in result.all()
         ]
 
     return templates.TemplateResponse(
@@ -131,12 +172,22 @@ async def registration_detail_page(
                 detail="Актуальное мероприятие не найдено",
             )
 
-        total_result = await session.execute(
+        registered_result = await session.execute(
             select(func.count(Registration.id)).where(
-                Registration.event_id == event_id
+                Registration.event_id == event_id,
+                Registration.status.in_(("registered", "confirmed")),
             )
         )
-        registrations_count = total_result.scalar_one()
+        registrations_count = registered_result.scalar_one()
+
+        confirmed_result = await session.execute(
+            select(func.count(Registration.id)).where(
+                Registration.event_id == event_id,
+                Registration.status.in_(("registered", "confirmed")),
+                Registration.confirmation_status == "confirmed",
+            )
+        )
+        confirmed_count = confirmed_result.scalar_one()
 
         registrations_query = (
             select(Registration, User)
@@ -166,6 +217,15 @@ async def registration_detail_page(
             {
                 "id": registration.id,
                 "status": registration.status,
+                "confirmation_status": registration.confirmation_status,
+                "confirmation_status_label": confirmation_status_label(
+                    registration.status,
+                    registration.confirmation_status,
+                ),
+                "confirmation_status_color": confirmation_status_color(
+                    registration.status,
+                    registration.confirmation_status,
+                ),
                 "registration_date": registration.registration_date,
                 "user_id": user.id,
                 "user_code": user.user_code,
@@ -184,6 +244,8 @@ async def registration_detail_page(
             "event": event,
             "registrations": registrations,
             "registrations_count": registrations_count,
+            "confirmed_count": confirmed_count,
+            "pending_count": max(registrations_count - confirmed_count, 0),
             "shown_registrations_count": len(registrations),
             "q": search_query,
         },

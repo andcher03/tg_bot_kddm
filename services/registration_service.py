@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from services.database import SessionLocal
 from services.models import User, Event, Registration
@@ -100,7 +101,6 @@ class RegistrationService:
                 select(Registration).where(
                     Registration.user_id == user.id,
                     Registration.event_id == event.id,
-                    Registration.status != "cancelled"
                 )
             )
 
@@ -109,7 +109,23 @@ class RegistrationService:
             )
 
             if existing_registration:
-                return False
+                if existing_registration.status != "cancelled":
+                    return False
+
+                # The database keeps one row per user/event pair. Reuse a
+                # cancelled row if the user registers again.
+                existing_registration.status = "registered"
+                existing_registration.registration_date = datetime.now()
+                existing_registration.confirmation_status = "not_requested"
+                existing_registration.confirmation_requested_at = None
+                existing_registration.confirmation_responded_at = None
+                existing_registration.confirmation_for_start_at = None
+                try:
+                    await session.commit()
+                except IntegrityError:
+                    await session.rollback()
+                    return False
+                return True
 
             # -------------------------
             # Создаём регистрацию
@@ -119,6 +135,7 @@ class RegistrationService:
                 user_id=user.id,
                 event_id=event.id,
                 status="registered",
+                confirmation_status="not_requested",
             )
 
             session.add(registration)
@@ -194,6 +211,11 @@ class RegistrationService:
                         else ""
                     ),
                     "status": registration.status,
+                    "confirmation_status": (
+                        "confirmed"
+                        if registration.status == "confirmed"
+                        else registration.confirmation_status
+                    ),
                 })
 
             return registrations

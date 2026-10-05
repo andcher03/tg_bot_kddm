@@ -53,9 +53,9 @@
     </div>
 
     <div class="registration-detail-total">
-        <span>Всего регистраций</span>
+        <span>Зарегистрировано</span>
         <strong>{{ registrations_count }}</strong>
-        <small>на это мероприятие</small>
+        <small>Подтвердили участие: {{ confirmed_count }}</small>
     </div>
 </section>
 
@@ -66,7 +66,11 @@
                 Зарегистрированные пользователи
                 <span>{{ registrations_count }}</span>
             </h2>
-            <p>Список обновляется после каждой новой регистрации</p>
+            <p>
+                Зарегистрировано: {{ registrations_count }} ·
+                подтвердили: {{ confirmed_count }} ·
+                пока не подтвердили: {{ pending_count }}
+            </p>
         </div>
 
         <form
@@ -153,12 +157,8 @@
                         {{ registration.telegram_id }}
                     </td>
                     <td>
-                        <span class="registration-status-badge">
-                            {% if registration.status == "registered" %}
-                                Зарегистрирован
-                            {% else %}
-                                {{ registration.status }}
-                            {% endif %}
+                        <span class="registration-status-badge registration-status-badge--{{ registration.confirmation_status_color }}">
+                            {{ registration.confirmation_status_label }}
                         </span>
                     </td>
                     <td>

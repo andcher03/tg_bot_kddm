@@ -109,8 +109,17 @@ async def dashboard(request: Request):
                         FROM registrations r
                         WHERE
                             r.event_id = e.id
-                            AND r.status = 'registered'
-                    ) AS registrations_count
+                            AND r.status IN ('registered', 'confirmed')
+                    ) AS registrations_count,
+
+                    (
+                        SELECT COUNT(*)
+                        FROM registrations r
+                        WHERE
+                            r.event_id = e.id
+                            AND r.status IN ('registered', 'confirmed')
+                            AND r.confirmation_status = 'confirmed'
+                    ) AS confirmed_count
 
                 FROM events e
 

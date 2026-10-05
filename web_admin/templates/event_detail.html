@@ -151,11 +151,24 @@
     <div class="event-stat-card">
 
         <span>
-            Регистраций
+            Зарегистрировано
         </span>
 
         <strong>
             {{ registrations_count }}
+        </strong>
+
+    </div>
+
+
+    <div class="event-stat-card">
+
+        <span>
+            Подтвердили участие
+        </span>
+
+        <strong>
+            {{ confirmed_count }}
         </strong>
 
     </div>
@@ -343,7 +356,9 @@
 
 
                     <td>
-                        {{ participant.status }}
+                        <span class="registration-status-badge registration-status-badge--{{ participant.confirmation_status_color }}">
+                            {{ participant.confirmation_status_label }}
+                        </span>
                     </td>
 
 

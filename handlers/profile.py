@@ -233,14 +233,17 @@ async def my_events(message: Message):
         if event.get("status") == "archived":
             continue
 
-        status = registration["status"]
-
-        if status == "registered":
-            status_text = "🕐 Зарегистрирован"
-        elif status == "confirmed":
-            status_text = "✅ Участие подтверждено"
-        else:
-            status_text = status
+        confirmation_status = registration.get(
+            "confirmation_status",
+            "not_requested",
+        )
+        status_text = {
+            "not_requested": "🕐 Зарегистрирован, ожидает запроса подтверждения",
+            "sending": "📨 Отправляем запрос подтверждения",
+            "pending": "⌛ Нужно подтвердить участие",
+            "confirmed": "✅ Участие подтверждено",
+            "delivery_failed": "⚠️ Не удалось доставить запрос подтверждения",
+        }.get(confirmation_status, "🕐 Зарегистрирован")
 
         text += (
             f"🎯 <b>{event['title']}</b>\n"
@@ -418,16 +421,17 @@ async def my_events_callback(callback: CallbackQuery):
         if event.get("status") == "archived":
             continue
 
-        status = registration["status"]
-
-        if status == "registered":
-            status_text = "🕐 Зарегистрирован"
-
-        elif status == "confirmed":
-            status_text = "✅ Участие подтверждено"
-
-        else:
-            status_text = status
+        confirmation_status = registration.get(
+            "confirmation_status",
+            "not_requested",
+        )
+        status_text = {
+            "not_requested": "🕐 Зарегистрирован, ожидает запроса подтверждения",
+            "sending": "📨 Отправляем запрос подтверждения",
+            "pending": "⌛ Нужно подтвердить участие",
+            "confirmed": "✅ Участие подтверждено",
+            "delivery_failed": "⚠️ Не удалось доставить запрос подтверждения",
+        }.get(confirmation_status, "🕐 Зарегистрирован")
 
         text += (
             f"🎯 <b>{event['title']}</b>\n"

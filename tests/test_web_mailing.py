@@ -115,6 +115,28 @@ async def test_specific_users_are_added_to_recipient_query():
     assert "users.id IN (7, 12)" in sql
 
 
+@pytest.mark.asyncio
+async def test_event_audience_only_includes_confirmed_participants():
+    session = CapturingSession()
+
+    await get_recipients(
+        session=session,
+        all_users=False,
+        selected_universities=[],
+        selected_event_ids=[17],
+        selected_user_ids=[],
+    )
+
+    sql = str(
+        session.statement.compile(
+            compile_kwargs={"literal_binds": True}
+        )
+    )
+
+    assert "registrations.confirmation_status = 'confirmed'" in sql
+    assert "registrations.event_id IN (17)" in sql
+
+
 def test_photo_urls_are_deduplicated_in_original_order():
     assert normalized_photo_urls([" one.jpg ", "two.jpg", "one.jpg"]) == [
         "one.jpg",

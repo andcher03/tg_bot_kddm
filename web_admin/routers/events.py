@@ -20,6 +20,7 @@ from services.models import (
     User,
     EventReview,
 )
+from services.registration_status import confirmation_status_color
 
 
 router = APIRouter()
@@ -223,12 +224,39 @@ async def event_detail_page(
         participants = []
 
         for registration, user in registration_rows:
+            confirmation_status = registration.confirmation_status
+            if registration.status == "cancelled":
+                confirmation_label = {
+                    "declined": "Отказался",
+                    "expired": "Не подтвердил вовремя",
+                }.get(confirmation_status, "Регистрация снята")
+            else:
+                confirmation_label = {
+                    "not_requested": "Ожидает запроса",
+                    "sending": "Отправляется",
+                    "pending": "Ожидает ответа",
+                    "confirmed": "Подтвердил участие",
+                    "delivery_failed": "Запрос не доставлен",
+                }.get(confirmation_status, confirmation_status)
+
             participants.append({
                 "registration_id":
                     registration.id,
 
                 "status":
                     registration.status,
+
+                "confirmation_status":
+                    confirmation_status,
+
+                "confirmation_status_label":
+                    confirmation_label,
+
+                "confirmation_status_color":
+                    confirmation_status_color(
+                        registration.status,
+                        confirmation_status,
+                    ),
 
                 "registration_date":
                     registration.registration_date,
@@ -296,7 +324,15 @@ async def event_detail_page(
 
 
         # Статистика
-        registrations_count = len(participants)
+        registrations_count = sum(
+            participant["status"] in {"registered", "confirmed"}
+            for participant in participants
+        )
+        confirmed_count = sum(
+            participant["status"] in {"registered", "confirmed"}
+            and participant["confirmation_status"] == "confirmed"
+            for participant in participants
+        )
         reviews_count = len(reviews)
 
         if reviews_count:
@@ -326,6 +362,9 @@ async def event_detail_page(
 
             "registrations_count":
                 registrations_count,
+
+            "confirmed_count":
+                confirmed_count,
 
             "reviews_count":
                 reviews_count,

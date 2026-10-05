@@ -104,7 +104,8 @@
         <div class="registration-event-card-footer">
             <div class="registration-event-total">
                 <strong>{{ event.registrations_count }}</strong>
-                <span>{{ event.registrations_word }}</span>
+                <span>{{ event.registrations_word }} всего</span>
+                <small>Подтвердили: {{ event.confirmed_count }}</small>
             </div>
 
             <span class="registration-card-action">

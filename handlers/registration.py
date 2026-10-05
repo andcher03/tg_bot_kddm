@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from html import escape
+
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -201,7 +203,11 @@ async def education(
             await callback.message.edit_text(
                 "✅ <b>Регистрация завершена!</b>\n\n"
                 f"Вы зарегистрированы на:\n"
-                f"<b>{event_title}</b>",
+                f"<b>{escape(event_title)}</b>\n\n"
+                "Перед мероприятием мы попросим подтвердить участие "
+                "(обычно за 2 часа до начала; при поздней регистрации — "
+                "в ближайшее время). Если до начала вы не ответите, "
+                "регистрация будет снята.",
                 parse_mode="HTML"
             )
 

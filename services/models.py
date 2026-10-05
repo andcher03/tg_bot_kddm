@@ -237,6 +237,12 @@ class Registration(Base):
             "event_id",
             name="unique_user_event"
         ),
+        Index(
+            "ix_registrations_event_confirmation",
+            "event_id",
+            "status",
+            "confirmation_status",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -272,6 +278,28 @@ class Registration(Base):
         nullable=False,
         default=datetime.now,
         server_default=text("CURRENT_TIMESTAMP"),
+    )
+
+    confirmation_status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="not_requested",
+        server_default=text("'not_requested'"),
+    )
+
+    confirmation_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    confirmation_responded_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    confirmation_for_start_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
     )
 
     user: Mapped["User"] = relationship(

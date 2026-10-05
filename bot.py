@@ -9,6 +9,7 @@ from services.channel_stats_service import (
     channel_stats_reconciliation_loop,
     refresh_channel_member_count,
 )
+from services.event_confirmation import event_confirmation_loop
 
 from handlers.start import router as start_router
 from handlers.registration import router as registration_router
@@ -84,6 +85,7 @@ async def main():
     logger.info("Бот запускается")
 
     stats_task = None
+    event_confirmation_task = None
 
     try:
 
@@ -130,6 +132,10 @@ async def main():
             )
         )
 
+        event_confirmation_task = asyncio.create_task(
+            event_confirmation_loop(bot)
+        )
+
 
         await dp.start_polling(
             bot,
@@ -159,6 +165,12 @@ async def main():
                 asyncio.CancelledError
             ):
                 await stats_task
+
+        if event_confirmation_task is not None:
+            event_confirmation_task.cancel()
+
+            with suppress(asyncio.CancelledError):
+                await event_confirmation_task
 
 
         logger.info("Бот остановлен")

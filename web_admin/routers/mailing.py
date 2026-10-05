@@ -219,6 +219,7 @@ async def get_recipients(
                         "registered",
                         "confirmed",
                     )),
+                    Registration.confirmation_status == "confirmed",
                 )
             )
 

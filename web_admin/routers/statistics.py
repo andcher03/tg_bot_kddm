@@ -36,7 +36,7 @@ async def usage_statistics_page(
 ):
     today = datetime.now(MOSCOW_TZ).date()
     selected_to = _parse_date(date_to, today)
-    selected_from = _parse_date(date_from, selected_to - timedelta(days=29))
+    selected_from = _parse_date(date_from, selected_to)
     if selected_from > selected_to:
         selected_from, selected_to = selected_to, selected_from
     if (selected_to - selected_from).days > 365:
@@ -59,6 +59,8 @@ async def usage_statistics_page(
             **statistics,
             "date_from": selected_from.isoformat(),
             "date_to": selected_to.isoformat(),
+            "today": today.isoformat(),
+            "yesterday": (today - timedelta(days=1)).isoformat(),
             "category": category,
             "categories": STATISTICS_CATEGORIES,
             "category_labels": CATEGORY_LABELS,

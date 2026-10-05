@@ -526,6 +526,22 @@ tbody tr:hover { background: rgba(234, 242, 248, .58); }
 }
 .statistics-category-filter { flex: 1 1 220px; }
 .statistics-filters .primary-button { min-height: 42px; }
+.statistics-date-shortcuts { display: flex; align-items: center; gap: 8px; }
+.statistics-date-shortcuts a {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid rgba(255,255,255,.86);
+    border-radius: 11px;
+    background: rgba(255,255,255,.52);
+    color: var(--accent-strong);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.statistics-date-shortcuts a:hover,
+.statistics-date-shortcuts a[aria-current="date"] { background: var(--accent-soft); }
 .statistics-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
 .statistics-summary-card {
     display: flex;
@@ -575,7 +591,12 @@ tbody tr:hover { background: rgba(234, 242, 248, .58); }
     align-items: center;
     justify-content: flex-end;
     gap: 5px;
+    border-radius: 8px 8px 0 0;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
 }
+.statistics-bar-column:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 3px; }
 .statistics-bar-value { min-height: 13px; color: var(--text-muted); font: 10px var(--font-mono); }
 .statistics-bar-track { display: flex; width: 19px; height: 165px; align-items: flex-end; justify-content: center; }
 .statistics-bar {
@@ -585,7 +606,9 @@ tbody tr:hover { background: rgba(234, 242, 248, .58); }
     border-radius: 7px 7px 2px 2px;
     background: linear-gradient(180deg, #82b8e5, #397fb8);
     box-shadow: 0 3px 10px rgba(57,127,184,.18);
+    transition: filter .15s ease, transform .15s ease;
 }
+.statistics-bar-column:hover .statistics-bar { filter: saturate(1.35) brightness(.94); transform: scaleX(1.12); }
 .statistics-bar-column time { color: var(--text-faint); font-size: 9px; white-space: nowrap; }
 .statistics-ranking-list { display: grid; gap: 12px; }
 .statistics-ranking-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px 16px; align-items: center; }

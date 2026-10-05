@@ -16,11 +16,11 @@
     <form class="statistics-filters" method="get" action="/statistics">
         <label>
             <span>С</span>
-            <input type="date" name="date_from" value="{{ date_from }}">
+            <input id="statisticsDateFrom" type="date" name="date_from" value="{{ date_from }}" max="{{ date_to }}">
         </label>
         <label>
             <span>По</span>
-            <input type="date" name="date_to" value="{{ date_to }}">
+            <input id="statisticsDateTo" type="date" name="date_to" value="{{ date_to }}" min="{{ date_from }}">
         </label>
         <label class="statistics-category-filter">
             <span>Категория</span>
@@ -31,6 +31,10 @@
             </select>
         </label>
         <button class="primary-button" type="submit">Применить</button>
+        <div class="statistics-date-shortcuts" aria-label="Быстрый выбор даты">
+            <a href="/statistics?date_from={{ today }}&amp;date_to={{ today }}" {% if date_from == today and date_to == today %}aria-current="date"{% endif %}>Сегодня</a>
+            <a href="/statistics?date_from={{ yesterday }}&amp;date_to={{ yesterday }}" {% if date_from == yesterday and date_to == yesterday %}aria-current="date"{% endif %}>Вчера</a>
+        </div>
     </form>
 
     <div class="statistics-summary-grid">
@@ -55,15 +59,15 @@
         </div>
         {% if actions %}
         <div class="statistics-chart-scroll">
-            <div class="statistics-bar-chart" role="img" aria-label="График активности по дням">
+            <div class="statistics-bar-chart" aria-label="График активности по дням">
                 {% for day in days %}
-                <div class="statistics-bar-column" title="{{ day.date.strftime('%d.%m.%Y') }}: {{ day.actions }} действий">
+                <a class="statistics-bar-column" href="/statistics?date_from={{ day.date.isoformat() }}&amp;date_to={{ day.date.isoformat() }}" aria-label="Показать все категории за {{ day.date.strftime('%d.%m.%Y') }}: {{ day.actions }} действий" title="Показать все категории за {{ day.date.strftime('%d.%m.%Y') }}: {{ day.actions }} действий">
                     <span class="statistics-bar-value">{{ day.actions }}</span>
                     <div class="statistics-bar-track">
                         <span class="statistics-bar" style="height: {{ day.height }}%"></span>
                     </div>
                     <time>{{ day.date.strftime("%d.%m") }}</time>
-                </div>
+                </a>
                 {% endfor %}
             </div>
         </div>
@@ -136,4 +140,20 @@
         {% endif %}
     </section>
 </section>
+<script>
+    (() => {
+        const dateFrom = document.getElementById("statisticsDateFrom");
+        const dateTo = document.getElementById("statisticsDateTo");
+        if (!dateFrom || !dateTo) return;
+
+        dateFrom.addEventListener("change", () => {
+            dateTo.min = dateFrom.value;
+            if (dateTo.value < dateFrom.value) dateTo.value = dateFrom.value;
+        });
+        dateTo.addEventListener("change", () => {
+            dateFrom.max = dateTo.value;
+            if (dateFrom.value > dateTo.value) dateFrom.value = dateTo.value;
+        });
+    })();
+</script>
 {% endblock %}

@@ -22,9 +22,9 @@
     --text-faint: #9CA1A6;
 
     /* акценты */
-    --accent: #1E8E5A;
-    --accent-strong: #146B44;
-    --accent-soft: #E7F4EC;
+    --accent: #397FB8;
+    --accent-strong: #286596;
+    --accent-soft: #E8F1FA;
 
     --danger: #C6433A;
     --danger-soft: #FBEAE8;
@@ -458,7 +458,7 @@ nav a:hover{
 .filter-search:focus,
 .reviews-filter select:focus{
     border-color: var(--border-strong);
-    box-shadow: 0 0 0 3px rgba(30,142,90,.1);
+    box-shadow: 0 0 0 3px rgba(57,127,184,.12);
 }
 
 .search-form button,

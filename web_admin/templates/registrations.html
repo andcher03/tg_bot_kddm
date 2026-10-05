@@ -4,9 +4,11 @@
 
 {% block content %}
 
+<section class="admin-page-panel" aria-labelledby="registrationsPageTitle">
+
 <div class="page-header registrations-page-header">
     <div>
-        <h1>Регистрации</h1>
+        <h1 id="registrationsPageTitle">Регистрации</h1>
         <p class="subtitle">
             Актуальные мероприятия, на которые сейчас идёт регистрация
         </p>
@@ -131,5 +133,7 @@
     </div>
     {% endfor %}
 </div>
+
+</section>
 
 {% endblock %}

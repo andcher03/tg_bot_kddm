@@ -17,6 +17,8 @@
 
 <div class="dashboard-page">
 
+    <section class="dashboard-overview-panel" aria-labelledby="dashboardTitle">
+
     <!-- =====================================================
          HEADER
          ===================================================== -->
@@ -25,12 +27,12 @@
 
         <div>
 
-            <h1>
+            <h1 id="dashboardTitle">
                 Главная
             </h1>
 
             <p class="subtitle">
-                Обзор проекта
+                Ключевые показатели проекта и активность пользователей
             </p>
 
         </div>
@@ -71,9 +73,10 @@
 
             <div class="dashboard-metric-top">
 
-                <span class="dashboard-metric-title">
-                    Подписчики канала
-                </span>
+                <div class="dashboard-metric-heading">
+                    <span class="dashboard-metric-title">Подписчики канала</span>
+                    <span class="dashboard-metric-description">Текущая аудитория и динамика</span>
+                </div>
 
                 <span class="dashboard-metric-icon">
                     TG
@@ -203,9 +206,10 @@
 
             <div class="dashboard-metric-top">
 
-                <span class="dashboard-metric-title">
-                    Пользователи бота
-                </span>
+                <div class="dashboard-metric-heading">
+                    <span class="dashboard-metric-title">Пользователи бота</span>
+                    <span class="dashboard-metric-description">Всего участников, зарегистрированных в боте</span>
+                </div>
 
                 <span class="dashboard-metric-icon">
                     KZN
@@ -272,9 +276,10 @@
 
             <div class="dashboard-metric-top">
 
-                <span class="dashboard-metric-title">
-                    Пройдено тестов
-                </span>
+                <div class="dashboard-metric-heading">
+                    <span class="dashboard-metric-title">Пройдено тестов</span>
+                    <span class="dashboard-metric-description">Все завершённые попытки пользователей</span>
+                </div>
 
                 <span class="dashboard-metric-icon">
                     TEST
@@ -314,11 +319,14 @@
 
     </div>
 
+    </section>
 
 
     <!-- =====================================================
          ПОСЛЕДНЯЯ АКТИВНОСТЬ
          ===================================================== -->
+
+    <section class="dashboard-activity-panel" aria-labelledby="dashboardActivityTitle">
 
     <div class="dashboard-section-header">
 
@@ -328,14 +336,19 @@
                 Последняя активность
             </span>
 
-            <h2>
+            <h2 id="dashboardActivityTitle">
                 Что произошло недавно
             </h2>
+
+            <p class="dashboard-section-description">
+                Последние рассылки, мероприятия и отзывы
+            </p>
 
         </div>
 
     </div>
 
+    <div class="dashboard-activity-grid">
 
 
     <!-- =====================================================
@@ -454,13 +467,8 @@
 
 
     <!-- =====================================================
-         МЕРОПРИЯТИЕ + ОТЗЫВ
+         МЕРОПРИЯТИЕ
          ===================================================== -->
-
-    <div class="dashboard-activity-grid">
-
-
-        <!-- МЕРОПРИЯТИЕ -->
 
         {% if latest_event %}
 
@@ -678,6 +686,8 @@
         {% endif %}
 
     </div>
+
+    </section>
 
 </div>
 

@@ -7,9 +7,11 @@
 
 {% block content %}
 
+<section class="admin-page-panel" aria-labelledby="usersPageTitle">
+
 <div class="page-header">
     <div>
-        <h1>Пользователи</h1>
+        <h1 id="usersPageTitle">Пользователи</h1>
         <p class="subtitle">
             Зарегистрированные пользователи бота
         </p>
@@ -148,5 +150,7 @@
     </table>
 
 </div>
+
+</section>
 
 {% endblock %}

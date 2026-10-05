@@ -18,13 +18,15 @@
 
     <link
         rel="stylesheet"
-        href="/static/style.css?v=20261001-2"
+        href="/static/style.css?v=20261005-2"
     >
 
     <link
         rel="stylesheet"
         href="/static/auth.css?v=20261001-1"
     >
+
+    <link rel="stylesheet" href="/static/redesign.css?v=20261005-11">
 
 </head>
 
@@ -80,52 +82,53 @@
             ×
         </button>
 
-        <div class="logo">
-            Бот Молодёжь Казани
-        </div>
+        <a class="logo" href="{% if auth_user.role == 'editor' %}/events{% else %}/{% endif %}">
+            <span class="brand-mark" aria-hidden="true"><img src="/static/bot_avatar.png" alt=""></span>
+            <span class="brand-copy"><strong>Админ панель</strong></span>
+        </a>
 
 
         <nav>
 
             {% if auth_user.role == "admin" %}
 
-            <a href="/">
-                Главная
+            <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/home.png" alt=""></span>Главная
             </a>
 
-            <a href="/users">
-                Пользователи
+            <a href="/users" class="{% if request.url.path.startswith('/users') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/users.png" alt=""></span>Пользователи
             </a>
 
-            <a href="/events">
-                Мероприятия
+            <a href="/events" class="{% if request.url.path.startswith('/events') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/events.png" alt=""></span>Мероприятия
             </a>
 
-            <a href="/registrations">
-                Регистрации
+            <a href="/registrations" class="{% if request.url.path.startswith('/registrations') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/registrations.png" alt=""></span>Регистрации
             </a>
 
-            <a href="/reviews">
-                Отзывы
+            <a href="/reviews" class="{% if request.url.path.startswith('/reviews') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/feedbacks.png" alt=""></span>Отзывы
             </a>
 
-            <a href="/mailing">
-                Рассылка
+            <a href="/mailing" class="{% if request.url.path.startswith('/mailing') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/mailing.png" alt=""></span>Рассылка
             </a>
 
 
             {% elif auth_user.role == "editor" %}
 
-            <a href="/events">
-                Мероприятия
+            <a href="/events" class="{% if request.url.path.startswith('/events') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/events.png" alt=""></span>Мероприятия
             </a>
 
-            <a href="/registrations">
-                Регистрации
+            <a href="/registrations" class="{% if request.url.path.startswith('/registrations') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/registrations.png" alt=""></span>Регистрации
             </a>
 
-            <a href="/reviews">
-                Отзывы
+            <a href="/reviews" class="{% if request.url.path.startswith('/reviews') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/feedbacks.png" alt=""></span>Отзывы
             </a>
 
             {% endif %}

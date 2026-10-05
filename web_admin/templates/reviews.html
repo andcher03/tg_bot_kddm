@@ -4,9 +4,11 @@
 
 {% block content %}
 
+<section class="admin-page-panel" aria-labelledby="reviewsPageTitle">
+
 <div class="page-header reviews-page-header">
     <div>
-        <h1>Отзывы</h1>
+        <h1 id="reviewsPageTitle">Отзывы</h1>
         <p class="subtitle">
             Отзывы пользователей по всем мероприятиям
         </p>
@@ -135,5 +137,7 @@
     </div>
     {% endfor %}
 </div>
+
+</section>
 
 {% endblock %}

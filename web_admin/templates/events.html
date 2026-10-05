@@ -7,13 +7,15 @@
 
 {% block content %}
 
+<section class="admin-page-panel" aria-labelledby="eventsPageTitle">
+
 <div class="page-header">
 
     <div>
-        <h1>Мероприятия</h1>
+        <h1 id="eventsPageTitle">Мероприятия</h1>
 
         <p class="subtitle">
-            Актуальные мероприятия
+            Управление событиями и публикациями
         </p>
     </div>
 
@@ -99,11 +101,14 @@
 
     <div class="empty-state">
         Актуальных мероприятий пока нет.
+    </div>
 
     {% endfor %}
 
 </div>
 
 </div>
+
+</section>
 
 {% endblock %}

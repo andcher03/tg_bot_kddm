@@ -7,9 +7,11 @@
 {% block content %}
 {% set photo_urls = photo_urls or [] %}
 
+<section class="admin-page-panel" aria-labelledby="mailingPageTitle">
+
 <div class="page-header">
     <div>
-        <h1>Рассылка</h1>
+        <h1 id="mailingPageTitle">Рассылка</h1>
         <p class="subtitle">
             Создание рассылки пользователям Telegram-бота
         </p>
@@ -827,6 +829,7 @@
 
 {% endif %}
 
+</section>
 
 
 <script>

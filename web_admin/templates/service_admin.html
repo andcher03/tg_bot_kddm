@@ -65,7 +65,9 @@
             {% set current_profile_tab = profile_tab if user.id == expanded_user_id else "history" %}
             <article class="service-admin-user-card">
                 <div class="service-user-main">
-                    <span class="service-user-avatar">{{ (user.display_name or user.username)[:1]|upper }}</span>
+                    <span class="service-user-avatar">
+                        {% if user.avatar_path %}<img src="{{ user.avatar_path }}" alt="">{% else %}{{ (user.display_name or user.username)[:1]|upper }}{% endif %}
+                    </span>
                     <div><strong>{{ user.display_name or user.username }}</strong><span>@{{ user.username }} · {{ row.role_label }}</span></div>
                 </div>
                 <div class="service-user-status">

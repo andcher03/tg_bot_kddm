@@ -44,6 +44,7 @@
 .service-admin-user-card { grid-template-columns: minmax(210px, 1.25fr) minmax(130px, .65fr) minmax(230px, 1fr); }
 .service-user-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .service-user-avatar { display: grid; flex: 0 0 42px; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-weight: 800; }
+.service-user-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .service-user-main > div, .service-user-status { display: grid; gap: 4px; min-width: 0; }
 .service-user-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .service-user-main span:not(.service-user-avatar), .service-user-status small { color: var(--text-faint); font-size: 12px; }

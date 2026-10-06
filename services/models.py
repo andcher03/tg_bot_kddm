@@ -287,6 +287,11 @@ class Registration(Base):
         server_default=text("'not_requested'"),
     )
 
+    decline_reason: Mapped[str | None] = mapped_column(
+        String(180),
+        nullable=True,
+    )
+
     confirmation_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,

@@ -36,8 +36,11 @@ def registrations_word(count: int) -> str:
 def confirmation_status_label(
     registration_status: str,
     confirmation_status: str,
+    decline_reason: str | None = None,
 ) -> str:
     if registration_status == "cancelled":
+        if confirmation_status == "declined" and decline_reason:
+            return f"Отказался: {decline_reason}"
         return {
             "declined": "Отказался",
             "expired": "Не подтвердил вовремя",
@@ -48,7 +51,11 @@ def confirmation_status_label(
         "sending": "Отправляется",
         "pending": "Ожидает ответа",
         "confirmed": "Подтвердил участие",
-        "declined": "Отказался",
+        "declined": (
+            f"Отказался: {decline_reason}"
+            if decline_reason
+            else "Отказался"
+        ),
         "expired": "Не подтвердил вовремя",
         "delivery_failed": "Запрос не доставлен",
     }.get(confirmation_status, confirmation_status)
@@ -221,6 +228,7 @@ async def registration_detail_page(
                 "confirmation_status_label": confirmation_status_label(
                     registration.status,
                     registration.confirmation_status,
+                    registration.decline_reason,
                 ),
                 "confirmation_status_color": confirmation_status_color(
                     registration.status,

@@ -227,7 +227,11 @@ async def event_detail_page(
             confirmation_status = registration.confirmation_status
             if registration.status == "cancelled":
                 confirmation_label = {
-                    "declined": "Отказался",
+                    "declined": (
+                        f"Отказался: {registration.decline_reason}"
+                        if registration.decline_reason
+                        else "Отказался"
+                    ),
                     "expired": "Не подтвердил вовремя",
                 }.get(confirmation_status, "Регистрация снята")
             else:

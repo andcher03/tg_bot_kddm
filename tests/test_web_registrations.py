@@ -41,6 +41,14 @@ def test_confirmation_status_label_distinguishes_waiting_and_confirmed():
     )
 
 
+def test_declined_status_includes_selected_reason():
+    assert confirmation_status_label(
+        "cancelled",
+        "declined",
+        "Неудобное место, трудно добраться",
+    ) == "Отказался: Неудобное место, трудно добраться"
+
+
 def test_confirmation_status_color_matches_participation_state():
     assert confirmation_status_color("registered", "confirmed") == "success"
     assert confirmation_status_color("registered", "pending") == "waiting"

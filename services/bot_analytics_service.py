@@ -169,3 +169,23 @@ def track_registration_response(
             registration_id=registration_id,
         )
     )
+
+
+def track_registration_decline_reason(
+    *,
+    telegram_id: int,
+    callback_id: str,
+    registration_id: int,
+    reason_key: str,
+    reason_label: str,
+) -> None:
+    bot_analytics.enqueue(
+        AnalyticsEvent(
+            update_key=f"registration-decline-reason:{callback_id}",
+            actor_hash=bot_analytics.hash_actor(telegram_id),
+            category="registration",
+            action_key=f"registration.decline_reason.{reason_key}",
+            label=reason_label,
+            registration_id=registration_id,
+        )
+    )

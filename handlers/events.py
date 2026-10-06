@@ -8,8 +8,16 @@ from aiogram.types import (
 
 from services.postgres_event_service import PostgresEventService
 from services.registration_service import RegistrationService
-from services.event_confirmation import respond_to_confirmation
-from services.bot_analytics_service import track_registration_response
+from services.event_confirmation import (
+    DECLINE_REASONS,
+    decline_reason_keyboard,
+    respond_to_confirmation,
+    save_decline_reason,
+)
+from services.bot_analytics_service import (
+    track_registration_decline_reason,
+    track_registration_response,
+)
 
 router = Router()
 
@@ -240,9 +248,36 @@ async def handle_event_confirmation(
             confirmed=result == "confirmed",
         )
 
+    if result == "confirmed":
+        await callback.answer()
+        if callback.message:
+            try:
+                await callback.message.edit_text(
+                    "Класс! Подтвердили участие. Хорошей дороги — "
+                    "встретимся на мероприятии ❤️"
+                )
+            except Exception:
+                pass
+        return
+
+    if result == "declined":
+        await callback.answer()
+        if callback.message:
+            try:
+                await callback.message.edit_text(
+                    "Жаль, что не получилось 💔\n\n"
+                    "Подскажи, что помешало — мы учтем это в следующий раз:",
+                    reply_markup=decline_reason_keyboard(
+                        registration_id,
+                        start_timestamp,
+                        registration_timestamp,
+                    ),
+                )
+            except Exception:
+                pass
+        return
+
     messages = {
-        "confirmed": "✅ Участие подтверждено. Ждём вас на мероприятии!",
-        "declined": "Регистрация снята. Спасибо, что сообщили.",
         "expired": "Время подтверждения уже истекло.",
         "pending": "Вы уже подтвердили участие.",
         "not_owner": "Это подтверждение предназначено другому пользователю.",
@@ -252,13 +287,10 @@ async def handle_event_confirmation(
         "not_requested": "Запрос подтверждения ещё не отправлен.",
         "stale": "Время мероприятия изменилось. Дождитесь нового запроса.",
     }
-    message_text = messages.get(
-        result,
-        "Эта регистрация больше не ожидает подтверждения.",
-    )
+    message_text = messages.get(result, "Эта регистрация больше не ожидает подтверждения.")
     await callback.answer(message_text, show_alert=True)
 
-    if result in {"confirmed", "declined", "expired"} and callback.message:
+    if result == "expired" and callback.message:
         try:
             await callback.message.edit_reply_markup(reply_markup=None)
         except Exception:
@@ -273,3 +305,56 @@ async def confirm_event_participation(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("event_decline:"))
 async def decline_event_participation(callback: CallbackQuery):
     await handle_event_confirmation(callback, confirm=False)
+
+
+@router.callback_query(F.data.startswith("dr:"))
+async def record_decline_reason(callback: CallbackQuery):
+    try:
+        _action, registration_id_value, start_value, registered_value, reason_key = (
+            callback.data.split(":", maxsplit=4)
+        )
+        registration_id = int(registration_id_value)
+        start_timestamp = int(start_value)
+        registration_timestamp = int(registered_value)
+        reason_label = dict(DECLINE_REASONS)[reason_key]
+    except (IndexError, KeyError, ValueError):
+        await callback.answer("Не удалось определить причину отказа.", show_alert=True)
+        return
+
+    result = await save_decline_reason(
+        registration_id=registration_id,
+        telegram_id=callback.from_user.id,
+        expected_start_timestamp=start_timestamp,
+        expected_registration_timestamp=registration_timestamp,
+        reason_label=reason_label,
+    )
+    if result != "ok":
+        messages = {
+            "not_found": "Регистрация не найдена.",
+            "not_owner": "Этот выбор предназначен другому пользователю.",
+            "stale": "Ответ относится к другому времени мероприятия.",
+            "not_declined": "Для этой регистрации причина отказа не ожидается.",
+            "already_recorded": "Причина отказа уже сохранена.",
+        }
+        await callback.answer(
+            messages.get(result, "Не удалось сохранить ответ."),
+            show_alert=True,
+        )
+        return
+
+    track_registration_decline_reason(
+        telegram_id=callback.from_user.id,
+        callback_id=callback.id,
+        registration_id=registration_id,
+        reason_key=reason_key,
+        reason_label=reason_label,
+    )
+    await callback.answer()
+    if callback.message:
+        try:
+            await callback.message.edit_text(
+                "Спасибо, что поделился причиной. Мы учтём ее при "
+                "планировании следующих встреч ❤️"
+            )
+        except Exception:
+            pass

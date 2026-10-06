@@ -17,6 +17,13 @@ MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 CONFIRMATION_LEAD_TIME = timedelta(hours=2)
 CONFIRMATION_RETRY_INTERVAL = timedelta(minutes=10)
 CONFIRMATION_CHECK_INTERVAL_SECONDS = 60
+DECLINE_REASONS = (
+    ("not_interested", "Встреча уже неинтересна"),
+    ("schedule", "Появились планы — неудобное время"),
+    ("alone", "Не хочу идти один"),
+    ("location", "Неудобное место, трудно добраться"),
+    ("other", "Другая причина"),
+)
 
 
 def local_now() -> datetime:
@@ -46,7 +53,7 @@ def reminder_keyboard(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="✅ Подтверждаю участие",
+                    text="Я буду!",
                     callback_data=(
                         "event_confirm:"
                         f"{registration_id}:{start_timestamp}:"
@@ -56,7 +63,7 @@ def reminder_keyboard(
             ],
             [
                 InlineKeyboardButton(
-                    text="❌ Не смогу прийти",
+                    text="Не смогу прийти",
                     callback_data=(
                         "event_decline:"
                         f"{registration_id}:{start_timestamp}:"
@@ -68,22 +75,38 @@ def reminder_keyboard(
     )
 
 
+def decline_reason_keyboard(
+    registration_id: int,
+    start_timestamp: int,
+    registration_timestamp: int,
+) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=label,
+                    callback_data=(
+                        f"dr:{registration_id}:{start_timestamp}:"
+                        f"{registration_timestamp}:{reason_key}"
+                    ),
+                )
+            ]
+            for reason_key, label in DECLINE_REASONS
+        ]
+    )
+
+
 def reminder_text(event: Event, now: datetime) -> str:
     start_at = event_start_at(event)
     if start_at is None:
         raise ValueError("У мероприятия не заданы дата и время начала")
 
-    remaining = start_at - now
-    if remaining > timedelta(hours=1):
-        intro = "⏰ Через 2 часа начинается мероприятие"
-    else:
-        intro = "⏰ Скоро начинается мероприятие"
-
     return (
-        f"{intro} <b>«{escape(event.title)}»</b> "
-        f"({start_at.strftime('%d.%m.%Y в %H:%M')}).\n\n"
-        "Подтвердите участие кнопкой ниже. Если не ответить до начала, "
-        "регистрация будет снята."
+        f"☀️ Сегодня встреча — <b>{escape(event.title)}</b>\n\n"
+        f"Ждём тебя в {start_at.strftime('%H:%M')} по адресу "
+        f"{escape(event.place or 'адрес уточняется')}.\n\n"
+        "Подтверди участие, чтобы мы знали точное количество занятых "
+        "мест на событии :)"
     )
 
 
@@ -364,6 +387,62 @@ async def respond_to_confirmation(
         registration.confirmation_responded_at = current_time
         await session.commit()
         return "declined"
+
+
+async def save_decline_reason(
+    *,
+    registration_id: int,
+    telegram_id: int,
+    expected_start_timestamp: int,
+    expected_registration_timestamp: int,
+    reason_label: str,
+) -> str:
+    """Save a reason only for the owner's matching declined registration."""
+    async with SessionLocal() as session:
+        result = await session.execute(
+            select(Registration, User, Event)
+            .join(User, User.id == Registration.user_id)
+            .join(Event, Event.id == Registration.event_id)
+            .where(Registration.id == registration_id)
+        )
+        row = result.one_or_none()
+        if row is None:
+            return "not_found"
+
+        registration, user, event = row
+        if user.telegram_id != telegram_id:
+            return "not_owner"
+
+        expected_start_at = datetime.fromtimestamp(
+            expected_start_timestamp, MOSCOW_TZ
+        ).replace(tzinfo=None)
+        expected_registration_at = datetime.fromtimestamp(
+            expected_registration_timestamp, MOSCOW_TZ
+        ).replace(tzinfo=None)
+        if (
+            registration.confirmation_for_start_at != expected_start_at
+            or event_start_at(event) != expected_start_at
+            or int(
+                registration.registration_date.replace(
+                    tzinfo=MOSCOW_TZ
+                ).timestamp()
+            )
+            != int(expected_registration_at.replace(tzinfo=MOSCOW_TZ).timestamp())
+        ):
+            return "stale"
+        if (
+            registration.status != "cancelled"
+            or registration.confirmation_status != "declined"
+        ):
+            return "not_declined"
+
+        if registration.decline_reason is not None:
+            return "already_recorded"
+
+        registration.decline_reason = reason_label
+        await session.commit()
+
+    return "ok"
 
 
 async def event_confirmation_loop(bot: Bot) -> None:

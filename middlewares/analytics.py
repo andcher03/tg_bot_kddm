@@ -142,7 +142,7 @@ def build_analytics_event(event: TelegramObject, data: dict[str, Any]) -> Analyt
         event_id = registration_id = None
     elif isinstance(event, CallbackQuery):
         callback_data = event.data or ""
-        if callback_data.startswith(("event_confirm:", "event_decline:")):
+        if callback_data.startswith(("event_confirm:", "event_decline:", "dr:")):
             # These callbacks are recorded after the bot validates the
             # response, so the funnel counts accepted confirmations.
             return None

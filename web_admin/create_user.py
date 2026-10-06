@@ -32,7 +32,7 @@ async def main():
     ).strip().lower()
 
     password = getpass(
-        "Пароль (минимум 12 символов): "
+        "Пароль (минимум 8 символов): "
     )
 
     password_repeat = getpass(

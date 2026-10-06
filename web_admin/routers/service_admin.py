@@ -464,7 +464,7 @@ async def update_service_user_profile(
         clean_value = normalize_username(clean_value)
         if not clean_value or len(clean_value) > 80:
             return RedirectResponse("/service-admin?view=users&error=invalid_profile_value", status_code=303)
-    if parameter == "password" and (len(value) < 12 or value != value_repeat):
+    if parameter == "password" and (len(value) < 8 or value != value_repeat):
         return RedirectResponse("/service-admin?view=users&error=invalid_profile_value", status_code=303)
     if parameter == "role" and clean_value not in {ROLE_SUPERUSER, ROLE_ADMIN, ROLE_EDITOR}:
         return RedirectResponse("/service-admin?view=users&error=invalid_profile_value", status_code=303)

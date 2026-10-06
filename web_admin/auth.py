@@ -530,9 +530,9 @@ async def create_or_update_web_user(
             "Роль должна быть superuser, admin или editor."
         )
 
-    if len(password) < 12:
+    if len(password) < 8:
         raise ValueError(
-            "Пароль должен содержать минимум 12 символов."
+            "Пароль должен содержать минимум 8 символов."
         )
 
 
@@ -650,8 +650,8 @@ async def create_web_admin_user(
         raise ValueError("Логин слишком длинный.")
     if role not in {ROLE_SUPERUSER, ROLE_ADMIN, ROLE_EDITOR}:
         raise ValueError("Выбрана неизвестная роль.")
-    if len(password) < 12:
-        raise ValueError("Пароль должен содержать минимум 12 символов.")
+    if len(password) < 8:
+        raise ValueError("Пароль должен содержать минимум 8 символов.")
 
     hashed = password_hash.hash(password)
     display_name = (display_name or "").strip() or normalized

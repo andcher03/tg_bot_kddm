@@ -80,7 +80,7 @@
         <div class="profile-card-heading">
             <div>
                 <h2>Сменить пароль</h2>
-                <p>Для подтверждения укажите текущий пароль. Минимальная длина нового — 12 символов.</p>
+                <p>Для подтверждения укажите текущий пароль. Минимальная длина нового — 8 символов.</p>
             </div>
         </div>
         <form class="profile-form" method="post" action="/profile/password">
@@ -90,11 +90,11 @@
             </label>
             <label class="profile-field">
                 <span>Новый пароль</span>
-                <input type="password" name="new_password" minlength="12" autocomplete="new-password" required>
+                <input type="password" name="new_password" minlength="8" autocomplete="new-password" required>
             </label>
             <label class="profile-field">
                 <span>Повторите новый пароль</span>
-                <input type="password" name="confirm_password" minlength="12" autocomplete="new-password" required>
+                <input type="password" name="confirm_password" minlength="8" autocomplete="new-password" required>
             </label>
             <button class="profile-submit" type="submit">Обновить пароль</button>
         </form>

@@ -22,7 +22,7 @@
     {% if error == "self_session" %}<div class="error-notice">Нельзя завершить текущую сессию отсюда.</div>{% endif %}
     {% if error == "self_profile" %}<div class="error-notice">Собственные данные изменяются в личном кабинете.</div>{% endif %}
     {% if error == "invalid_profile_parameter" %}<div class="error-notice">Выберите параметр для изменения.</div>{% endif %}
-    {% if error == "invalid_profile_value" %}<div class="error-notice">Проверьте значение параметра. Пароль должен содержать не менее 12 символов, а фото быть JPG, PNG или WebP до 5 МБ.</div>{% endif %}
+    {% if error == "invalid_profile_value" %}<div class="error-notice">Проверьте значение параметра. Пароль должен содержать не менее 8 символов, а фото быть JPG, PNG или WebP до 5 МБ.</div>{% endif %}
     {% if error == "username_taken" %}<div class="error-notice">Этот логин уже занят.</div>{% endif %}
     {% if error %}<div class="error-notice">{{ error if error not in ["self_access", "last_superuser", "invalid_access", "self_session", "self_profile", "invalid_profile_parameter", "invalid_profile_value", "username_taken"] else "" }}</div>{% endif %}
 
@@ -52,8 +52,8 @@
                 <label>Имя для отображения<input name="display_name" maxlength="120" autocomplete="name" placeholder="Например, Анна Иванова"></label>
                 <label>Логин<input name="username" required maxlength="80" autocomplete="off" placeholder="anna.ivanova"></label>
                 <label>Роль<select name="role" required>{% for key, label in roles %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
-                <label>Пароль, минимум 12 символов<input name="password" type="password" required minlength="12" autocomplete="new-password"></label>
-                <label>Повторите пароль<input name="password_repeat" type="password" required minlength="12" autocomplete="new-password"></label>
+                <label>Пароль, минимум 8 символов<input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+                <label>Повторите пароль<input name="password_repeat" type="password" required minlength="8" autocomplete="new-password"></label>
                 <p class="service-form-note">Пароль показывается только тому, кто создаёт аккаунт; передайте его сотруднику безопасным способом.</p>
                 <button type="submit" class="primary-link-button">Создать аккаунт</button>
             </form>
@@ -146,7 +146,7 @@
                             </section>
                             <section id="profile-panel-{{ user.id }}-password" role="tabpanel" data-profile-panel="password" {% if current_profile_tab != "password" %}hidden{% endif %}>
                                 <h3>Сбросить пароль</h3>
-                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" class="service-user-edit-form"><input type="hidden" name="parameter" value="password"><label>Новый пароль<input name="value" type="password" minlength="12" autocomplete="new-password" required></label><label>Повторите пароль<input name="value_repeat" type="password" minlength="12" autocomplete="new-password" required></label><button class="service-action-button" type="submit" onclick="return confirm('Изменить пароль? Все активные сессии этого пользователя будут завершены.')">Сохранить пароль</button></form>
+                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" class="service-user-edit-form"><input type="hidden" name="parameter" value="password"><label>Новый пароль<input name="value" type="password" minlength="8" autocomplete="new-password" required></label><label>Повторите пароль<input name="value_repeat" type="password" minlength="8" autocomplete="new-password" required></label><button class="service-action-button" type="submit" onclick="return confirm('Изменить пароль? Все активные сессии этого пользователя будут завершены.')">Сохранить пароль</button></form>
                                 <p class="service-user-history-empty">После смены пароля пользователь выйдет из остальных устройств.</p>
                             </section>
                             <section id="profile-panel-{{ user.id }}-role" role="tabpanel" data-profile-panel="role" {% if current_profile_tab != "role" %}hidden{% endif %}>

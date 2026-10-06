@@ -56,7 +56,7 @@ PROFILE_MESSAGES = {
     "invalid": "Проверьте введённые данные.",
     "password_current": "Текущий пароль указан неверно.",
     "password_mismatch": "Новые пароли не совпадают.",
-    "password_short": "Новый пароль должен содержать минимум 12 символов.",
+    "password_short": "Новый пароль должен содержать минимум 8 символов.",
     "username_taken": "Этот логин уже занят.",
     "login_confirm": "Для смены логина подтвердите текущий пароль.",
     "avatar_invalid": "Не удалось загрузить фотографию. Допустимы JPG, PNG или WebP до 5 МБ.",
@@ -192,7 +192,7 @@ async def update_profile_password(
     auth_user = request.state.auth_user
     if new_password != confirm_password:
         return profile_redirect("password_mismatch", error=True)
-    if len(new_password) < 12:
+    if len(new_password) < 8:
         return profile_redirect("password_short", error=True)
 
     async with SessionLocal() as session:

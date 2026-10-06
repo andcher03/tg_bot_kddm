@@ -13,7 +13,6 @@ from sqlalchemy import text
 
 from services.database import SessionLocal
 from services.web_admin_activity import (
-    record_activity,
     record_authenticated_request,
 )
 

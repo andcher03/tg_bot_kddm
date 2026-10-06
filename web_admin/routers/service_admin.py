@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
 from services.database import SessionLocal
@@ -524,7 +524,6 @@ async def update_service_user_profile(
 
             user.updated_at = datetime.now(timezone.utc)
             target_username = user.username
-            target_display_name = user.display_name or user.username
             await session.commit()
     except IntegrityError:
         if new_avatar_path:
@@ -577,7 +576,7 @@ async def change_user_access(
             raise ValueError("Укажите причину ограничения.")
         if action not in {"restrict", "unrestrict", "block", "unblock"}:
             raise ValueError("Неизвестное действие.")
-    except ValueError as error:
+    except ValueError:
         return RedirectResponse(
             "/service-admin?view=users&error=invalid_access",
             status_code=303,

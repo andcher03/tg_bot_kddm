@@ -32,7 +32,14 @@
         href="/static/auth.css?v=20261001-1"
     >
 
-    <link rel="stylesheet" href="/static/redesign.css?v=20261005-15">
+    <link rel="stylesheet" href="/static/redesign.css?v=20261006-1">
+
+    {% if request.url.path.startswith('/service-admin') %}
+    <link rel="stylesheet" href="/static/service_admin.css?v=20261006-2">
+    {% endif %}
+    {% if request.url.path.startswith('/profile') %}
+    <link rel="stylesheet" href="/static/profile.css?v=20261006-1">
+    {% endif %}
 
 </head>
 
@@ -64,7 +71,9 @@
         </a>
 
         <span class="mobile-topbar-avatar" aria-hidden="true">
+            {% if auth_user.avatar_path %}<img src="{{ auth_user.avatar_path }}" alt="">{% else %}
             {{ auth_user.display_name[:1]|upper }}
+            {% endif %}
         </span>
 
     </header>
@@ -90,13 +99,13 @@
 
         <a class="logo" href="{% if auth_user.role == 'editor' %}/events{% else %}/{% endif %}">
             <span class="brand-mark" aria-hidden="true"><img src="/static/bot_avatar.png" alt=""></span>
-            <span class="brand-copy"><strong>Админ панель</strong></span>
+            <span class="brand-copy"><strong>Молодежная CRM</strong></span>
         </a>
 
 
         <nav>
 
-            {% if auth_user.role == "admin" %}
+            {% if auth_user.role in ["admin", "superuser"] %}
 
             <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
                 <span class="nav-icon" aria-hidden="true"><img src="/static/icons/home.png" alt=""></span>Главная
@@ -145,13 +154,26 @@
 
         </nav>
 
+        {% if auth_user.role == "superuser" %}
+        <a
+            href="/service-admin"
+            class="service-admin-nav {% if request.url.path.startswith('/service-admin') %}active{% endif %}"
+        >
+            <span aria-hidden="true"><img src="/static/icons/settings.png" alt=""></span>
+            Администрирование сервиса
+        </a>
+        {% endif %}
+
 
         <div class="sidebar-auth-user">
 
+            <a class="sidebar-profile-link {% if request.url.path.startswith('/profile') %}active{% endif %}" href="/profile" aria-label="Открыть личный кабинет">
             <div class="sidebar-auth-user-main">
 
                 <div class="sidebar-auth-avatar">
+                    {% if auth_user.avatar_path %}<img src="{{ auth_user.avatar_path }}" alt="">{% else %}
                     {{ auth_user.display_name[:1]|upper }}
+                    {% endif %}
                 </div>
 
                 <div class="sidebar-auth-user-text">
@@ -163,10 +185,12 @@
                     <span>
                         {{ auth_user.role_label }}
                     </span>
+                    <span class="sidebar-profile-caption">Личный кабинет</span>
 
                 </div>
 
             </div>
+            </a>
 
 
             <form
@@ -188,7 +212,14 @@
     </aside>
 
 
-    <main class="content">
+    <main class="content{% if auth_user.is_restricted %} content-read-only{% endif %}">
+
+        {% if auth_user.is_restricted %}
+        <div class="read-only-banner" role="status">
+            Доступ ограничен: доступен только просмотр.
+            {% if auth_user.restriction_reason %}Причина: {{ auth_user.restriction_reason }}{% endif %}
+        </div>
+        {% endif %}
 
         {% block content %}
         {% endblock %}
@@ -198,7 +229,7 @@
     {% block scripts %}
     {% endblock %}
 
-    <script src="/static/base.js?v=20261001-1" defer></script>
+    <script src="/static/base.js?v=20261006-1" defer></script>
 
 </body>
 

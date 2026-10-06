@@ -12,6 +12,10 @@ from pwdlib import PasswordHash
 from sqlalchemy import text
 
 from services.database import SessionLocal
+from services.web_admin_activity import (
+    record_activity,
+    record_authenticated_request,
+)
 
 
 load_dotenv()
@@ -31,10 +35,12 @@ COOKIE_SECURE = (
 
 ROLE_ADMIN = "admin"
 ROLE_EDITOR = "editor"
+ROLE_SUPERUSER = "superuser"
 
 ROLE_LABELS = {
     ROLE_ADMIN: "Администратор",
     ROLE_EDITOR: "Редактор",
+    ROLE_SUPERUSER: "Суперпользователь",
 }
 
 password_hash = PasswordHash.recommended()
@@ -93,7 +99,13 @@ def role_can_access(
     path: str,
 ) -> bool:
 
-    if role == ROLE_ADMIN:
+    if path == "/profile" or path.startswith("/profile/"):
+        return role in {ROLE_SUPERUSER, ROLE_ADMIN, ROLE_EDITOR}
+
+    if path == "/service-admin" or path.startswith("/service-admin/"):
+        return role == ROLE_SUPERUSER
+
+    if role in {ROLE_ADMIN, ROLE_SUPERUSER}:
         return True
 
     if role != ROLE_EDITOR:
@@ -155,6 +167,7 @@ async def authenticate_web_user(
                     id,
                     username,
                     display_name,
+                    avatar_path,
                     password_hash,
                     role,
                     is_active
@@ -235,6 +248,9 @@ async def authenticate_web_user(
                 or user["username"]
             ),
 
+        "avatar_path":
+            user["avatar_path"],
+
         "role":
             user["role"],
 
@@ -249,6 +265,7 @@ async def authenticate_web_user(
 async def create_web_session(
     user_id: int,
     remember_me: bool,
+    user_agent: str | None = None,
 ):
     raw_token = secrets.token_urlsafe(
         48
@@ -295,21 +312,24 @@ async def create_web_session(
 
     async with SessionLocal() as session:
 
-        await session.execute(
+        result = await session.execute(
             text(
                 """
                 INSERT INTO web_admin_sessions (
                     user_id,
                     token_hash,
                     remember_me,
-                    expires_at
+                    expires_at,
+                    user_agent
                 )
                 VALUES (
                     :user_id,
                     :token_hash,
                     :remember_me,
-                    :expires_at
+                    :expires_at,
+                    :user_agent
                 )
+                RETURNING id
                 """
             ),
             {
@@ -324,8 +344,13 @@ async def create_web_session(
 
                 "expires_at":
                     expires_at,
+
+                "user_agent":
+                    (user_agent or "")[:500] or None,
             }
         )
+
+        session_id = result.scalar_one()
 
         await session.commit()
 
@@ -333,6 +358,7 @@ async def create_web_session(
     return (
         raw_token,
         cookie_max_age,
+        session_id,
     )
 
 
@@ -384,8 +410,20 @@ async def get_authenticated_user(
                     wau.id,
                     wau.username,
                     wau.display_name,
+                    wau.avatar_path,
                     wau.role,
                     wau.is_active,
+                    wau.is_restricted,
+                    wau.restricted_until,
+                    wau.restriction_reason,
+
+                    (
+                        wau.is_restricted
+                        AND (
+                            wau.restricted_until IS NULL
+                            OR wau.restricted_until > CURRENT_TIMESTAMP
+                        )
+                    ) AS access_restricted,
 
                     was.id AS session_id,
                     was.expires_at
@@ -437,6 +475,9 @@ async def get_authenticated_user(
                 or row["username"]
             ),
 
+        "avatar_path":
+            row["avatar_path"],
+
         "role":
             row["role"],
 
@@ -445,6 +486,15 @@ async def get_authenticated_user(
                 row["role"],
                 row["role"],
             ),
+
+        "session_id":
+            row["session_id"],
+
+        "is_restricted":
+            row["access_restricted"],
+
+        "restriction_reason":
+            row["restriction_reason"],
     }
 
 
@@ -473,11 +523,12 @@ async def create_or_update_web_user(
         )
 
     if role not in {
+        ROLE_SUPERUSER,
         ROLE_ADMIN,
         ROLE_EDITOR,
     }:
         raise ValueError(
-            "Роль должна быть admin или editor."
+            "Роль должна быть superuser, admin или editor."
         )
 
     if len(password) < 12:
@@ -532,6 +583,15 @@ async def create_or_update_web_user(
                     is_active =
                         TRUE,
 
+                    is_restricted =
+                        FALSE,
+
+                    restricted_until =
+                        NULL,
+
+                    restriction_reason =
+                        NULL,
+
                     updated_at =
                         CURRENT_TIMESTAMP
 
@@ -576,6 +636,56 @@ async def create_or_update_web_user(
     return user_id
 
 
+async def create_web_admin_user(
+    *,
+    username: str,
+    password: str,
+    role: str,
+    display_name: str | None = None,
+) -> int:
+    normalized = normalize_username(username)
+    role = role.strip().lower()
+    if not normalized:
+        raise ValueError("Логин не может быть пустым.")
+    if len(normalized) > 80:
+        raise ValueError("Логин слишком длинный.")
+    if role not in {ROLE_SUPERUSER, ROLE_ADMIN, ROLE_EDITOR}:
+        raise ValueError("Выбрана неизвестная роль.")
+    if len(password) < 12:
+        raise ValueError("Пароль должен содержать минимум 12 символов.")
+
+    hashed = password_hash.hash(password)
+    display_name = (display_name or "").strip() or normalized
+    if len(display_name) > 120:
+        raise ValueError("Имя слишком длинное.")
+
+    async with SessionLocal() as session:
+        result = await session.execute(
+            text(
+                """
+                INSERT INTO web_admin_users (
+                    username, display_name, password_hash, role, is_active,
+                    updated_at
+                )
+                VALUES (
+                    :username, :display_name, :password_hash, :role, TRUE,
+                    CURRENT_TIMESTAMP
+                )
+                RETURNING id
+                """
+            ),
+            {
+                "username": normalized,
+                "display_name": display_name,
+                "password_hash": hashed,
+                "role": role,
+            },
+        )
+        user_id = result.scalar_one()
+        await session.commit()
+    return user_id
+
+
 def is_public_path(path: str) -> bool:
 
     if path == "/login":
@@ -604,6 +714,14 @@ async def web_admin_auth_middleware(
     call_next,
 ):
     path = request.url.path
+
+    if (
+        path == "/static"
+        or path.startswith("/static/")
+        or path == "/favicon.ico"
+    ):
+        request.state.auth_user = None
+        return await call_next(request)
 
     raw_token = request.cookies.get(
         COOKIE_NAME
@@ -661,6 +779,18 @@ async def web_admin_auth_middleware(
 
     role = auth_user["role"]
 
+    if (
+        auth_user.get("is_restricted")
+        and request.method.upper() not in {"GET", "HEAD", "OPTIONS"}
+        and path != "/logout"
+    ):
+        if path.startswith("/api/"):
+            return JSONResponse(
+                {"detail": "Доступ ограничен: разрешён только просмотр."},
+                status_code=403,
+            )
+        return RedirectResponse(url="/forbidden?restricted=1", status_code=303)
+
 
     # Для editor корневая страница заменяется
     # на его рабочий раздел.
@@ -697,6 +827,28 @@ async def web_admin_auth_middleware(
         )
 
 
-    return await call_next(
-        request
-    )
+    response = await call_next(request)
+    try:
+        async with SessionLocal() as session:
+            await session.execute(
+                text(
+                    """
+                    UPDATE web_admin_sessions
+                    SET last_seen_at = CURRENT_TIMESTAMP,
+                        user_agent = COALESCE(:user_agent, user_agent)
+                    WHERE id = :session_id
+                    """
+                ),
+                {
+                    "session_id": auth_user["session_id"],
+                    "user_agent": (
+                        request.headers.get("user-agent", "")[:500] or None
+                    ),
+                },
+            )
+            await session.commit()
+        await record_authenticated_request(request, auth_user, response)
+    except Exception:
+        # Activity logging must not break normal admin requests.
+        pass
+    return response

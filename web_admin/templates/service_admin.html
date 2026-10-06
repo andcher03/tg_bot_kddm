@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Администрирование сервиса — Молодёжь Казани{% endblock %}
+
+{% block content %}
+<section class="admin-page-panel service-admin-page" aria-labelledby="serviceAdminTitle">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">УПРАВЛЕНИЕ ДОСТУПОМ И БЕЗОПАСНОСТЬЮ</p>
+            <h1 id="serviceAdminTitle">Администрирование сервиса</h1>
+            <p class="subtitle">Учётные записи, сессии и журнал работы веб-админки</p>
+        </div>
+    </header>
+
+    {% if notice == "created" %}<div class="success-notice">Учётная запись создана.</div>{% endif %}
+    {% if notice == "access_updated" %}<div class="success-notice">Права доступа обновлены.</div>{% endif %}
+    {% if notice == "session_revoked" %}<div class="success-notice">Сессия завершена.</div>{% endif %}
+    {% if notice == "profile_updated" %}<div class="success-notice">Параметр учётной записи обновлён.</div>{% endif %}
+    {% if error == "self_access" %}<div class="error-notice">Нельзя ограничить или заблокировать собственную учётную запись.</div>{% endif %}
+    {% if error == "last_superuser" %}<div class="error-notice">Нельзя ограничить или лишить роли последнего активного суперпользователя.</div>{% endif %}
+    {% if error == "invalid_access" %}<div class="error-notice">Проверьте причину и срок ограничения.</div>{% endif %}
+    {% if error == "self_session" %}<div class="error-notice">Нельзя завершить текущую сессию отсюда.</div>{% endif %}
+    {% if error == "self_profile" %}<div class="error-notice">Собственные данные изменяются в личном кабинете.</div>{% endif %}
+    {% if error == "invalid_profile_parameter" %}<div class="error-notice">Выберите параметр для изменения.</div>{% endif %}
+    {% if error == "invalid_profile_value" %}<div class="error-notice">Проверьте значение параметра. Пароль должен содержать не менее 12 символов, а фото быть JPG, PNG или WebP до 5 МБ.</div>{% endif %}
+    {% if error == "username_taken" %}<div class="error-notice">Этот логин уже занят.</div>{% endif %}
+    {% if error %}<div class="error-notice">{{ error if error not in ["self_access", "last_superuser", "invalid_access", "self_session", "self_profile", "invalid_profile_parameter", "invalid_profile_value", "username_taken"] else "" }}</div>{% endif %}
+
+    <div class="service-admin-metrics">
+        <article><span>Учётные записи</span><strong>{{ total_users }}</strong></article>
+        <article><span>Доступ активен</span><strong>{{ active_users }}</strong></article>
+        <article><span>Только просмотр</span><strong>{{ restricted_users }}</strong></article>
+        <article><span>Заблокированы</span><strong>{{ blocked_users }}</strong></article>
+        <article><span>Активные сессии</span><strong>{{ active_sessions_count }}</strong></article>
+    </div>
+
+    <nav class="service-admin-tabs" aria-label="Разделы администрирования">
+        <a href="/service-admin?view=users" class="{% if view == 'users' %}active{% endif %}">Пользователи</a>
+        <a href="/service-admin?view=activity" class="{% if view == 'activity' %}active{% endif %}">Активность</a>
+        <a href="/service-admin?view=devices" class="{% if view == 'devices' %}active{% endif %}">Сессии и устройства</a>
+    </nav>
+
+    {% if view == "users" %}
+    <section class="service-admin-section">
+        <div class="service-section-heading">
+            <div><h2>Пользователи веб-админки</h2><p>Создавайте аккаунты, задавайте уровень доступа и завершайте работу сотрудников.</p></div>
+        </div>
+
+        <details class="service-create-details">
+            <summary>＋ Создать пользователя</summary>
+            <form method="post" action="/service-admin/users" class="service-create-form">
+                <label>Имя для отображения<input name="display_name" maxlength="120" autocomplete="name" placeholder="Например, Анна Иванова"></label>
+                <label>Логин<input name="username" required maxlength="80" autocomplete="off" placeholder="anna.ivanova"></label>
+                <label>Роль<select name="role" required>{% for key, label in roles %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+                <label>Пароль, минимум 12 символов<input name="password" type="password" required minlength="12" autocomplete="new-password"></label>
+                <label>Повторите пароль<input name="password_repeat" type="password" required minlength="12" autocomplete="new-password"></label>
+                <p class="service-form-note">Пароль показывается только тому, кто создаёт аккаунт; передайте его сотруднику безопасным способом.</p>
+                <button type="submit" class="primary-link-button">Создать аккаунт</button>
+            </form>
+        </details>
+
+        <div class="service-admin-user-list">
+            {% for row in users %}
+            {% set user = row.user %}
+            {% set current_profile_tab = profile_tab if user.id == expanded_user_id else "history" %}
+            <article class="service-admin-user-card">
+                <div class="service-user-main">
+                    <span class="service-user-avatar">{{ (user.display_name or user.username)[:1]|upper }}</span>
+                    <div><strong>{{ user.display_name or user.username }}</strong><span>@{{ user.username }} · {{ row.role_label }}</span></div>
+                </div>
+                <div class="service-user-status">
+                    <span class="service-status-chip service-status-chip--{{ row.access_color }}">{{ row.access_label }}</span>
+                    {% if user.restriction_reason and row.access_color in ["warning", "danger"] %}<small>{{ user.restriction_reason }}</small>{% endif %}
+                    {% if row.last_activity %}<small>Последняя активность: {{ row.last_activity.strftime("%d.%m.%Y %H:%M") }}</small>{% elif user.last_login_at %}<small>Вход: {{ user.last_login_at.strftime("%d.%m.%Y %H:%M") }}</small>{% else %}<small>Ещё не входил</small>{% endif %}
+                </div>
+                <div class="service-user-actions">
+                    {% if user.id != request.state.auth_user.id %}
+                        {% if not user.is_active %}
+                        <form method="post" action="/service-admin/users/{{ user.id }}/access"><input type="hidden" name="action" value="unblock"><button class="service-action-button" type="submit">Восстановить доступ</button></form>
+                        {% elif row.access_color == "warning" %}
+                        <form method="post" action="/service-admin/users/{{ user.id }}/access"><input type="hidden" name="action" value="unrestrict"><button class="service-action-button" type="submit">Снять ограничение</button></form>
+                        <form method="post" action="/service-admin/users/{{ user.id }}/access"><input type="hidden" name="action" value="block"><input type="hidden" name="reason" value="Заблокирован суперпользователем"><button class="service-action-button service-action-button--danger" type="submit" onclick="return confirm('Заблокировать пользователя и завершить его сессии?')">Заблокировать</button></form>
+                        {% else %}
+                        <details class="service-restrict-details">
+                            <summary class="service-action-button">Ограничить доступ</summary>
+                            <form method="post" action="/service-admin/users/{{ user.id }}/access" class="service-restrict-form">
+                                <input type="hidden" name="action" value="restrict">
+                                <label>Причина<input type="text" name="reason" maxlength="240" required placeholder="Например, проверка обращения"></label>
+                                <label>Ограничить до (необязательно)<input type="datetime-local" name="restricted_until"></label>
+                                <button class="service-action-button" type="submit">Оставить только просмотр</button>
+                            </form>
+                        </details>
+                        <form method="post" action="/service-admin/users/{{ user.id }}/access"><input type="hidden" name="action" value="block"><input type="hidden" name="reason" value="Заблокирован суперпользователем"><button class="service-action-button service-action-button--danger" type="submit" onclick="return confirm('Заблокировать пользователя и завершить его сессии?')">Заблокировать</button></form>
+                        {% endif %}
+                    {% else %}
+                        <span class="service-self-label">Вы вошли под этим аккаунтом</span>
+                    {% endif %}
+                </div>
+                <details class="service-user-profile-details" {% if user.id == expanded_user_id %}open{% endif %}>
+                    <summary>Открыть карточку пользователя</summary>
+                    <div class="service-user-profile-heading">
+                        <span class="service-user-avatar service-user-avatar--large">
+                            {% if user.avatar_path %}<img src="{{ user.avatar_path }}" alt="">{% else %}{{ (user.display_name or user.username)[:1]|upper }}{% endif %}
+                        </span>
+                        <div><h3>{{ user.display_name or user.username }}</h3><span>@{{ user.username }} · {{ row.role_label }}</span></div>
+                    </div>
+                    <dl class="service-user-profile-data service-user-profile-data--inline">
+                        <div><dt>Создан</dt><dd>{{ user.created_at.strftime("%d.%m.%Y %H:%M") }}</dd></div>
+                        <div><dt>Последний вход</dt><dd>{% if user.last_login_at %}{{ user.last_login_at.strftime("%d.%m.%Y %H:%M") }}{% else %}Ещё не входил{% endif %}</dd></div>
+                        <div><dt>Статус</dt><dd>{{ row.access_label }}</dd></div>
+                    </dl>
+                    <div class="service-user-profile-workspace">
+                        <nav class="service-user-profile-tabs" role="tablist" aria-label="Параметры учётной записи">
+                            {% for tab_key, tab_label, tab_icon in [("history", "История действий", "◷"), ("display_name", "Имя", "●"), ("username", "Логин", "@"), ("password", "Пароль", "◆"), ("role", "Роль", "♙"), ("avatar", "Фотография", "◉")] %}
+                            <button type="button" role="tab" aria-selected="{{ 'true' if current_profile_tab == tab_key else 'false' }}" aria-controls="profile-panel-{{ user.id }}-{{ tab_key }}" data-profile-tab="{{ tab_key }}" class="{% if current_profile_tab == tab_key %}active{% endif %}">
+                                <span aria-hidden="true">{{ tab_icon }}</span>{{ tab_label }}<span class="service-user-tab-chevron" aria-hidden="true">›</span>
+                            </button>
+                            {% endfor %}
+                        </nav>
+                        <div class="service-user-profile-panels">
+                            <section id="profile-panel-{{ user.id }}-history" role="tabpanel" data-profile-panel="history" {% if current_profile_tab != "history" %}hidden{% endif %}>
+                                <h3>История действий</h3>
+                                {% if row.history %}
+                                <ol class="service-user-history-list">
+                                    {% for item in row.history %}
+                                    <li>
+                                        <span class="service-history-mark {% if item.by_admin %}service-history-mark--admin{% endif %}" aria-hidden="true">{% if item.by_admin %}✎{% else %}•{% endif %}</span>
+                                        <div><strong>{{ item.event.summary }}</strong><span>{{ item.event.created_at.strftime("%d.%m.%Y · %H:%M") }}{% if item.by_admin %} · {{ item.event.display_name }}{% endif %}</span></div>
+                                    </li>
+                                    {% endfor %}
+                                </ol>
+                                {% else %}<p class="service-user-history-empty">История появится после первого входа или изменения аккаунта.</p>{% endif %}
+                            </section>
+                            {% if user.id == request.state.auth_user.id %}
+                            {% for tab_key, tab_label in [("display_name", "имя"), ("username", "логин"), ("password", "пароль"), ("role", "роль"), ("avatar", "фотографию")] %}
+                            <section id="profile-panel-{{ user.id }}-{{ tab_key }}" role="tabpanel" data-profile-panel="{{ tab_key }}" {% if current_profile_tab != tab_key %}hidden{% endif %}><h3>{{ tab_label|capitalize }}</h3><p class="service-user-history-empty">Чтобы изменить свои данные, откройте <a href="/profile">личный кабинет</a>.</p></section>
+                            {% endfor %}
+                            {% else %}
+                            <section id="profile-panel-{{ user.id }}-display_name" role="tabpanel" data-profile-panel="display_name" {% if current_profile_tab != "display_name" %}hidden{% endif %}>
+                                <h3>Изменить имя</h3>
+                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" class="service-user-edit-form"><input type="hidden" name="parameter" value="display_name"><label>Имя<input name="value" value="{{ user.display_name or user.username }}" maxlength="120" required></label><button class="service-action-button" type="submit">Сохранить имя</button></form>
+                            </section>
+                            <section id="profile-panel-{{ user.id }}-username" role="tabpanel" data-profile-panel="username" {% if current_profile_tab != "username" %}hidden{% endif %}>
+                                <h3>Изменить логин</h3>
+                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" class="service-user-edit-form"><input type="hidden" name="parameter" value="username"><label>Логин<input name="value" value="{{ user.username }}" maxlength="80" autocomplete="off" required></label><button class="service-action-button" type="submit">Сохранить логин</button></form>
+                            </section>
+                            <section id="profile-panel-{{ user.id }}-password" role="tabpanel" data-profile-panel="password" {% if current_profile_tab != "password" %}hidden{% endif %}>
+                                <h3>Сбросить пароль</h3>
+                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" class="service-user-edit-form"><input type="hidden" name="parameter" value="password"><label>Новый пароль<input name="value" type="password" minlength="12" autocomplete="new-password" required></label><label>Повторите пароль<input name="value_repeat" type="password" minlength="12" autocomplete="new-password" required></label><button class="service-action-button" type="submit" onclick="return confirm('Изменить пароль? Все активные сессии этого пользователя будут завершены.')">Сохранить пароль</button></form>
+                                <p class="service-user-history-empty">После смены пароля пользователь выйдет из остальных устройств.</p>
+                            </section>
+                            <section id="profile-panel-{{ user.id }}-role" role="tabpanel" data-profile-panel="role" {% if current_profile_tab != "role" %}hidden{% endif %}>
+                                <h3>Изменить роль</h3>
+                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" class="service-user-edit-form"><input type="hidden" name="parameter" value="role"><label>Роль<select name="value" required>{% for role_key, role_name in roles %}<option value="{{ role_key }}" {% if user.role == role_key %}selected{% endif %}>{{ role_name }}</option>{% endfor %}</select></label><button class="service-action-button" type="submit">Сохранить роль</button></form>
+                            </section>
+                            <section id="profile-panel-{{ user.id }}-avatar" role="tabpanel" data-profile-panel="avatar" {% if current_profile_tab != "avatar" %}hidden{% endif %}>
+                                <h3>Изменить фотографию</h3>
+                                <form method="post" action="/service-admin/users/{{ user.id }}/profile" enctype="multipart/form-data" class="service-user-edit-form"><input type="hidden" name="parameter" value="avatar"><label>Фотография<input name="avatar" type="file" accept="image/jpeg,image/png,image/webp" required></label><button class="service-action-button" type="submit">Загрузить фото</button></form>
+                                <p class="service-user-history-empty">JPG, PNG или WebP размером до 5 МБ.</p>
+                            </section>
+                            {% endif %}
+                        </div>
+                    </div>
+                </details>
+            </article>
+            {% else %}
+            <div class="empty-state">Пользователей веб-админки пока нет.</div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% elif view == "activity" %}
+    <section class="service-admin-section">
+        <div class="service-section-heading"><div><h2>Журнал активности</h2><p>До 300 событий по выбранным фильтрам. Содержимое форм и вводимый текст не сохраняются.</p></div></div>
+        <form method="get" action="/service-admin" class="service-filter-form">
+            <input type="hidden" name="view" value="activity">
+            <label>Пользователь<select name="user_id"><option value="">Все пользователи</option>{% for option in user_filter_options %}<option value="{{ option.id }}" {% if selected_user_id == option.id %}selected{% endif %}>{{ option.display_name }} · @{{ option.username }}</option>{% endfor %}</select></label>
+            <label>Тип события<select name="event_type"><option value="">Все события</option>{% for key, label in event_types %}<option value="{{ key }}" {% if selected_event_type == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label>С даты<input type="date" name="date_from" value="{{ date_from }}"></label>
+            <label>По дату<input type="date" name="date_to" value="{{ date_to }}"></label>
+            <button class="service-action-button" type="submit">Применить</button>
+        </form>
+        <div class="service-audit-list">
+            {% for row in activity %}
+            <article class="service-audit-row">
+                <time>{{ row.event.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</time>
+                <div class="service-audit-person"><strong>{{ row.event.display_name }}</strong><span>@{{ row.event.username }}</span></div>
+                <div class="service-audit-summary"><strong>{{ row.type_label }}</strong><span>{{ row.event.summary }}</span></div>
+                <div class="service-audit-device"><span>{{ row.device }}</span><small>{{ row.event.user_agent or "Браузер не определён" }}</small></div>
+                <div class="service-audit-path"><code>{{ row.event.method or "—" }} {{ row.event.path or "—" }}</code><span>HTTP {{ row.event.status_code or "—" }}</span></div>
+            </article>
+            {% else %}<div class="empty-state">Событий пока нет.</div>{% endfor %}
+        </div>
+    </section>
+
+    {% else %}
+    <section class="service-admin-section">
+        <div class="service-section-heading"><div><h2>Сессии и устройства</h2><p>Тип устройства определяется приблизительно по браузеру. Это не идентификатор физического устройства.</p></div></div>
+        <form method="get" action="/service-admin" class="service-filter-form">
+            <input type="hidden" name="view" value="devices">
+            <label>Пользователь<select name="user_id"><option value="">Все пользователи</option>{% for option in user_filter_options %}<option value="{{ option.id }}" {% if selected_user_id == option.id %}selected{% endif %}>{{ option.display_name }} · @{{ option.username }}</option>{% endfor %}</select></label>
+            <button class="service-action-button" type="submit">Применить</button>
+        </form>
+        <h3 class="service-subheading">Активные сессии</h3>
+        <div class="service-device-list">
+            {% for row in active_sessions %}
+            <article class="service-device-card">
+                <div class="service-device-icon">⌘</div>
+                <div class="service-device-info"><strong>{{ row.user.display_name or row.user.username }}</strong><span>{{ row.device }}</span><small>Последняя активность: {{ row.session.last_seen_at.strftime("%d.%m.%Y %H:%M") }} · истекает {{ row.session.expires_at.strftime("%d.%m.%Y %H:%M") }}</small></div>
+                <details class="service-ua-details"><summary>Данные браузера</summary><code>{{ row.session.user_agent or "Не переданы" }}</code></details>
+                {% if row.session.id != request.state.auth_user.session_id %}
+                <form method="post" action="/service-admin/sessions/{{ row.session.id }}/revoke"><button type="submit" class="service-action-button service-action-button--danger" onclick="return confirm('Завершить эту сессию?')">Завершить</button></form>
+                {% else %}<span class="service-self-label">Текущая сессия</span>{% endif %}
+            </article>
+            {% else %}<div class="empty-state">Активных сессий нет.</div>{% endfor %}
+        </div>
+
+        <h3 class="service-subheading">Замеченные браузеры</h3>
+        <div class="service-device-list">
+            {% for row in devices %}
+            <article class="service-device-card">
+                <div class="service-device-icon">⌘</div>
+                <div class="service-device-info"><strong>{{ row.display_name }} <span>@{{ row.username }}</span></strong><span>{{ row.device }}</span><small>Первое посещение: {{ row.first_seen.strftime("%d.%m.%Y %H:%M") }} · последнее: {{ row.last_seen.strftime("%d.%m.%Y %H:%M") }}</small></div>
+                <details class="service-ua-details"><summary>User-Agent</summary><code>{{ row.user_agent }}</code></details>
+            </article>
+            {% else %}<div class="empty-state">Данные об устройствах появятся после входа пользователей.</div>{% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll(".service-user-profile-details").forEach((card) => {
+    const tabs = card.querySelectorAll("[data-profile-tab]");
+    const panels = card.querySelectorAll("[data-profile-panel]");
+    tabs.forEach((tab) => tab.addEventListener("click", () => {
+        tabs.forEach((item) => {
+            const selected = item === tab;
+            item.classList.toggle("active", selected);
+            item.setAttribute("aria-selected", selected ? "true" : "false");
+        });
+        panels.forEach((panel) => { panel.hidden = panel.dataset.profilePanel !== tab.dataset.profileTab; });
+    }));
+});
+</script>
+{% endblock %}

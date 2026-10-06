@@ -1,4 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".content-read-only form button[type='submit']")
+        .forEach((button) => { button.disabled = true; });
+
     const body = document.body;
     const menuToggle = document.getElementById("mobileMenuToggle");
     const menuClose = document.getElementById("mobileMenuClose");

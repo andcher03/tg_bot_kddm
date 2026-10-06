@@ -13,7 +13,7 @@ async def main():
         "Создание пользователя Web Admin"
     )
     print(
-        "Роли: admin / editor"
+        "Роли: superuser / admin / editor"
     )
     print()
 
@@ -28,7 +28,7 @@ async def main():
     ).strip()
 
     role = input(
-        "Роль [admin/editor]: "
+        "Роль [superuser/admin/editor]: "
     ).strip().lower()
 
     password = getpass(

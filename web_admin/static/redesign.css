@@ -121,8 +121,19 @@ body {
 .sidebar-auth-avatar { background: #eaf2fb; color: #5481af; border-radius: 12px; }
 .sidebar-auth-user-text strong { color: var(--text); }
 .sidebar-auth-user-text span { color: var(--text-faint); }
+.sidebar-profile-link { display: block; margin: -5px; padding: 5px; border-radius: 12px; color: inherit; text-decoration: none; transition: background .15s ease, box-shadow .15s ease; }
+.sidebar-profile-link:hover { background: #f1f6fa; box-shadow: inset 0 0 0 1px rgba(57,127,184,.10); }
+.sidebar-profile-link.active { background: var(--accent-soft); }
+.sidebar-profile-link .sidebar-auth-user-text strong { text-decoration: none; }
+.sidebar-profile-caption { color: var(--accent-strong) !important; font-weight: 700; }
 .sidebar-logout-button { border-radius: 10px; color: var(--text-muted); border-color: var(--border); }
 .sidebar-logout-button:hover { background: #f5f8f9; color: var(--text); }
+.service-admin-nav { display: flex; align-items: center; gap: 11px; min-width: 0; min-height: 46px; margin: auto 0 14px; padding: 10px 12px; border-radius: 13px; color: #77818c; font-size: 13px; font-weight: 700; line-height: 1.25; text-decoration: none; transition: background .15s ease, color .15s ease; }
+.service-admin-nav > span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #f0f3f6; color: #71808d; font-size: 18px; }
+.service-admin-nav:hover, .service-admin-nav.active { background: var(--accent-soft); color: var(--accent-strong); }
+.service-admin-nav.active > span { background: #dceafa; color: var(--accent-strong); }
+.service-admin-nav + .sidebar-auth-user { margin-top: 0; }
+.content-read-only form button[type="submit"] { opacity: .55; cursor: not-allowed; }
 
 .content {
     min-height: 100vh;
@@ -338,6 +349,8 @@ tbody tr:hover { background: #f8fbfa; }
 .mobile-menu-toggle span { background: var(--text); }
 .mobile-topbar-brand { color: var(--text); }
 .mobile-topbar-avatar { background: var(--accent-soft); color: var(--accent-strong); }
+.sidebar-auth-avatar img, .mobile-topbar-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.service-admin-nav > span img { display: block; width: 19px; height: 19px; object-fit: contain; }
 
 /* Keep green reserved for successful outcomes and positive status indicators. */
 .success-notice,

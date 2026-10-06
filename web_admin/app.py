@@ -41,6 +41,9 @@ from web_admin.routers.registrations import (
 from web_admin.routers.statistics import (
     router as statistics_router,
 )
+from web_admin.routers.service_admin import (
+    router as service_admin_router,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -141,4 +144,7 @@ app.include_router(
 )
 app.include_router(
     registrations_router
+)
+app.include_router(
+    service_admin_router
 )

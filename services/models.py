@@ -689,7 +689,7 @@ class WebAdminUser(Base):
     __tablename__ = "web_admin_users"
     __table_args__ = (
         CheckConstraint(
-            "role IN ('admin', 'editor')",
+            "role IN ('superuser', 'admin', 'editor')",
             name="web_admin_users_role_check",
         ),
     )
@@ -710,6 +710,11 @@ class WebAdminUser(Base):
         nullable=True,
     )
 
+    avatar_path: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     password_hash: Mapped[str] = mapped_column(
         Text,
         nullable=False,
@@ -724,6 +729,22 @@ class WebAdminUser(Base):
         Boolean,
         nullable=False,
         server_default=text("TRUE"),
+    )
+
+    is_restricted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("FALSE"),
+    )
+
+    restricted_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    restriction_reason: Mapped[str | None] = mapped_column(
+        String(240),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -794,6 +815,39 @@ class WebAdminSession(Base):
     )
 
     last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
+
+    user_agent: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
+
+class WebAdminActivity(Base):
+    __tablename__ = "web_admin_activity"
+    __table_args__ = (
+        Index("ix_web_admin_activity_created_at", "created_at"),
+        Index("ix_web_admin_activity_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("web_admin_users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    username: Mapped[str] = mapped_column(String(80), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    session_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    method: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    path: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    summary: Mapped[str] = mapped_column(String(240), nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=text("CURRENT_TIMESTAMP"),

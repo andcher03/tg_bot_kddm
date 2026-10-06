@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет — Молодёжь Казани{% endblock %}
+
+{% block content %}
+<section class="page-header profile-header">
+    <div>
+        <p class="profile-eyebrow">УЧЁТНАЯ ЗАПИСЬ</p>
+        <h1>Личный кабинет</h1>
+        <p>Настройте имя, логин, пароль и фотографию профиля.</p>
+    </div>
+</section>
+
+{% if notice %}<div class="profile-message profile-message--success" role="status">{{ notice }}</div>{% endif %}
+{% if error %}<div class="profile-message profile-message--error" role="alert">{{ error }}</div>{% endif %}
+
+<div class="profile-layout">
+    <section class="profile-card">
+        <div class="profile-card-heading">
+            <div>
+                <h2>Личные данные</h2>
+                <p>Имя и логин используются в панели и журнале активности.</p>
+            </div>
+        </div>
+
+        <form class="profile-form" method="post" action="/profile" enctype="multipart/form-data">
+            <div class="profile-identity-row">
+                <div class="profile-avatar-preview">
+                    {% if request.state.auth_user.avatar_path %}
+                    <img src="{{ request.state.auth_user.avatar_path }}" alt="Фотография профиля">
+                    {% else %}
+                    <span>{{ request.state.auth_user.display_name[:1]|upper }}</span>
+                    {% endif %}
+                </div>
+                <div class="profile-identity-fields">
+                    <label class="profile-field">
+                        <span>Имя</span>
+                        <input type="text" name="display_name" value="{{ request.state.auth_user.display_name }}" maxlength="120" autocomplete="name" required>
+                    </label>
+
+                    <label class="profile-field">
+                        <span>Логин</span>
+                        <input type="text" name="username" value="{{ request.state.auth_user.username }}" maxlength="80" autocomplete="username" required>
+                    </label>
+
+                    <div class="profile-field profile-role-field">
+                        <span>Роль</span>
+                        <div>{{ request.state.auth_user.role_label }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-photo-section">
+                <div>
+                    <strong>Фотография профиля</strong>
+                    <p>Выберите изображение JPG, PNG или WebP размером до 5 МБ.</p>
+                </div>
+                <label class="profile-photo-picker">
+                    <span>Выбрать фотографию</span>
+                    <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp">
+                </label>
+                {% if request.state.auth_user.avatar_path %}
+                <button class="profile-remove-avatar" type="submit" form="removeAvatarForm">Удалить фото</button>
+                {% endif %}
+            </div>
+
+            <label class="profile-field">
+                <span>Текущий пароль <small>нужен только при смене логина</small></span>
+                <input type="password" name="current_password" autocomplete="current-password">
+            </label>
+
+            <button class="profile-submit" type="submit">Сохранить изменения</button>
+        </form>
+        {% if request.state.auth_user.avatar_path %}
+        <form id="removeAvatarForm" method="post" action="/profile/avatar/delete" hidden></form>
+        {% endif %}
+    </section>
+
+    <section class="profile-card">
+        <div class="profile-card-heading">
+            <div>
+                <h2>Сменить пароль</h2>
+                <p>Для подтверждения укажите текущий пароль. Минимальная длина нового — 12 символов.</p>
+            </div>
+        </div>
+        <form class="profile-form" method="post" action="/profile/password">
+            <label class="profile-field">
+                <span>Текущий пароль</span>
+                <input type="password" name="current_password" autocomplete="current-password" required>
+            </label>
+            <label class="profile-field">
+                <span>Новый пароль</span>
+                <input type="password" name="new_password" minlength="12" autocomplete="new-password" required>
+            </label>
+            <label class="profile-field">
+                <span>Повторите новый пароль</span>
+                <input type="password" name="confirm_password" minlength="12" autocomplete="new-password" required>
+            </label>
+            <button class="profile-submit" type="submit">Обновить пароль</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

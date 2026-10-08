@@ -3,8 +3,6 @@
    Единые токены + компоненты для всех страниц админки.
    ========================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
-
 :root{
     /* поверхности */
     --ink: #12181A;
@@ -43,9 +41,9 @@
     --shadow-hover: 0 10px 28px rgba(18,24,26,.07);
 
     /* шрифты */
-    --font-display: "Manrope", "Inter", sans-serif;
-    --font-body: "Inter", sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
+    --font-display: "Montserrat", sans-serif;
+    --font-body: "Montserrat", sans-serif;
+    --font-mono: "Montserrat", sans-serif;
 }
 
 *{ box-sizing: border-box; }

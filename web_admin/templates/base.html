@@ -32,7 +32,7 @@
         href="/static/auth.css?v=20261001-1"
     >
 
-    <link rel="stylesheet" href="/static/redesign.css?v=20261006-1">
+    <link rel="stylesheet" href="/static/redesign.css?v=20261008-3">
 
     {% if request.url.path.startswith('/service-admin') %}
     <link rel="stylesheet" href="/static/service_admin.css?v=20261006-2">
@@ -67,7 +67,7 @@
             href="{% if auth_user.role == 'editor' %}/events{% else %}/{% endif %}"
             class="mobile-topbar-brand"
         >
-            Молодёжь Казани
+            <img src="/static/site_pic.png?v=20261008-3" alt="Молодёжь Казани">
         </a>
 
         <span class="mobile-topbar-avatar" aria-hidden="true">
@@ -98,7 +98,7 @@
         </button>
 
         <a class="logo" href="{% if auth_user.role == 'editor' %}/events{% else %}/{% endif %}">
-            <span class="brand-mark" aria-hidden="true"><img src="/static/bot_avatar.png" alt=""></span>
+            <span class="brand-mark" aria-hidden="true"><img src="/static/site_pic.png?v=20261008-1" alt=""></span>
             <span class="brand-copy"><strong>Молодежная CRM</strong></span>
         </a>
 

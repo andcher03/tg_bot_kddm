@@ -56,20 +56,19 @@ body {
 .brand-mark {
     display: grid;
     place-items: center;
-    overflow: hidden;
     width: 42px;
     height: 42px;
     flex: 0 0 42px;
-    border: 1px solid #e8edf1;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 7px 17px rgba(35, 57, 75, .09);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 .brand-mark img {
     display: block;
     width: 42px;
     height: 42px;
-    object-fit: cover;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(35, 57, 75, .28));
 }
 
 .brand-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
@@ -347,7 +346,22 @@ tbody tr:hover { background: #f8fbfa; }
 }
 .mobile-menu-toggle { border-color: var(--border); background: #f7f9fa; }
 .mobile-menu-toggle span { background: var(--text); }
-.mobile-topbar-brand { color: var(--text); }
+.mobile-topbar-brand {
+    display: grid;
+    place-items: center;
+    justify-self: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 0;
+    background: transparent;
+}
+.mobile-topbar-brand img {
+    display: block;
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(35, 57, 75, .28));
+}
 .mobile-topbar-avatar { background: var(--accent-soft); color: var(--accent-strong); }
 .sidebar-auth-avatar img, .mobile-topbar-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .service-admin-nav > span img { display: block; width: 19px; height: 19px; object-fit: contain; }

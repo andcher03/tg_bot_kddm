@@ -6,7 +6,9 @@ from zoneinfo import ZoneInfo
 
 from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from sqlalchemy import select
+from sqlalchemy import select, update
+
+from config import EVENT_CONFIRMATIONS_ENABLED
 
 from services.database import SessionLocal
 from services.models import Event, Registration, User
@@ -206,6 +208,9 @@ async def send_due_confirmation_requests(
     bot: Bot,
     now: datetime | None = None,
 ) -> int:
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        return 0
+
     current_time = now or local_now()
 
     async with SessionLocal() as session:
@@ -284,6 +289,9 @@ async def send_due_confirmation_requests(
 async def expire_unconfirmed_registrations(
     now: datetime | None = None,
 ) -> int:
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        return 0
+
     current_time = now or local_now()
 
     async with SessionLocal() as session:
@@ -313,6 +321,28 @@ async def expire_unconfirmed_registrations(
     if expired:
         logger.info("Сняты неподтверждённые регистрации: %s", expired)
     return expired
+
+
+async def confirm_active_registrations() -> int:
+    """Mark current registrations confirmed while confirmation requests are disabled."""
+    if EVENT_CONFIRMATIONS_ENABLED:
+        return 0
+
+    current_time = local_now()
+    async with SessionLocal() as session:
+        result = await session.execute(
+            update(Registration)
+            .where(
+                Registration.status == "registered",
+                Registration.confirmation_status != "confirmed",
+            )
+            .values(
+                confirmation_status="confirmed",
+                confirmation_responded_at=current_time,
+            )
+        )
+        await session.commit()
+        return result.rowcount or 0
 
 
 async def respond_to_confirmation(

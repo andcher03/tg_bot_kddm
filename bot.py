@@ -4,12 +4,16 @@ from contextlib import suppress
 
 from aiogram import Dispatcher
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.commands import set_default_commands
 from services.channel_stats_service import (
     channel_stats_reconciliation_loop,
     refresh_channel_member_count,
 )
-from services.event_confirmation import event_confirmation_loop
+from services.event_confirmation import (
+    confirm_active_registrations,
+    event_confirmation_loop,
+)
 
 from handlers.start import router as start_router
 from handlers.registration import router as registration_router
@@ -138,9 +142,17 @@ async def main():
             )
         )
 
-        event_confirmation_task = asyncio.create_task(
-            event_confirmation_loop(bot)
-        )
+        if EVENT_CONFIRMATIONS_ENABLED:
+            event_confirmation_task = asyncio.create_task(
+                event_confirmation_loop(bot)
+            )
+        else:
+            updated_registrations = await confirm_active_registrations()
+            logger.warning(
+                "Подтверждения участия отключены; активных регистраций "
+                "отмечено подтверждёнными: %s",
+                updated_registrations,
+            )
 
 
         await dp.start_polling(

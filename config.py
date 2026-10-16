@@ -3,6 +3,11 @@ import os
 
 load_dotenv()
 
+EVENT_CONFIRMATIONS_ENABLED = (
+    os.getenv("EVENT_CONFIRMATIONS_ENABLED", "0").strip().lower()
+    in {"1", "true", "yes", "on"}
+)
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DATABASE_URL = os.getenv("DATABASE_URL")

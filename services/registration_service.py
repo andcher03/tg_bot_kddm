@@ -2,6 +2,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
+from config import EVENT_CONFIRMATIONS_ENABLED
+
 from services.database import SessionLocal
 from services.models import User, Event, Registration
 
@@ -115,10 +117,15 @@ class RegistrationService:
                 # The database keeps one row per user/event pair. Reuse a
                 # cancelled row if the user registers again.
                 existing_registration.status = "registered"
-                existing_registration.registration_date = datetime.now()
-                existing_registration.confirmation_status = "not_requested"
+                registered_at = datetime.now()
+                existing_registration.registration_date = registered_at
+                existing_registration.confirmation_status = (
+                    "not_requested" if EVENT_CONFIRMATIONS_ENABLED else "confirmed"
+                )
                 existing_registration.confirmation_requested_at = None
-                existing_registration.confirmation_responded_at = None
+                existing_registration.confirmation_responded_at = (
+                    None if EVENT_CONFIRMATIONS_ENABLED else registered_at
+                )
                 existing_registration.confirmation_for_start_at = None
                 try:
                     await session.commit()
@@ -135,7 +142,12 @@ class RegistrationService:
                 user_id=user.id,
                 event_id=event.id,
                 status="registered",
-                confirmation_status="not_requested",
+                confirmation_status=(
+                    "not_requested" if EVENT_CONFIRMATIONS_ENABLED else "confirmed"
+                ),
+                confirmation_responded_at=(
+                    None if EVENT_CONFIRMATIONS_ENABLED else datetime.now()
+                ),
             )
 
             session.add(registration)

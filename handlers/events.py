@@ -6,6 +6,7 @@ from aiogram.types import (
     InlineKeyboardButton,
 )
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.postgres_event_service import PostgresEventService
 from services.registration_service import RegistrationService
 from services.event_confirmation import (
@@ -200,15 +201,22 @@ async def register_for_event(callback: CallbackQuery):
 
         return
 
-    await callback.message.edit_text(
+    registration_message = (
         "✅ <b>Вы успешно зарегистрированы!</b>\n\n"
-        "🎯 Регистрация сохранена. За 2 часа до начала "
-        "мы попросим подтвердить участие. Если вы записались "
-        "меньше чем за 2 часа, запрос придёт в ближайшее время.\n\n"
-        "Подтверждённые мероприятия отображаются в разделе "
-        "«Мои мероприятия».",
-        parse_mode="HTML"
+        "🎯 Регистрация сохранена. Подтверждать участие не нужно — "
+        "ваша регистрация уже учтена.\n\n"
+        "Мероприятие отображается в разделе «Мои мероприятия»."
+        if not EVENT_CONFIRMATIONS_ENABLED
+        else (
+            "✅ <b>Вы успешно зарегистрированы!</b>\n\n"
+            "🎯 Регистрация сохранена. За 2 часа до начала "
+            "мы попросим подтвердить участие. Если вы записались "
+            "меньше чем за 2 часа, запрос придёт в ближайшее время.\n\n"
+            "Подтверждённые мероприятия отображаются в разделе "
+            "«Мои мероприятия»."
+        )
     )
+    await callback.message.edit_text(registration_message, parse_mode="HTML")
 
     await callback.answer()
 
@@ -218,6 +226,10 @@ async def handle_event_confirmation(
     *,
     confirm: bool,
 ) -> None:
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        await callback.answer("Подтверждение участия сейчас отключено.", show_alert=True)
+        return
+
     try:
         (
             _action,
@@ -309,6 +321,10 @@ async def decline_event_participation(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("dr:"))
 async def record_decline_reason(callback: CallbackQuery):
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        await callback.answer("Подтверждение участия сейчас отключено.", show_alert=True)
+        return
+
     try:
         _action, registration_id_value, start_value, registered_value, reason_key = (
             callback.data.split(":", maxsplit=4)

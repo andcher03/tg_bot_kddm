@@ -17,6 +17,7 @@ from sqlalchemy import (
     text,
 )
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
 from services.mailing_images import (
     MailingImageError,
@@ -207,20 +208,19 @@ async def get_recipients(
 
         if selected_event_ids:
 
-            registered_users = (
-                select(
-                    Registration.user_id
+            registration_filters = [
+                Registration.event_id.in_(selected_event_ids),
+                Registration.status.in_(
+                    ("registered", "confirmed")
+                ),
+            ]
+            if EVENT_CONFIRMATIONS_ENABLED:
+                registration_filters.append(
+                    Registration.confirmation_status == "confirmed"
                 )
-                .where(
-                    Registration.event_id.in_(
-                        selected_event_ids
-                    ),
-                    Registration.status.in_((
-                        "registered",
-                        "confirmed",
-                    )),
-                    Registration.confirmation_status == "confirmed",
-                )
+
+            registered_users = select(Registration.user_id).where(
+                *registration_filters
             )
 
             conditions.append(

@@ -29,7 +29,11 @@ def test_registrations_word_uses_russian_plural_forms():
         assert registrations_word(count) == word
 
 
-def test_confirmation_status_label_distinguishes_waiting_and_confirmed():
+def test_confirmation_status_label_distinguishes_waiting_and_confirmed(monkeypatch):
+    monkeypatch.setattr(
+        "web_admin.routers.registrations.EVENT_CONFIRMATIONS_ENABLED",
+        True,
+    )
     assert confirmation_status_label("registered", "pending") == (
         "Ожидает ответа"
     )
@@ -38,6 +42,18 @@ def test_confirmation_status_label_distinguishes_waiting_and_confirmed():
     )
     assert confirmation_status_label("cancelled", "expired") == (
         "Не подтвердил вовремя"
+    )
+
+
+def test_confirmation_status_label_is_registered_when_confirmations_are_disabled(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "web_admin.routers.registrations.EVENT_CONFIRMATIONS_ENABLED",
+        False,
+    )
+    assert confirmation_status_label("registered", "confirmed") == (
+        "Зарегистрирован"
     )
 
 

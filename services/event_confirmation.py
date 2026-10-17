@@ -323,22 +323,19 @@ async def expire_unconfirmed_registrations(
     return expired
 
 
-async def confirm_active_registrations() -> int:
-    """Mark current registrations confirmed while confirmation requests are disabled."""
+async def normalize_active_registration_statuses() -> int:
+    """Use the registered state for all active rows when confirmations are off."""
     if EVENT_CONFIRMATIONS_ENABLED:
         return 0
 
-    current_time = local_now()
     async with SessionLocal() as session:
         result = await session.execute(
             update(Registration)
             .where(
-                Registration.status == "registered",
-                Registration.confirmation_status != "confirmed",
+                Registration.status == "confirmed",
             )
             .values(
-                confirmation_status="confirmed",
-                confirmation_responded_at=current_time,
+                status="registered",
             )
         )
         await session.commit()

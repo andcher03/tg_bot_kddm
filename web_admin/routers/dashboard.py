@@ -6,6 +6,7 @@ from fastapi import APIRouter, Query, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
 from services.channel_stats_service import (
     get_channel_history,
@@ -218,6 +219,9 @@ async def dashboard(request: Request):
 
             "latest_event":
                 latest_event,
+
+            "confirmations_enabled":
+                EVENT_CONFIRMATIONS_ENABLED,
 
             "latest_review":
                 latest_review,

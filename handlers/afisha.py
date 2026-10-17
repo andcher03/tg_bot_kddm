@@ -6,6 +6,7 @@ from aiogram.types import (
     CallbackQuery,
     ReplyKeyboardRemove,
 )
+from config import EVENT_CONFIRMATIONS_ENABLED
 from states.registration import RegistrationState
 from keyboards.registration import personal_data_consent_keyboard
 
@@ -260,9 +261,16 @@ async def register_event(
         "✅ <b>Вы зарегистрированы!</b>\n\n"
         f"Мероприятие:\n"
         f"<b>{escape(event_title)}</b>\n\n"
-        "За 2 часа до начала мы попросим подтвердить участие. "
-        "Если вы зарегистрировались после начала мероприятия, "
-        "участие будет отмечено подтверждённым автоматически.",
+        + (
+            "Статус: <b>Зарегистрирован</b>. "
+            "Подтверждение участия не требуется."
+            if not EVENT_CONFIRMATIONS_ENABLED
+            else (
+                "За 2 часа до начала мы попросим подтвердить участие. "
+                "Если вы зарегистрировались после начала мероприятия, "
+                "участие будет отмечено подтверждённым автоматически."
+            )
+        ),
         parse_mode="HTML"
     )
 

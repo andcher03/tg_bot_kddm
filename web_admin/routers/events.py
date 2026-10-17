@@ -13,6 +13,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_, select
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
 from services.models import (
     Event,
@@ -234,6 +235,8 @@ async def event_detail_page(
                     ),
                     "expired": "Не подтвердил вовремя",
                 }.get(confirmation_status, "Регистрация снята")
+            elif not EVENT_CONFIRMATIONS_ENABLED:
+                confirmation_label = "Зарегистрирован"
             else:
                 confirmation_label = {
                     "not_requested": "Ожидает запроса",
@@ -257,9 +260,14 @@ async def event_detail_page(
                     confirmation_label,
 
                 "confirmation_status_color":
-                    confirmation_status_color(
-                        registration.status,
-                        confirmation_status,
+                    (
+                        confirmation_status_color(
+                            registration.status,
+                            confirmation_status,
+                        )
+                        if EVENT_CONFIRMATIONS_ENABLED
+                        or registration.status == "cancelled"
+                        else "success"
                     ),
 
                 "registration_date":
@@ -378,6 +386,9 @@ async def event_detail_page(
 
             "today":
                 date.today(),
+
+            "confirmations_enabled":
+                EVENT_CONFIRMATIONS_ENABLED,
         }
     )
 

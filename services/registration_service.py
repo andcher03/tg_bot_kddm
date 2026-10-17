@@ -11,9 +11,9 @@ from services.models import User, Event, Registration
 
 
 def confirmation_is_immediate(event: Event, registered_at: datetime) -> bool:
-    """Skip the confirmation request if the event has already started."""
+    """Return whether confirmation can be skipped after an event has started."""
     if not EVENT_CONFIRMATIONS_ENABLED:
-        return True
+        return False
 
     event_start = event_start_at(event)
     return event_start is not None and event_start <= registered_at

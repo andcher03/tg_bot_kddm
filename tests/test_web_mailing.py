@@ -116,7 +116,8 @@ async def test_specific_users_are_added_to_recipient_query():
 
 
 @pytest.mark.asyncio
-async def test_event_audience_only_includes_confirmed_participants():
+async def test_event_audience_only_includes_confirmed_participants(monkeypatch):
+    monkeypatch.setattr(mailing, "EVENT_CONFIRMATIONS_ENABLED", True)
     session = CapturingSession()
 
     await get_recipients(
@@ -135,6 +136,32 @@ async def test_event_audience_only_includes_confirmed_participants():
 
     assert "registrations.confirmation_status = 'confirmed'" in sql
     assert "registrations.event_id IN (17)" in sql
+
+
+@pytest.mark.asyncio
+async def test_event_audience_includes_all_registered_when_confirmations_are_disabled(
+    monkeypatch,
+):
+    monkeypatch.setattr(mailing, "EVENT_CONFIRMATIONS_ENABLED", False)
+    session = CapturingSession()
+
+    await get_recipients(
+        session=session,
+        all_users=False,
+        selected_universities=[],
+        selected_event_ids=[17],
+        selected_user_ids=[],
+    )
+
+    sql = str(
+        session.statement.compile(
+            compile_kwargs={"literal_binds": True}
+        )
+    )
+
+    assert "registrations.event_id IN (17)" in sql
+    assert "registrations.status IN ('registered', 'confirmed')" in sql
+    assert "registrations.confirmation_status" not in sql
 
 
 def test_photo_urls_are_deduplicated_in_original_order():

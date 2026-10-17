@@ -4,7 +4,7 @@ import os
 load_dotenv()
 
 EVENT_CONFIRMATIONS_ENABLED = (
-    os.getenv("EVENT_CONFIRMATIONS_ENABLED", "1").strip().lower()
+    os.getenv("EVENT_CONFIRMATIONS_ENABLED", "0").strip().lower()
     in {"1", "true", "yes", "on"}
 )
 

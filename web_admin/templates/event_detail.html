@@ -179,11 +179,19 @@
     <div class="event-stat-card">
 
         <span>
+            {% if confirmations_enabled %}
             Подтвердили участие
+            {% else %}
+            Статус регистрации
+            {% endif %}
         </span>
 
         <strong>
+            {% if confirmations_enabled %}
             {{ confirmed_count }}
+            {% else %}
+            Зарегистрировано
+            {% endif %}
         </strong>
 
     </div>

@@ -3,6 +3,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InlineKey
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.postgres_user_service import PostgresUserService
 from services.postgres_event_service import PostgresEventService
 from services.registration_service import RegistrationService
@@ -237,13 +238,17 @@ async def my_events(message: Message):
             "confirmation_status",
             "not_requested",
         )
-        status_text = {
-            "not_requested": "🕐 Зарегистрирован, ожидает запроса подтверждения",
-            "sending": "📨 Отправляем запрос подтверждения",
-            "pending": "⌛ Нужно подтвердить участие",
-            "confirmed": "✅ Участие подтверждено",
-            "delivery_failed": "⚠️ Не удалось доставить запрос подтверждения",
-        }.get(confirmation_status, "🕐 Зарегистрирован")
+        status_text = (
+            "✅ Зарегистрирован"
+            if not EVENT_CONFIRMATIONS_ENABLED
+            else {
+                "not_requested": "🕐 Зарегистрирован, ожидает запроса подтверждения",
+                "sending": "📨 Отправляем запрос подтверждения",
+                "pending": "⌛ Нужно подтвердить участие",
+                "confirmed": "✅ Участие подтверждено",
+                "delivery_failed": "⚠️ Не удалось доставить запрос подтверждения",
+            }.get(confirmation_status, "🕐 Зарегистрирован")
+        )
 
         text += (
             f"🎯 <b>{event['title']}</b>\n"
@@ -425,13 +430,17 @@ async def my_events_callback(callback: CallbackQuery):
             "confirmation_status",
             "not_requested",
         )
-        status_text = {
-            "not_requested": "🕐 Зарегистрирован, ожидает запроса подтверждения",
-            "sending": "📨 Отправляем запрос подтверждения",
-            "pending": "⌛ Нужно подтвердить участие",
-            "confirmed": "✅ Участие подтверждено",
-            "delivery_failed": "⚠️ Не удалось доставить запрос подтверждения",
-        }.get(confirmation_status, "🕐 Зарегистрирован")
+        status_text = (
+            "✅ Зарегистрирован"
+            if not EVENT_CONFIRMATIONS_ENABLED
+            else {
+                "not_requested": "🕐 Зарегистрирован, ожидает запроса подтверждения",
+                "sending": "📨 Отправляем запрос подтверждения",
+                "pending": "⌛ Нужно подтвердить участие",
+                "confirmed": "✅ Участие подтверждено",
+                "delivery_failed": "⚠️ Не удалось доставить запрос подтверждения",
+            }.get(confirmation_status, "🕐 Зарегистрирован")
+        )
 
         text += (
             f"🎯 <b>{event['title']}</b>\n"

@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import String, cast, func, or_, select
 
+from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
 from services.models import Event, Registration, User
 from services.registration_status import confirmation_status_color
@@ -45,6 +46,9 @@ def confirmation_status_label(
             "declined": "Отказался",
             "expired": "Не подтвердил вовремя",
         }.get(confirmation_status, "Регистрация снята")
+
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        return "Зарегистрирован"
 
     return {
         "not_requested": "Ожидает запроса",
@@ -151,6 +155,7 @@ async def registrations_page(
         context={
             "events": events,
             "q": search_query,
+            "confirmations_enabled": EVENT_CONFIRMATIONS_ENABLED,
         },
     )
 
@@ -230,9 +235,14 @@ async def registration_detail_page(
                     registration.confirmation_status,
                     registration.decline_reason,
                 ),
-                "confirmation_status_color": confirmation_status_color(
-                    registration.status,
-                    registration.confirmation_status,
+                "confirmation_status_color": (
+                    confirmation_status_color(
+                        registration.status,
+                        registration.confirmation_status,
+                    )
+                    if EVENT_CONFIRMATIONS_ENABLED
+                    or registration.status == "cancelled"
+                    else "success"
                 ),
                 "registration_date": registration.registration_date,
                 "user_id": user.id,
@@ -256,5 +266,6 @@ async def registration_detail_page(
             "pending_count": max(registrations_count - confirmed_count, 0),
             "shown_registrations_count": len(registrations),
             "q": search_query,
+            "confirmations_enabled": EVENT_CONFIRMATIONS_ENABLED,
         },
     )

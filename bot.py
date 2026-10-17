@@ -11,8 +11,8 @@ from services.channel_stats_service import (
     refresh_channel_member_count,
 )
 from services.event_confirmation import (
-    confirm_active_registrations,
     event_confirmation_loop,
+    normalize_active_registration_statuses,
 )
 
 from handlers.start import router as start_router
@@ -147,10 +147,12 @@ async def main():
                 event_confirmation_loop(bot)
             )
         else:
-            updated_registrations = await confirm_active_registrations()
+            updated_registrations = (
+                await normalize_active_registration_statuses()
+            )
             logger.warning(
                 "Подтверждения участия отключены; активных регистраций "
-                "отмечено подтверждёнными: %s",
+                "переведено в статус 'Зарегистрирован': %s",
                 updated_registrations,
             )
 

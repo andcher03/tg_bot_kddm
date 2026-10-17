@@ -30,11 +30,11 @@ def test_registration_before_event_start_still_waits_for_confirmation(monkeypatc
     assert not confirmation_is_immediate(event, datetime(2026, 10, 16, 9, 29))
 
 
-def test_disabled_confirmations_mark_registration_confirmed(monkeypatch):
+def test_disabled_confirmations_leave_registration_unconfirmed(monkeypatch):
     monkeypatch.setattr(
         "services.registration_service.EVENT_CONFIRMATIONS_ENABLED",
         False,
     )
     event = Event(event_date=date(2026, 10, 16), start_time=None)
 
-    assert confirmation_is_immediate(event, datetime(2026, 10, 16, 9, 0))
+    assert not confirmation_is_immediate(event, datetime(2026, 10, 16, 9, 0))

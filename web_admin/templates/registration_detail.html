@@ -55,7 +55,11 @@
     <div class="registration-detail-total">
         <span>Зарегистрировано</span>
         <strong>{{ registrations_count }}</strong>
+        {% if confirmations_enabled %}
         <small>Подтвердили участие: {{ confirmed_count }}</small>
+        {% else %}
+        <small>Подтверждение не требуется</small>
+        {% endif %}
     </div>
 </section>
 
@@ -67,9 +71,13 @@
                 <span>{{ registrations_count }}</span>
             </h2>
             <p>
+                {% if confirmations_enabled %}
                 Зарегистрировано: {{ registrations_count }} ·
                 подтвердили: {{ confirmed_count }} ·
                 пока не подтвердили: {{ pending_count }}
+                {% else %}
+                Зарегистрировано: {{ registrations_count }}
+                {% endif %}
             </p>
         </div>
 

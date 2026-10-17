@@ -137,6 +137,21 @@
 
             </form>
 
+            {% elif event.status == "archived" %}
+
+            <div class="restore-event-hint">
+                <span>
+                    Дата мероприятия уже прошла. Чтобы вернуть его в открытые мероприятия,
+                    измените дату на будущую.
+                </span>
+                <a
+                    href="/events/{{ event.id }}/edit"
+                    class="edit-event-button"
+                >
+                    Изменить дату
+                </a>
+            </div>
+
             {% endif %}
 
         </div>

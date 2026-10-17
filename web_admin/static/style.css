@@ -1893,6 +1893,19 @@ tbody tr:hover{ background: var(--canvas); }
     flex-shrink: 0;
 }
 
+.restore-event-hint{
+    display: grid;
+    gap: 10px;
+    max-width: 360px;
+    padding: 12px 14px;
+    border: 1px solid var(--warning-border, var(--border));
+    border-radius: var(--radius-sm);
+    background: var(--warning-soft);
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .event-detail-stats{
     display: grid;
     grid-template-columns: repeat(3, minmax(0,1fr));

@@ -1,11 +1,22 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 
 from services.database import SessionLocal
+from services.event_confirmation import event_start_at, local_now
 from services.models import User, Event, Registration
+
+
+def confirmation_is_immediate(event: Event, registered_at: datetime) -> bool:
+    """Skip the confirmation request if the event has already started."""
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        return True
+
+    event_start = event_start_at(event)
+    return event_start is not None and event_start <= registered_at
 
 
 class RegistrationService:
@@ -110,6 +121,12 @@ class RegistrationService:
                 registration_result.scalar_one_or_none()
             )
 
+            registered_at = local_now()
+            is_confirmed_immediately = confirmation_is_immediate(
+                event,
+                registered_at,
+            )
+
             if existing_registration:
                 if existing_registration.status != "cancelled":
                     return False
@@ -117,14 +134,13 @@ class RegistrationService:
                 # The database keeps one row per user/event pair. Reuse a
                 # cancelled row if the user registers again.
                 existing_registration.status = "registered"
-                registered_at = datetime.now()
                 existing_registration.registration_date = registered_at
                 existing_registration.confirmation_status = (
-                    "not_requested" if EVENT_CONFIRMATIONS_ENABLED else "confirmed"
+                    "confirmed" if is_confirmed_immediately else "not_requested"
                 )
                 existing_registration.confirmation_requested_at = None
                 existing_registration.confirmation_responded_at = (
-                    None if EVENT_CONFIRMATIONS_ENABLED else registered_at
+                    registered_at if is_confirmed_immediately else None
                 )
                 existing_registration.confirmation_for_start_at = None
                 try:
@@ -143,10 +159,10 @@ class RegistrationService:
                 event_id=event.id,
                 status="registered",
                 confirmation_status=(
-                    "not_requested" if EVENT_CONFIRMATIONS_ENABLED else "confirmed"
+                    "confirmed" if is_confirmed_immediately else "not_requested"
                 ),
                 confirmation_responded_at=(
-                    None if EVENT_CONFIRMATIONS_ENABLED else datetime.now()
+                    registered_at if is_confirmed_immediately else None
                 ),
             )
 

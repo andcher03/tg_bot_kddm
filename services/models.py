@@ -188,6 +188,13 @@ class Event(Base):
         nullable=True
     )
 
+    # Retained in the database for historical event data. These fields are no
+    # longer exposed in the admin UI or used by the bot's event flow.
+    scale: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    organizer_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    activity_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,

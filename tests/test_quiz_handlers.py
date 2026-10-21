@@ -16,6 +16,11 @@ from states.registration import RegistrationState
 
 @pytest.mark.asyncio
 async def test_unregistered_user_is_sent_to_registration(monkeypatch):
+    monkeypatch.setattr(
+        quiz_handlers,
+        "quiz_is_enabled",
+        AsyncMock(return_value=True),
+    )
     is_registered = AsyncMock(return_value=False)
     monkeypatch.setattr(
         quiz_handlers.users,
@@ -40,6 +45,11 @@ async def test_unregistered_user_is_sent_to_registration(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_registered_user_starts_with_first_question(monkeypatch):
+    monkeypatch.setattr(
+        quiz_handlers,
+        "quiz_is_enabled",
+        AsyncMock(return_value=True),
+    )
     is_registered = AsyncMock(return_value=True)
     monkeypatch.setattr(
         quiz_handlers.users,
@@ -103,6 +113,11 @@ async def test_final_answer_records_completion_with_result(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_restart_keeps_previous_result_in_chat(monkeypatch):
+    monkeypatch.setattr(
+        quiz_handlers,
+        "quiz_is_enabled",
+        AsyncMock(return_value=True),
+    )
     is_registered = AsyncMock(return_value=True)
     monkeypatch.setattr(
         quiz_handlers.users,

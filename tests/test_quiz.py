@@ -126,3 +126,19 @@ def test_quiz_is_first_green_main_menu_button():
     first_button = user_menu().keyboard[0][0]
     assert first_button.text == "🧩 Какая ты аномалия в Казани?"
     assert first_button.style == "success"
+
+
+def test_closed_quiz_is_omitted_from_main_menu():
+    menu = user_menu(quiz_button_texts=[])
+
+    assert all(
+        button.text != "🧩 Какая ты аномалия в Казани?"
+        for row in menu.keyboard
+        for button in row
+    )
+
+
+def test_main_menu_supports_future_quiz_buttons():
+    menu = user_menu(quiz_button_texts=["Тест 1", "Тест 2"])
+
+    assert [row[0].text for row in menu.keyboard[:2]] == ["Тест 1", "Тест 2"]

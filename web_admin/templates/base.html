@@ -124,6 +124,10 @@
                 <span class="nav-icon" aria-hidden="true"><img src="/static/icons/statistics.png" alt=""></span>Статистика
             </a>
 
+            <a href="/tests" class="{% if request.url.path.startswith('/tests') %}active{% endif %}">
+                <span class="nav-icon" aria-hidden="true"><img src="/static/icons/test.png" alt=""></span>Тесты
+            </a>
+
             <a href="/events" class="{% if request.url.path.startswith('/events') %}active{% endif %}">
                 <span class="nav-icon" aria-hidden="true"><img src="/static/icons/events.png" alt=""></span>Мероприятия
             </a>

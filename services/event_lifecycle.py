@@ -5,6 +5,7 @@ from datetime import date
 from sqlalchemy import update
 
 from services.database import SessionLocal
+from services.event_confirmation import local_now
 from services.models import Event
 
 
@@ -13,13 +14,13 @@ EVENT_ARCHIVE_INTERVAL_SECONDS = 300
 
 
 def finished_events_update(today: date | None = None):
-    current_date = today or date.today()
+    current_date = today or local_now().date()
 
     return (
         update(Event)
         .where(
             Event.status == "active",
-            Event.event_date < current_date,
+            Event.end_date < current_date,
         )
         .values(status="archived")
         .returning(Event.id)
@@ -27,7 +28,7 @@ def finished_events_update(today: date | None = None):
 
 
 async def archive_finished_events(today: date | None = None) -> int:
-    """Persistently archive active events whose calendar date has passed."""
+    """Archive active events after their final calendar day has passed."""
 
     async with SessionLocal() as session:
         async with session.begin():

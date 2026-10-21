@@ -14,12 +14,6 @@ from keyboards.afisha import (
     afisha_menu,
     nearest_events_keyboard,
     event_details_keyboard,
-    scale_keyboard,
-    organizer_keyboard,
-    company_keyboard,
-    activity_keyboard,
-    search_results_keyboard,
-    empty_search_keyboard,
     rating_keyboard
 )
 
@@ -39,7 +33,7 @@ from services.menu_service import show_main_menu
 
 from aiogram.fsm.context import FSMContext
 
-from states.afisha import AfishaSearchState, ReviewState
+from states.afisha import ReviewState
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from services.review_service import ReviewService
@@ -280,31 +274,6 @@ async def register_event(
     )
 
 
-@router.callback_query(
-    F.data == "afisha_search"
-)
-async def search_events(
-    callback: CallbackQuery,
-    state: FSMContext
-):
-
-    await callback.answer()
-
-    await state.clear()
-
-    await state.set_state(
-        AfishaSearchState.scale
-    )
-
-    await callback.message.edit_text(
-        "🔎 <b>Поиск события</b>\n\n"
-        "1/4. Какой масштаб мероприятия "
-        "вам подходит?",
-        parse_mode="HTML",
-        reply_markup=scale_keyboard()
-    )
-
-
 @router.callback_query(F.data == "afisha_rate")
 async def rate_event(
     callback: CallbackQuery
@@ -422,165 +391,6 @@ async def afisha_main_menu(
     await show_main_menu(
         callback.bot,
         callback.from_user.id
-    )
-
-@router.callback_query(
-    AfishaSearchState.scale,
-    F.data.startswith("search_scale_")
-)
-async def search_scale(
-    callback: CallbackQuery,
-    state: FSMContext
-):
-
-    await callback.answer()
-
-    value = callback.data.replace(
-        "search_scale_",
-        ""
-    )
-
-    await state.update_data(
-        scale=None if value == "any" else value
-    )
-
-    await state.set_state(
-        AfishaSearchState.organizer
-    )
-
-    await callback.message.edit_text(
-        "🔎 <b>Поиск события</b>\n\n"
-        "2/4. Кто организатор?",
-        parse_mode="HTML",
-        reply_markup=organizer_keyboard()
-    )
-
-@router.callback_query(
-    AfishaSearchState.organizer,
-    F.data.startswith("search_organizer_")
-)
-async def search_organizer(
-    callback: CallbackQuery,
-    state: FSMContext
-):
-
-    await callback.answer()
-
-    value = callback.data.replace(
-        "search_organizer_",
-        ""
-    )
-
-    await state.update_data(
-        organizer_type=(
-            None
-            if value == "any"
-            else value
-        )
-    )
-
-    await state.set_state(
-        AfishaSearchState.company
-    )
-
-    await callback.message.edit_text(
-        "🔎 <b>Поиск события</b>\n\n"
-        "3/4. С кем вы планируете идти?",
-        parse_mode="HTML",
-        reply_markup=company_keyboard()
-    )
-
-@router.callback_query(
-    AfishaSearchState.company,
-    F.data.startswith("search_company_")
-)
-async def search_company(
-    callback: CallbackQuery,
-    state: FSMContext
-):
-
-    await callback.answer()
-
-    value = callback.data.replace(
-        "search_company_",
-        ""
-    )
-
-    await state.update_data(
-        company=None if value == "any" else value
-    )
-
-    await state.set_state(
-        AfishaSearchState.activity
-    )
-
-    await callback.message.edit_text(
-        "🔎 <b>Поиск события</b>\n\n"
-        "4/4. Какой формат участия вам ближе?",
-        parse_mode="HTML",
-        reply_markup=activity_keyboard()
-    )
-
-@router.callback_query(
-    AfishaSearchState.activity,
-    F.data.startswith("search_activity_")
-)
-async def search_activity(
-    callback: CallbackQuery,
-    state: FSMContext
-):
-
-    await callback.answer()
-
-    value = callback.data.replace(
-        "search_activity_",
-        ""
-    )
-
-    await state.update_data(
-        activity_type=(
-            None
-            if value == "any"
-            else value
-        )
-    )
-
-    filters = await state.get_data()
-
-    events = await event_service.search_events(
-        scale=filters.get("scale"),
-        organizer_type=filters.get(
-            "organizer_type"
-        ),
-        company=filters.get("company"),
-        activity_type=filters.get(
-            "activity_type"
-        )
-    )
-
-    await state.clear()
-
-    if not events:
-
-        await callback.message.edit_text(
-            "🔎 <b>Поиск события</b>\n\n"
-            "По выбранным параметрам "
-            "мероприятий пока не найдено.\n\n"
-            "Попробуйте изменить параметры поиска.",
-            parse_mode="HTML",
-            reply_markup=empty_search_keyboard()
-        )
-
-        return
-
-    await callback.message.edit_text(
-        "🔎 <b>Подходящие события</b>\n\n"
-        f"Найдено: {len(events)}\n\n"
-        "Выберите мероприятие:",
-        parse_mode="HTML",
-        reply_markup=search_results_keyboard(
-            events
-        )
     )
 
 @router.callback_query(

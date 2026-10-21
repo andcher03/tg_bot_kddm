@@ -69,7 +69,7 @@
 
             {% if event.event_date %}
             <span>
-                📅 {{ event.event_date.strftime("%d.%m.%Y") }}
+                📅 {{ event.event_date.strftime("%d.%m.%Y") }}{% if event.end_date and event.end_date > event.event_date %}–{{ event.end_date.strftime("%d.%m.%Y") }}{% endif %}
             </span>
             {% endif %}
 

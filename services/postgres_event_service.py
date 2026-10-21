@@ -1,8 +1,7 @@
-from datetime import date
-
 from sqlalchemy import select
 
 from services.database import SessionLocal
+from services.event_confirmation import local_now
 from services.models import Event
 
 
@@ -10,7 +9,7 @@ class PostgresEventService:
 
     async def get_active_events(self):
 
-        today = date.today()
+        today = local_now().date()
 
         async with SessionLocal() as session:
 
@@ -18,7 +17,7 @@ class PostgresEventService:
                 select(Event)
                 .where(
                     Event.status == "active",
-                    Event.event_date >= today
+                    Event.end_date >= today
                 )
                 .order_by(
                     Event.event_date,
@@ -61,10 +60,9 @@ class PostgresEventService:
             "title": event.title,
             "description": event.description or "",
 
-            "date": (
-                event.event_date.strftime("%d.%m.%Y")
-                if event.event_date
-                else ""
+            "date": format_event_date_range(
+                event.event_date,
+                event.end_date,
             ),
 
             "start_time": (
@@ -82,59 +80,15 @@ class PostgresEventService:
                 if event.created_at
                 else ""
             ),
-            "scale": event.scale or "",
-            "organizer_type": event.organizer_type or "",
-            "company": event.company or "",
-            "activity_type": event.activity_type or "",
         }
-    
-    async def search_events(
-        self,
-        scale=None,
-        organizer_type=None,
-        company=None,
-        activity_type=None
-    ):
 
-        today = date.today()
 
-        async with SessionLocal() as session:
+def format_event_date_range(start_date, end_date):
+    if start_date is None:
+        return ""
 
-            query = select(Event).where(
-                Event.status == "active",
-                Event.event_date >= today
-            )
+    start_label = start_date.strftime("%d.%m.%Y")
+    if end_date is None or end_date <= start_date:
+        return start_label
 
-            if scale:
-                query = query.where(
-                    Event.scale == scale
-                )
-
-            if organizer_type:
-                query = query.where(
-                    Event.organizer_type == organizer_type
-                )
-
-            if company:
-                query = query.where(
-                    Event.company == company
-                )
-
-            if activity_type:
-                query = query.where(
-                    Event.activity_type == activity_type
-                )
-
-            query = query.order_by(
-                Event.event_date,
-                Event.start_time
-            )
-
-            result = await session.execute(query)
-
-            events = result.scalars().all()
-
-            return [
-                self._to_dict(event)
-                for event in events
-            ]
+    return f"{start_label}–{end_date.strftime('%d.%m.%Y')}"

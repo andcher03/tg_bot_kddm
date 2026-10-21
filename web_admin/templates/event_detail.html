@@ -9,10 +9,10 @@
 
 
 <a
-    href="{% if event.status == 'archived' or event.event_date < today %}/events/archive{% else %}/events{% endif %}"
+    href="{% if event.status == 'archived' or event.end_date < today %}/events/archive{% else %}/events{% endif %}"
     class="back-link"
 >
-    {% if event.status == "archived" or event.event_date < today %}
+    {% if event.status == "archived" or event.end_date < today %}
         ← К завершённым мероприятиям
     {% else %}
         ← К мероприятиям
@@ -39,7 +39,7 @@
                     Архив
                 </span>
 
-                {% elif event.event_date < today %}
+                {% elif event.end_date < today %}
 
                 <span class="event-status-badge event-status-finished">
                     Завершено
@@ -66,7 +66,7 @@
                 {% if event.event_date %}
 
                 <span>
-                    📅 {{ event.event_date.strftime("%d.%m.%Y") }}
+                    📅 {{ event.event_date.strftime("%d.%m.%Y") }}{% if event.end_date and event.end_date > event.event_date %}–{{ event.end_date.strftime("%d.%m.%Y") }}{% endif %}
                 </span>
 
                 {% endif %}
@@ -121,7 +121,7 @@
             </form>
 
 
-            {% elif event.status == "archived" and event.event_date >= today %}
+            {% elif event.status == "archived" and event.end_date >= today %}
 
             <form
                 method="post"
@@ -141,8 +141,8 @@
 
             <div class="restore-event-hint">
                 <span>
-                    Дата мероприятия уже прошла. Чтобы вернуть его в открытые мероприятия,
-                    измените дату на будущую.
+                    Срок мероприятия уже завершился. Чтобы вернуть его в открытые мероприятия,
+                    измените даты проведения.
                 </span>
                 <a
                     href="/events/{{ event.id }}/edit"
@@ -267,19 +267,6 @@
             <div>
 
                 <span>
-                    Категория
-                </span>
-
-                <strong>
-                    {{ event.category or "—" }}
-                </strong>
-
-            </div>
-
-
-            <div>
-
-                <span>
                     Статус
                 </span>
 
@@ -289,31 +276,6 @@
 
             </div>
 
-
-            <div>
-
-                <span>
-                    Масштаб
-                </span>
-
-                <strong>
-                    {{ event.scale or "—" }}
-                </strong>
-
-            </div>
-
-
-            <div>
-
-                <span>
-                    Организатор
-                </span>
-
-                <strong>
-                    {{ event.organizer_type or "—" }}
-                </strong>
-
-            </div>
 
         </div>
 

@@ -41,6 +41,9 @@ from web_admin.routers.registrations import (
 from web_admin.routers.statistics import (
     router as statistics_router,
 )
+from web_admin.routers.quizzes import (
+    router as quizzes_router,
+)
 from web_admin.routers.service_admin import (
     router as service_admin_router,
 )
@@ -129,6 +132,9 @@ app.include_router(
 )
 app.include_router(
     statistics_router
+)
+app.include_router(
+    quizzes_router
 )
 app.include_router(
     users_router

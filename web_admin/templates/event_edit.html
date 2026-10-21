@@ -102,25 +102,57 @@
 
 
 
-    <!-- ДАТА И ВРЕМЯ -->
+    <!-- ДАТЫ И ВРЕМЯ -->
+
+    <div class="form-field event-multi-day-toggle">
+        <label class="mailing-checkbox">
+            <input
+                type="checkbox"
+                name="is_multi_day"
+                id="eventMultiDay"
+                value="true"
+                {% if event.end_date and event.end_date > event.event_date %}checked{% endif %}
+            >
+            <span>Мероприятие длится несколько дней</span>
+        </label>
+    </div>
 
     <div class="form-row">
 
         <div class="form-field">
 
             <label>
-                Дата *
+                Дата начала *
             </label>
 
             <input
                 type="date"
                 name="event_date"
+                id="eventStartDate"
 
                 {% if event.event_date %}
                 value="{{ event.event_date.isoformat() }}"
                 {% endif %}
 
                 required
+            >
+
+        </div>
+
+
+        <div class="form-field event-end-date-field" id="eventEndDateField" {% if not event.end_date or event.end_date <= event.event_date %}hidden{% endif %}>
+
+            <label>
+                Дата завершения *
+            </label>
+
+            <input
+                type="date"
+                name="end_date"
+                id="eventEndDate"
+                value="{{ event.end_date.isoformat() if event.end_date else event.event_date.isoformat() }}"
+                min="{{ event.event_date.isoformat() }}"
+                {% if not event.end_date or event.end_date <= event.event_date %}disabled{% else %}required{% endif %}
             >
 
         </div>
@@ -168,245 +200,6 @@
 
 
 
-    <!-- КАТЕГОРИЯ -->
-
-    <div class="form-field">
-
-        <label>
-            Категория
-        </label>
-
-        <input
-            type="text"
-            name="category"
-            value="{{ event.category or '' }}"
-        >
-
-    </div>
-
-
-
-    <!-- МАСШТАБ -->
-
-    <div class="form-field">
-
-        <label>
-            Масштаб *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="scale"
-                    value="chamber"
-
-                    {% if event.scale == "chamber" %}
-                    checked
-                    {% endif %}
-
-                    required
-                >
-
-                Камерное
-
-            </label>
-
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="scale"
-                    value="large"
-
-                    {% if event.scale == "large" %}
-                    checked
-                    {% endif %}
-                >
-
-                Крупное
-
-            </label>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ОРГАНИЗАТОР -->
-
-    <div class="form-field">
-
-        <label>
-            Организатор *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="organizer_type"
-                    value="kddm"
-
-                    {% if event.organizer_type == "kddm" %}
-                    checked
-                    {% endif %}
-
-                    required
-                >
-
-                Молодежь Казани
-
-            </label>
-
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="organizer_type"
-                    value="other"
-
-                    {% if event.organizer_type == "other" %}
-                    checked
-                    {% endif %}
-                >
-
-                Другой организатор
-
-            </label>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- КОМПАНИЯ -->
-
-    <div class="form-field">
-
-        <label>
-            С кем подходит идти *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="company"
-                    value="friends"
-
-                    {% if event.company == "friends" %}
-                    checked
-                    {% endif %}
-
-                    required
-                >
-
-                С друзьями
-
-            </label>
-
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="company"
-                    value="solo"
-
-                    {% if event.company == "solo" %}
-                    checked
-                    {% endif %}
-                >
-
-                Один
-
-            </label>
-
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="company"
-                    value="any"
-
-                    {% if event.company == "any" %}
-                    checked
-                    {% endif %}
-                >
-
-                Неважно
-
-            </label>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ФОРМАТ УЧАСТИЯ -->
-
-    <div class="form-field">
-
-        <label>
-            Формат участия *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="activity_type"
-                    value="active"
-
-                    {% if event.activity_type == "active" %}
-                    checked
-                    {% endif %}
-
-                    required
-                >
-
-                Активное участие
-
-            </label>
-
-
-            <label class="radio-option">
-
-                <input
-                    type="radio"
-                    name="activity_type"
-                    value="passive"
-
-                    {% if event.activity_type == "passive" %}
-                    checked
-                    {% endif %}
-                >
-
-                Смотрю / слушаю
-
-            </label>
-
-        </div>
-
-    </div>
-
-
-
     <!-- КНОПКИ -->
 
     <div class="event-edit-actions">
@@ -432,6 +225,32 @@
 </form>
 
 </div>
+
+<script>
+    (() => {
+        const toggle = document.getElementById("eventMultiDay");
+        const startDate = document.getElementById("eventStartDate");
+        const endDateField = document.getElementById("eventEndDateField");
+        const endDate = document.getElementById("eventEndDate");
+
+        const updateEndDate = () => {
+            const enabled = toggle.checked;
+            endDateField.hidden = !enabled;
+            endDate.disabled = !enabled;
+            endDate.required = enabled;
+            endDate.min = startDate.value;
+            if (!enabled) {
+                endDate.value = startDate.value;
+            } else if (!endDate.value || endDate.value < startDate.value) {
+                endDate.value = startDate.value;
+            }
+        };
+
+        toggle.addEventListener("change", updateEndDate);
+        startDate.addEventListener("change", updateEndDate);
+        updateEndDate();
+    })();
+</script>
 
 
 {% endblock %}

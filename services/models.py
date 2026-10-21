@@ -168,6 +168,11 @@ class Event(Base):
         nullable=False
     )
 
+    end_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
     start_time = mapped_column(
         Time,
         nullable=True
@@ -204,26 +209,6 @@ class Event(Base):
     event_code: Mapped[str | None] = mapped_column(
         String(30),
         unique=True,
-        nullable=True
-    )
-
-    scale: Mapped[str | None] = mapped_column(
-        String(20),
-        nullable=True
-    )
-
-    organizer_type: Mapped[str | None] = mapped_column(
-        String(20),
-        nullable=True
-    )
-
-    company: Mapped[str | None] = mapped_column(
-        String(20),
-        nullable=True
-    )
-
-    activity_type: Mapped[str | None] = mapped_column(
-        String(20),
         nullable=True
     )
 

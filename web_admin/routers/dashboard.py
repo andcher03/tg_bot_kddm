@@ -13,7 +13,7 @@ from services.channel_stats_service import (
     get_channel_stats,
     refresh_channel_member_count,
 )
-from services.quiz_data import QUIZ_CODE
+from services.quiz_registry import get_active_quiz
 from services.quiz_stats_service import get_quiz_statistics
 
 
@@ -28,6 +28,8 @@ templates = Jinja2Templates(
 
 @router.get("/")
 async def dashboard(request: Request):
+    active_quiz = await get_active_quiz()
+    active_quiz_code = active_quiz.code if active_quiz else ""
 
     async with SessionLocal() as session:
 
@@ -58,7 +60,7 @@ async def dashboard(request: Request):
                 WHERE quiz_code = :quiz_code
                 """
             ),
-            {"quiz_code": QUIZ_CODE},
+            {"quiz_code": active_quiz_code},
         )
 
 
@@ -99,6 +101,7 @@ async def dashboard(request: Request):
                     e.title,
                     e.description,
                     e.event_date,
+                    e.end_date,
                     e.start_time,
                     e.place,
                     e.category,
@@ -214,6 +217,9 @@ async def dashboard(request: Request):
             "quiz_completions_count":
                 quiz_completions_count or 0,
 
+            "active_quiz":
+                active_quiz,
+
             "latest_mailing":
                 latest_mailing,
 
@@ -246,4 +252,7 @@ async def dashboard_channel_history(
 
 @router.get("/api/dashboard/quiz-statistics")
 async def dashboard_quiz_statistics():
-    return await get_quiz_statistics()
+    active_quiz = await get_active_quiz()
+    return await get_quiz_statistics(
+        active_quiz.code if active_quiz else ""
+    )

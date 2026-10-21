@@ -22,6 +22,7 @@ from services.quiz_data import (
     format_result,
     result_image_path,
 )
+from services.quiz_registry import quiz_is_enabled
 from services.quiz_service import QuizService
 from services.settings_service import SettingsService
 from states.quiz import QuizState
@@ -113,6 +114,10 @@ async def begin_quiz_from_callback(
 
 @router.message(F.text == QUIZ_BUTTON_TEXT)
 async def start_quiz(message: Message, state: FSMContext) -> None:
+    if not await quiz_is_enabled(QUIZ_CODE):
+        await message.answer("Сейчас нет открытых тестов.")
+        return
+
     if not await users.is_registered(message.from_user.id):
         await state.clear()
         await state.update_data(after_registration="quiz")
@@ -138,6 +143,10 @@ async def restart_quiz(
     callback: CallbackQuery,
     state: FSMContext,
 ) -> None:
+    if not await quiz_is_enabled(QUIZ_CODE):
+        await callback.answer("Этот тест сейчас закрыт.", show_alert=True)
+        return
+
     if not await users.is_registered(callback.from_user.id):
         await callback.answer(
             "Сначала зарегистрируйтесь в боте.",

@@ -7,6 +7,7 @@ from sqlalchemy import String, cast, func, or_, select
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
+from services.event_confirmation import local_now
 from services.models import Event, Registration, User
 from services.registration_status import confirmation_status_color
 
@@ -94,7 +95,7 @@ def active_events_query(search_query: str):
         )
         .where(
             Event.status == "active",
-            Event.event_date >= date.today(),
+            Event.end_date >= local_now().date(),
         )
     )
 
@@ -133,6 +134,7 @@ async def registrations_page(
                 "event_code": event.event_code,
                 "title": event.title,
                 "event_date": event.event_date,
+                "end_date": event.end_date,
                 "start_time": event.start_time,
                 "place": event.place,
                 "category": event.category,
@@ -173,7 +175,7 @@ async def registration_detail_page(
             select(Event).where(
                 Event.id == event_id,
                 Event.status == "active",
-                Event.event_date >= date.today(),
+                Event.end_date >= local_now().date(),
             )
         )
         event = event_result.scalar_one_or_none()

@@ -277,8 +277,8 @@
             <div class="dashboard-metric-top">
 
                 <div class="dashboard-metric-heading">
-                    <span class="dashboard-metric-title">Пройдено тестов</span>
-                    <span class="dashboard-metric-description">Все завершённые попытки пользователей</span>
+                    <span class="dashboard-metric-title">Открытый тест</span>
+                    <span class="dashboard-metric-description">{{ active_quiz.title if active_quiz else "Нет открытого теста" }}</span>
                 </div>
 
                 <span class="dashboard-metric-icon">
@@ -303,7 +303,7 @@
                 </span>
 
                 <span>
-                    завершённых прохождений
+                    прохождений текущего теста
                 </span>
 
             </div>
@@ -505,7 +505,7 @@
                 {% if latest_event.event_date %}
 
                 <span>
-                    {{ latest_event.event_date.strftime("%d.%m.%Y") }}
+                    {{ latest_event.event_date.strftime("%d.%m.%Y") }}{% if latest_event.end_date and latest_event.end_date > latest_event.event_date %}–{{ latest_event.end_date.strftime("%d.%m.%Y") }}{% endif %}
                 </span>
 
                 {% endif %}

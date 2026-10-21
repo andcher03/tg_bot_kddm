@@ -68,18 +68,47 @@
     </div>
 
 
+    <div class="form-field event-multi-day-toggle">
+        <label class="mailing-checkbox">
+            <input
+                type="checkbox"
+                name="is_multi_day"
+                id="eventMultiDay"
+                value="true"
+            >
+            <span>Мероприятие длится несколько дней</span>
+        </label>
+    </div>
+
     <div class="form-row">
 
         <div class="form-field">
 
             <label>
-                Дата *
+                Дата начала *
             </label>
 
             <input
                 type="date"
                 name="event_date"
+                id="eventStartDate"
                 required
+            >
+
+        </div>
+
+
+        <div class="form-field event-end-date-field" id="eventEndDateField" hidden>
+
+            <label>
+                Дата завершения *
+            </label>
+
+            <input
+                type="date"
+                name="end_date"
+                id="eventEndDate"
+                disabled
             >
 
         </div>
@@ -117,157 +146,6 @@
     </div>
 
 
-    <div class="form-field">
-
-        <label>
-            Категория
-        </label>
-
-        <input
-            type="text"
-            name="category"
-        >
-
-    </div>
-
-
-    <div class="form-field">
-
-        <label>
-            Масштаб *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="scale"
-                    value="chamber"
-                    required
-                >
-                Камерное
-            </label>
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="scale"
-                    value="large"
-                >
-                Крупное
-            </label>
-
-        </div>
-
-    </div>
-
-
-    <div class="form-field">
-
-        <label>
-            Организатор *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="organizer_type"
-                    value="kddm"
-                    required
-                >
-                Молодежь Казани
-            </label>
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="organizer_type"
-                    value="other"
-                >
-                Другой организатор
-            </label>
-
-        </div>
-
-    </div>
-
-
-    <div class="form-field">
-
-        <label>
-            С кем подходит идти *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="company"
-                    value="friends"
-                    required
-                >
-                С друзьями
-            </label>
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="company"
-                    value="solo"
-                >
-                Один
-            </label>
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="company"
-                    value="any"
-                >
-                Неважно
-            </label>
-
-        </div>
-
-    </div>
-
-
-    <div class="form-field">
-
-        <label>
-            Формат участия *
-        </label>
-
-        <div class="radio-group">
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="activity_type"
-                    value="active"
-                    required
-                >
-                Активное участие
-            </label>
-
-            <label class="radio-option">
-                <input
-                    type="radio"
-                    name="activity_type"
-                    value="passive"
-                >
-                Смотрю / слушаю
-            </label>
-
-        </div>
-
-    </div>
-
-
     <div class="event-submit">
 
         <button
@@ -282,5 +160,31 @@
 </form>
 
 </div>
+
+<script>
+    (() => {
+        const toggle = document.getElementById("eventMultiDay");
+        const startDate = document.getElementById("eventStartDate");
+        const endDateField = document.getElementById("eventEndDateField");
+        const endDate = document.getElementById("eventEndDate");
+
+        const updateEndDate = () => {
+            const enabled = toggle.checked;
+            endDateField.hidden = !enabled;
+            endDate.disabled = !enabled;
+            endDate.required = enabled;
+            endDate.min = startDate.value;
+            if (!enabled) {
+                endDate.value = startDate.value;
+            } else if (!endDate.value || endDate.value < startDate.value) {
+                endDate.value = startDate.value;
+            }
+        };
+
+        toggle.addEventListener("change", updateEndDate);
+        startDate.addEventListener("change", updateEndDate);
+        updateEndDate();
+    })();
+</script>
 
 {% endblock %}

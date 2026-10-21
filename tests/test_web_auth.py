@@ -35,6 +35,8 @@ def test_editor_can_access_working_sections(path):
         "/mailing/history/1",
         "/api/users",
         "/api/dashboard/quiz-statistics",
+        "/tests",
+        "/tests/kazan_anomalies_2026/toggle",
         "/users/12/delete",
     ],
 )

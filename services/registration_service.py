@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -8,6 +8,15 @@ from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
 from services.event_confirmation import event_start_at, local_now
 from services.models import User, Event, Registration
+
+
+def event_is_registration_open(
+    event: Event,
+    today: date | None = None,
+) -> bool:
+    current_date = today or local_now().date()
+    final_date = event.end_date or event.event_date
+    return event.status == "active" and final_date >= current_date
 
 
 def confirmation_is_immediate(event: Event, registered_at: datetime) -> bool:
@@ -106,6 +115,10 @@ class RegistrationService:
             if not event:
                 return False
 
+            registered_at = local_now()
+            if not event_is_registration_open(event, registered_at.date()):
+                return False
+
             # -------------------------
             # Проверяем дубль
             # -------------------------
@@ -121,7 +134,6 @@ class RegistrationService:
                 registration_result.scalar_one_or_none()
             )
 
-            registered_at = local_now()
             is_confirmed_immediately = confirmation_is_immediate(
                 event,
                 registered_at,

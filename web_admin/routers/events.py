@@ -15,6 +15,7 @@ from sqlalchemy import or_, select
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
+from services.event_confirmation import local_now
 from services.models import (
     Event,
     Registration,
@@ -34,18 +35,18 @@ templates = Jinja2Templates(
 
 
 def archive_events_query(today: date | None = None):
-    current_date = today or date.today()
+    current_date = today or local_now().date()
 
     return (
         select(Event)
         .where(
             or_(
                 Event.status == "archived",
-                Event.event_date < current_date,
+                Event.end_date < current_date,
             )
         )
         .order_by(
-            Event.event_date.desc(),
+            Event.end_date.desc(),
             Event.start_time.desc(),
         )
     )
@@ -64,7 +65,7 @@ async def events_page(request: Request):
             select(Event)
             .where(
                 Event.status == "active",
-                Event.event_date >= date.today()
+                Event.end_date >= local_now().date()
             )
             .order_by(
                 Event.event_date.asc(),
@@ -108,12 +109,23 @@ async def create_event(
     event_date: date = Form(...),
     start_time: time = Form(...),
     place: str = Form(...),
-    category: str = Form(""),
-    scale: str = Form(...),
-    organizer_type: str = Form(...),
-    company: str = Form(...),
-    activity_type: str = Form(...),
+    is_multi_day: bool = Form(False),
+    end_date: date | None = Form(None),
 ):
+
+    if is_multi_day and end_date is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Укажите дату завершения мероприятия.",
+        )
+
+    if is_multi_day and end_date < event_date:
+        raise HTTPException(
+            status_code=422,
+            detail="Дата завершения не может быть раньше даты начала.",
+        )
+
+    resolved_end_date = end_date if is_multi_day else event_date
 
     async with SessionLocal() as session:
 
@@ -122,17 +134,11 @@ async def create_event(
             description=description.strip(),
 
             event_date=event_date,
+            end_date=resolved_end_date,
             start_time=start_time,
 
             place=place.strip(),
-            category=category.strip(),
-
             status="active",
-
-            scale=scale,
-            organizer_type=organizer_type,
-            company=company,
-            activity_type=activity_type,
         )
 
         session.add(event)
@@ -385,7 +391,7 @@ async def event_detail_page(
                 average_rating,
 
             "today":
-                date.today(),
+                local_now().date(),
 
             "confirmations_enabled":
                 EVENT_CONFIRMATIONS_ENABLED,
@@ -448,12 +454,12 @@ async def restore_event(
                 detail="Мероприятие не найдено"
             )
 
-        if event.event_date < date.today():
+        if event.end_date < local_now().date():
             raise HTTPException(
                 status_code=409,
                 detail=(
                     "Завершённое мероприятие нельзя вернуть в публикацию. "
-                    "Сначала измените его дату."
+                    "Сначала измените срок мероприятия."
                 ),
             )
 
@@ -512,13 +518,23 @@ async def edit_event(
     event_date: date = Form(...),
     start_time: time = Form(...),
     place: str = Form(...),
-    category: str = Form(""),
-
-    scale: str = Form(...),
-    organizer_type: str = Form(...),
-    company: str = Form(...),
-    activity_type: str = Form(...),
+    is_multi_day: bool = Form(False),
+    end_date: date | None = Form(None),
 ):
+    if is_multi_day and end_date is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Укажите дату завершения мероприятия.",
+        )
+
+    if is_multi_day and end_date < event_date:
+        raise HTTPException(
+            status_code=422,
+            detail="Дата завершения не может быть раньше даты начала.",
+        )
+
+    resolved_end_date = end_date if is_multi_day else event_date
+
     async with SessionLocal() as session:
 
         result = await session.execute(
@@ -539,17 +555,10 @@ async def edit_event(
         event.description = description.strip()
 
         event.event_date = event_date
+        event.end_date = resolved_end_date
         event.start_time = start_time
 
         event.place = place.strip()
-        event.category = category.strip()
-
-        event.scale = scale
-        event.organizer_type = organizer_type
-        event.company = company
-        event.activity_type = activity_type
-
-
         await session.commit()
 
 

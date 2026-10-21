@@ -28,7 +28,7 @@ def format_completed_at(value: datetime) -> tuple[str, str]:
     )
 
 
-async def get_quiz_statistics() -> dict:
+async def get_quiz_statistics(quiz_code: str = QUIZ_CODE) -> dict:
     async with SessionLocal() as session:
         distribution_result = await session.execute(
             text(
@@ -39,7 +39,7 @@ async def get_quiz_statistics() -> dict:
                 GROUP BY result_id
                 """
             ),
-            {"quiz_code": QUIZ_CODE},
+            {"quiz_code": quiz_code},
         )
         completion_result = await session.execute(
             text(
@@ -58,7 +58,7 @@ async def get_quiz_statistics() -> dict:
                 ORDER BY qp.completed_at DESC, qp.id DESC
                 """
             ),
-            {"quiz_code": QUIZ_CODE},
+            {"quiz_code": quiz_code},
         )
 
         raw_distribution = {
@@ -67,13 +67,21 @@ async def get_quiz_statistics() -> dict:
         }
         rows = completion_result.mappings().all()
 
+    result_order = (
+        RESULT_ORDER
+        if quiz_code == QUIZ_CODE
+        else tuple(dict.fromkeys(
+            [row["result_id"] for row in rows if row["result_id"]]
+            + [result_id for result_id in raw_distribution if result_id]
+        ))
+    )
     distribution = [
         {
             "result_id": result_id,
             "label": result_label(result_id),
             "count": raw_distribution.get(result_id, 0),
         }
-        for result_id in RESULT_ORDER
+        for result_id in result_order
     ]
 
     completions = []
@@ -96,7 +104,9 @@ async def get_quiz_statistics() -> dict:
         )
 
     return {
+        "quiz_code": quiz_code,
         "total": sum(raw_distribution.values()),
+        "unique_users": len({row["user_id"] for row in rows}),
         "results_total": sum(
             item["count"] for item in distribution
         ),

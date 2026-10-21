@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Тесты — Молодёжь Казани{% endblock %}
+
+{% block content %}
+<section class="admin-page-panel" aria-labelledby="testsPageTitle">
+    <div class="page-header">
+        <div>
+            <h1 id="testsPageTitle">Тесты</h1>
+            <p class="subtitle">Статистика прохождений и управление доступностью в Telegram-боте</p>
+        </div>
+    </div>
+
+    <div class="tests-page-note">
+        В боте одновременно открыт один тест. После переключения клавиатура обновится,
+        когда бот в следующий раз покажет пользователю главное меню. История прохождений сохраняется.
+    </div>
+
+    <div class="tests-grid">
+        {% for quiz in quizzes %}
+        <article class="test-card{% if quiz.enabled %} test-card-active{% endif %}">
+            <div class="test-card-topline">
+                <span class="test-card-code">{{ quiz.definition.code }}</span>
+                <span class="test-status{% if quiz.enabled %} is-enabled{% endif %}">
+                    {{ "Открыт в боте" if quiz.enabled else "Выключен" }}
+                </span>
+            </div>
+
+            <h2>{{ quiz.definition.title }}</h2>
+            <p class="test-card-description">{{ quiz.definition.description }}</p>
+
+            <div class="test-card-stats">
+                <div>
+                    <strong>{{ quiz.statistics.total }}</strong>
+                    <span>прохождений</span>
+                </div>
+                <div>
+                    <strong>{{ quiz.statistics.unique_users }}</strong>
+                    <span>участников</span>
+                </div>
+            </div>
+
+            {% if quiz.statistics.distribution %}
+            <div class="test-results" aria-label="Распределение результатов">
+                {% for result in quiz.statistics.distribution %}
+                <div class="test-result-row">
+                    <span>{{ result.label }}</span>
+                    <div class="test-result-track">
+                        <span style="width: {{ (result.count / quiz.statistics.total * 100) if quiz.statistics.total else 0 }}%"></span>
+                    </div>
+                    <strong>{{ result.count }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" action="/tests/{{ quiz.definition.code }}/toggle">
+                <button
+                    type="submit"
+                    class="{% if quiz.enabled %}test-toggle-button test-toggle-disable{% else %}test-toggle-button test-toggle-enable{% endif %}"
+                >
+                    {{ "Выключить тест" if quiz.enabled else "Включить тест" }}
+                </button>
+            </form>
+        </article>
+        {% else %}
+        <div class="empty-state">Тесты ещё не добавлены.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

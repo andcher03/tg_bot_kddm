@@ -19,6 +19,7 @@ from sqlalchemy import (
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
+from services.event_confirmation import local_now
 from services.mailing_images import (
     MailingImageError,
     normalize_mailing_photo,
@@ -72,7 +73,8 @@ async def get_mailing_filters(session):
     events_result = await session.execute(
         select(Event)
         .where(
-            Event.status == "active"
+            Event.status == "active",
+            Event.end_date >= local_now().date(),
         )
         .order_by(
             Event.event_date.asc(),

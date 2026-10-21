@@ -2477,6 +2477,8 @@ tbody tr:hover{ background: var(--canvas); }
 
 .mailing-checkbox input{ margin-top: 2px; accent-color: var(--accent); }
 
+.event-end-date-field[hidden]{ display: none !important; }
+
 .mailing-checkbox-main strong{ display: block; font-size: 13px; }
 .mailing-checkbox-main span{ color: var(--text-muted); font-size: 12px; }
 

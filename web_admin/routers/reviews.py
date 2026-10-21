@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import String, cast, func, or_, select
 
 from services.database import SessionLocal
+from services.event_confirmation import local_now
 from services.models import Event, EventReview, User
 from web_admin.review_export import (
     EXCEL_MEDIA_TYPE,
@@ -42,8 +43,10 @@ def event_display_status(
     status: str,
     event_date: date,
     today: date | None = None,
+    end_date: date | None = None,
 ) -> tuple[str, str]:
-    current_date = today or date.today()
+    current_date = today or local_now().date()
+    final_date = end_date or event_date
 
     if status == "archived":
         return "Архив", "archived"
@@ -51,7 +54,7 @@ def event_display_status(
     if status == "draft":
         return "Черновик", "draft"
 
-    if status == "active" and event_date < current_date:
+    if status == "active" and final_date < current_date:
         return "Завершено", "finished"
 
     if status == "active":
@@ -117,6 +120,7 @@ async def reviews_page(
             status_label, status_class = event_display_status(
                 event.status,
                 event.event_date,
+                end_date=event.end_date,
             )
 
             events.append({
@@ -124,6 +128,7 @@ async def reviews_page(
                 "event_code": event.event_code,
                 "title": event.title,
                 "event_date": event.event_date,
+                "end_date": event.end_date,
                 "start_time": event.start_time,
                 "place": event.place,
                 "category": event.category,
@@ -220,6 +225,7 @@ async def review_detail_page(
     status_label, status_class = event_display_status(
         event.status,
         event.event_date,
+        end_date=event.end_date,
     )
 
     return templates.TemplateResponse(
@@ -284,6 +290,7 @@ async def export_event_reviews(event_id: int):
     status_label, _ = event_display_status(
         event.status,
         event.event_date,
+        end_date=event.end_date,
     )
     workbook = build_reviews_workbook(
         event,

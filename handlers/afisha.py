@@ -185,6 +185,10 @@ async def event_details(
     )
     if event.get("max_participants"):
         text += f"\n👥 Лимит участников: {event['max_participants']}"
+        text += (
+            "\n🎟 Осталось мест "
+            f"{event['available_places']} из {event['max_participants']}"
+        )
 
     await callback.message.edit_text(
         text,

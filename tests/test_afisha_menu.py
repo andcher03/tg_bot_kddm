@@ -60,10 +60,55 @@ async def test_active_events_include_started_events_for_today(monkeypatch):
 
     assert [event["id"] for event in events] == ["EVENT-000007"]
     query = session.execute.await_args.args[0]
-    assert str(query.whereclause) == (
-        "events.status = :status_1 AND events.end_date >= :end_date_1"
-    )
+    query_sql = str(query.compile(compile_kwargs={"literal_binds": True}))
+    assert "events.status = 'active'" in query_sql
+    assert "events.end_date >= '2026-10-21'" in query_sql
+    assert "events.max_participants IS NOT NULL" in query_sql
+    assert "registrations.confirmation_status = 'confirmed'" in query_sql
+    assert "NOT (" in query_sql
     assert list(query._order_by_clauses) == [Event.event_date, Event.start_time]
+
+
+@pytest.mark.asyncio
+async def test_event_details_count_free_places_including_waitlist_offers(monkeypatch):
+    event = Event(
+        id=9,
+        event_code="EVENT-000009",
+        title="Ограниченное событие",
+        event_date=date(2026, 10, 28),
+        end_date=date(2026, 10, 28),
+        start_time=time(18, 0),
+        max_participants=10,
+        status="active",
+    )
+
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = event
+    session = AsyncMock()
+    session.execute.return_value = result
+    session.scalar.side_effect = [7, 1]
+
+    class SessionContext:
+        async def __aenter__(self):
+            return session
+
+        async def __aexit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(
+        "services.postgres_event_service.SessionLocal",
+        SessionContext,
+    )
+    monkeypatch.setattr(
+        "services.postgres_event_service.local_now",
+        lambda: datetime(2026, 10, 22, 17, 0),
+    )
+
+    details = await PostgresEventService().get_event_by_id("EVENT-000009")
+
+    assert details["max_participants"] == 10
+    assert details["available_places"] == 2
+    assert session.scalar.await_count == 2
 
 
 def test_event_date_range_formats_single_and_multiple_days():

@@ -74,6 +74,7 @@ class PostgresEventService:
             "place": event.place or "",
             "category": event.category or "",
             "status": event.status,
+            "max_participants": event.max_participants,
 
             "created_at": (
                 event.created_at.strftime("%d.%m.%Y %H:%M:%S")

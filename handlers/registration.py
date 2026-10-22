@@ -20,6 +20,7 @@ from services.menu_service import show_main_menu
 from services.registration_service import RegistrationService
 from services.postgres_event_service import PostgresEventService
 from services.universities import UNIVERSITIES_BY_CALLBACK
+from keyboards.afisha import event_waitlist_keyboard
 
 
 
@@ -190,7 +191,7 @@ async def education(
 
         await state.clear()
 
-        if success:
+        if success in {"registered", "confirmed"}:
             event = await event_service.get_event_by_id(
                 event_id
             )
@@ -210,9 +211,14 @@ async def education(
                     "Подтверждение участия не требуется."
                     if not EVENT_CONFIRMATIONS_ENABLED
                     else (
-                        "За 2 часа до начала мы попросим подтвердить участие. "
-                        "Если вы зарегистрировались после начала мероприятия, "
-                        "участие будет отмечено подтверждённым автоматически."
+                        "Так как мероприятие уже началось и количество мест "
+                        "ограничено, участие подтверждено автоматически."
+                        if success == "confirmed"
+                        else (
+                            "За 2 часа до начала мы попросим подтвердить участие. "
+                            "Для мероприятий без лимита мест, на которые записались "
+                            "после начала, запрос подтверждения не отправляется."
+                        )
                     )
                 ),
                 parse_mode="HTML"
@@ -223,6 +229,16 @@ async def education(
                 callback.from_user.id
             )
 
+        elif success == "full":
+            await callback.message.edit_text(
+                "Профиль создан. На мероприятие все места заняты. "
+                "Можно встать в лист ожидания — бот напишет, если место освободится.",
+                reply_markup=event_waitlist_keyboard(event_id),
+            )
+            await show_main_menu(
+                callback.bot,
+                callback.from_user.id,
+            )
         else:
             await callback.message.edit_text(
                 "Профиль создан, но зарегистрироваться "

@@ -188,6 +188,11 @@ class Event(Base):
         nullable=True
     )
 
+    max_participants: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
     # Retained in the database for historical event data. These fields are no
     # longer exposed in the admin UI or used by the bot's event flow.
     scale: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -311,6 +316,64 @@ class Registration(Base):
         String(30),
         unique=True,
         nullable=True
+    )
+
+
+class EventWaitlistEntry(Base):
+    __tablename__ = "event_waitlist_entries"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "event_id",
+            name="unique_user_event_waitlist",
+        ),
+        Index(
+            "ix_event_waitlist_event_status_created",
+            "event_id",
+            "status",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="waiting",
+        server_default=text("'waiting'"),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
+    offered_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    notification_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    notification_claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    responded_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
     )
 
 class Setting(Base):

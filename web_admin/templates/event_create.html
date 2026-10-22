@@ -145,6 +145,48 @@
 
     </div>
 
+    <div class="form-field event-multi-day-toggle">
+        <label class="mailing-checkbox">
+            <input
+                type="checkbox"
+                name="has_participant_limit"
+                id="eventHasParticipantLimit"
+                value="true"
+            >
+            <span>Лимит участников</span>
+        </label>
+    </div>
+
+    <div class="participant-limit-panel" id="participantLimitField" hidden>
+        <div class="participant-limit-info">
+            <span class="participant-limit-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <circle cx="9.5" cy="7" r="3.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M17 11a3.5 3.5 0 1 0-1.2-6.8M17 14.5a4 4 0 0 1 4 4V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="participant-limit-copy">
+                <label for="eventMaxParticipants">Количество мест *</label>
+                <span>Максимальное число участников мероприятия</span>
+            </span>
+        </div>
+        <div class="participant-limit-control">
+            <input
+                class="participant-limit-input"
+                type="number"
+                name="max_participants"
+                id="eventMaxParticipants"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                placeholder="Например, 30"
+                disabled
+            >
+            <span>мест</span>
+        </div>
+    </div>
+
 
     <div class="event-submit">
 
@@ -167,6 +209,9 @@
         const startDate = document.getElementById("eventStartDate");
         const endDateField = document.getElementById("eventEndDateField");
         const endDate = document.getElementById("eventEndDate");
+        const limitToggle = document.getElementById("eventHasParticipantLimit");
+        const limitField = document.getElementById("participantLimitField");
+        const maxParticipants = document.getElementById("eventMaxParticipants");
 
         const updateEndDate = () => {
             const enabled = toggle.checked;
@@ -184,6 +229,15 @@
         toggle.addEventListener("change", updateEndDate);
         startDate.addEventListener("change", updateEndDate);
         updateEndDate();
+
+        const updateParticipantLimit = () => {
+            const enabled = limitToggle.checked;
+            limitField.hidden = !enabled;
+            maxParticipants.disabled = !enabled;
+            maxParticipants.required = enabled;
+        };
+        limitToggle.addEventListener("change", updateParticipantLimit);
+        updateParticipantLimit();
     })();
 </script>
 

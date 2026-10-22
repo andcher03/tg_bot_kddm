@@ -19,6 +19,8 @@ from services.bot_analytics_service import (
     track_registration_decline_reason,
     track_registration_response,
 )
+from services.event_waitlist import process_waitlist_offers
+from keyboards.afisha import event_waitlist_keyboard
 
 router = Router()
 
@@ -104,6 +106,8 @@ async def event_details(callback: CallbackQuery):
         f"📍 Место: {event['place']}\n"
         f"🏷 Категория: {event['category']}"
     )
+    if event.get("max_participants"):
+        text += f"\n👥 Лимит участников: {event['max_participants']}"
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -192,7 +196,16 @@ async def register_for_event(callback: CallbackQuery):
         event_id=event_id
     )
 
-    if not success:
+    if success == "full":
+        await callback.message.edit_text(
+            "На это мероприятие все места заняты. Можно встать в лист ожидания — "
+            "бот напишет, если место освободится.",
+            reply_markup=event_waitlist_keyboard(event_id),
+        )
+        await callback.answer()
+        return
+
+    if success == "already_registered":
 
         await callback.answer(
             "ℹ️ Вы уже зарегистрированы на это мероприятие.",
@@ -201,22 +214,35 @@ async def register_for_event(callback: CallbackQuery):
 
         return
 
-    registration_message = (
-        "✅ <b>Вы успешно зарегистрированы!</b>\n\n"
-        "🎯 Регистрация сохранена. Подтверждать участие не нужно — "
-        "ваша регистрация уже учтена.\n\n"
-        "Мероприятие отображается в разделе «Мои мероприятия»."
-        if not EVENT_CONFIRMATIONS_ENABLED
-        else (
+    if success not in {"registered", "confirmed"}:
+        await callback.answer(
+            "Сейчас регистрация на это мероприятие недоступна.",
+            show_alert=True,
+        )
+        return
+
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        registration_message = (
+            "✅ <b>Вы успешно зарегистрированы!</b>\n\n"
+            "🎯 Регистрация сохранена. Подтверждать участие не нужно — "
+            "ваша регистрация уже учтена.\n\n"
+            "Мероприятие отображается в разделе «Мои мероприятия»."
+        )
+    elif success == "confirmed":
+        registration_message = (
+            "✅ <b>Вы успешно зарегистрированы!</b>\n\n"
+            "Так как мероприятие уже началось и количество мест ограничено, "
+            "участие подтверждено автоматически."
+        )
+    else:
+        registration_message = (
             "✅ <b>Вы успешно зарегистрированы!</b>\n\n"
             "🎯 Регистрация сохранена. За 2 часа до начала "
-            "мы попросим подтвердить участие. Если вы зарегистрировались "
-            "после начала мероприятия, участие будет отмечено "
-            "подтверждённым автоматически.\n\n"
-            "Подтверждённые мероприятия отображаются в разделе "
-            "«Мои мероприятия»."
+            "мы попросим подтвердить участие. Для мероприятий без лимита, "
+            "на которые записались после начала, запрос подтверждения "
+            "не отправляется.\n\n"
+            "Мероприятие отображается в разделе «Мои мероприятия»."
         )
-    )
     await callback.message.edit_text(registration_message, parse_mode="HTML")
 
     await callback.answer()
@@ -274,6 +300,7 @@ async def handle_event_confirmation(
         return
 
     if result == "declined":
+        await process_waitlist_offers(callback.bot)
         await callback.answer()
         if callback.message:
             try:

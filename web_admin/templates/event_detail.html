@@ -276,6 +276,17 @@
 
             </div>
 
+            <div>
+                <span>Лимит участников</span>
+                <strong>
+                    {% if event.max_participants %}
+                        {{ registrations_count }} / {{ event.max_participants }}
+                    {% else %}
+                        Без лимита
+                    {% endif %}
+                </strong>
+            </div>
+
 
         </div>
 
@@ -310,6 +321,7 @@
                     <th>ВУЗ</th>
                     <th>Статус</th>
                     <th>Регистрация</th>
+                    <th>Действие</th>
                 </tr>
 
             </thead>
@@ -328,7 +340,6 @@
                         </a>
 
                     </td>
-
 
                     <td>
                         {{ participant.full_name }}
@@ -365,6 +376,22 @@
 
                     </td>
 
+                    <td>
+                        {% if participant.can_cancel %}
+                        <form
+                            method="post"
+                            action="/events/{{ event.id }}/registrations/{{ participant.registration_id }}/cancel"
+                            onsubmit="return confirm('Снять участника с мероприятия? Освободившееся место будет предложено следующему в очереди.')"
+                        >
+                            <button type="submit" class="danger-button">
+                                Снять с мероприятия
+                            </button>
+                        </form>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+
                 </tr>
 
 
@@ -372,7 +399,7 @@
 
                 <tr>
 
-                    <td colspan="5">
+                    <td colspan="6">
                         На мероприятие пока никто
                         не зарегистрировался.
                     </td>
@@ -388,6 +415,39 @@
     </div>
 
 </div>
+
+{% if event.max_participants %}
+<div class="event-detail-section">
+    <h2>
+        Лист ожидания
+        <span class="section-count">{{ waitlist|length }}</span>
+    </h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>ВУЗ</th>
+                    <th>Статус</th>
+                    <th>В очереди с</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for entry in waitlist %}
+                <tr>
+                    <td>{{ entry.full_name }} <span class="muted">{{ entry.user_code }}</span></td>
+                    <td>{{ entry.university or "—" }}</td>
+                    <td>{{ entry.status_label }}</td>
+                    <td>{{ entry.created_at.strftime("%d.%m.%Y %H:%M") if entry.created_at else "—" }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4">В листе ожидания пока никого нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 
 

@@ -87,6 +87,25 @@ def event_details_keyboard(event_id):
         ]
     )
 
+
+def event_waitlist_keyboard(event_id: str):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🔔 Встать в лист ожидания",
+                    callback_data=f"waitlist_join:{event_id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ К списку событий",
+                    callback_data="afisha_nearest",
+                )
+            ],
+        ]
+    )
+
 def rating_keyboard(event_id):
     return InlineKeyboardMarkup(
         inline_keyboard=[

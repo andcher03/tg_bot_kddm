@@ -142,11 +142,10 @@ async def main():
             )
         )
 
-        if EVENT_CONFIRMATIONS_ENABLED:
-            event_confirmation_task = asyncio.create_task(
-                event_confirmation_loop(bot)
-            )
-        else:
+        event_confirmation_task = asyncio.create_task(
+            event_confirmation_loop(bot)
+        )
+        if not EVENT_CONFIRMATIONS_ENABLED:
             updated_registrations = (
                 await normalize_active_registration_statuses()
             )

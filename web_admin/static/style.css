@@ -494,6 +494,7 @@ nav a:hover{
 }
 
 .form-field input[type="text"],
+.form-field input[type="number"],
 .form-field input[type="date"],
 .form-field input[type="time"],
 .form-field textarea{
@@ -514,6 +515,7 @@ nav a:hover{
 }
 
 .form-field input[type="text"]:focus,
+.form-field input[type="number"]:focus,
 .form-field input[type="date"]:focus,
 .form-field input[type="time"]:focus,
 .form-field textarea:focus{

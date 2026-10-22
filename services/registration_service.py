@@ -1,13 +1,13 @@
 from datetime import date, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 
 from services.database import SessionLocal
 from services.event_confirmation import event_start_at, local_now
-from services.models import User, Event, Registration
+from services.models import Event, EventWaitlistEntry, Registration, User
 
 
 def event_is_registration_open(
@@ -25,7 +25,11 @@ def confirmation_is_immediate(event: Event, registered_at: datetime) -> bool:
         return False
 
     event_start = event_start_at(event)
-    return event_start is not None and event_start <= registered_at
+    return (
+        event.max_participants is not None
+        and event_start is not None
+        and event_start <= registered_at
+    )
 
 
 class RegistrationService:
@@ -107,17 +111,17 @@ class RegistrationService:
             event_result = await session.execute(
                 select(Event).where(
                     Event.event_code == str(event_id)
-                )
+                ).with_for_update()
             )
 
             event = event_result.scalar_one_or_none()
 
             if not event:
-                return False
+                return "not_found"
 
             registered_at = local_now()
             if not event_is_registration_open(event, registered_at.date()):
-                return False
+                return "closed"
 
             # -------------------------
             # Проверяем дубль
@@ -134,19 +138,54 @@ class RegistrationService:
                 registration_result.scalar_one_or_none()
             )
 
+            if (
+                existing_registration is not None
+                and existing_registration.status != "cancelled"
+            ):
+                return "already_registered"
+
+            if event.max_participants is not None:
+                registration_count = await session.scalar(
+                    select(func.count(Registration.id)).where(
+                        Registration.event_id == event.id,
+                        Registration.status.in_(
+                            ("registered", "confirmed")
+                        ),
+                    )
+                )
+                offer_count = await session.scalar(
+                    select(func.count(EventWaitlistEntry.id)).where(
+                        EventWaitlistEntry.event_id == event.id,
+                        EventWaitlistEntry.status == "offered",
+                        EventWaitlistEntry.expires_at > registered_at,
+                    )
+                )
+                waiting_count = await session.scalar(
+                    select(func.count(EventWaitlistEntry.id)).where(
+                        EventWaitlistEntry.event_id == event.id,
+                        EventWaitlistEntry.status == "waiting",
+                    )
+                )
+                occupied_places = (registration_count or 0) + (offer_count or 0)
+                if (
+                    occupied_places >= event.max_participants
+                    or (waiting_count or 0) > 0
+                ):
+                    return "full"
+
             is_confirmed_immediately = confirmation_is_immediate(
                 event,
                 registered_at,
             )
 
             if existing_registration:
-                if existing_registration.status != "cancelled":
-                    return False
-
                 # The database keeps one row per user/event pair. Reuse a
                 # cancelled row if the user registers again.
                 existing_registration.status = "registered"
                 existing_registration.registration_date = registered_at
+                # A reused row represents a new registration attempt. Do not
+                # carry the decline reason from the previous attempt forward.
+                existing_registration.decline_reason = None
                 existing_registration.confirmation_status = (
                     "confirmed" if is_confirmed_immediately else "not_requested"
                 )
@@ -159,8 +198,10 @@ class RegistrationService:
                     await session.commit()
                 except IntegrityError:
                     await session.rollback()
-                    return False
-                return True
+                    return "already_registered"
+                return (
+                    "confirmed" if is_confirmed_immediately else "registered"
+                )
 
             # -------------------------
             # Создаём регистрацию
@@ -192,9 +233,9 @@ class RegistrationService:
 
             except IntegrityError:
                 await session.rollback()
-                return False
+                return "already_registered"
 
-            return True
+            return "confirmed" if is_confirmed_immediately else "registered"
 
     async def get_user_registrations(
         self,

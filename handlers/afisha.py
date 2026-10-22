@@ -14,6 +14,7 @@ from keyboards.afisha import (
     afisha_menu,
     nearest_events_keyboard,
     event_details_keyboard,
+    event_waitlist_keyboard,
     rating_keyboard
 )
 
@@ -23,6 +24,11 @@ from services.postgres_event_service import (
 
 from services.registration_service import (
     RegistrationService,
+)
+from services.event_waitlist import (
+    join_event_waitlist,
+    process_waitlist_offers,
+    respond_to_waitlist_offer,
 )
 
 from services.postgres_user_service import (
@@ -177,6 +183,8 @@ async def event_details(
         f"📍 Место: {event['place']}\n"
         f"🏷 Категория: {event['category']}"
     )
+    if event.get("max_participants"):
+        text += f"\n👥 Лимит участников: {event['max_participants']}"
 
     await callback.message.edit_text(
         text,
@@ -234,10 +242,25 @@ async def register_event(
         event_id=event_id
     )
 
-    if not success:
+    if success == "full":
+        await callback.message.edit_text(
+            "На это мероприятие все места заняты. Можно встать в лист ожидания — "
+            "бот напишет, если место освободится.",
+            reply_markup=event_waitlist_keyboard(event_id),
+        )
+        return
+
+    if success == "already_registered":
         await callback.answer(
             "Вы уже зарегистрированы на это мероприятие.",
             show_alert=True
+        )
+        return
+
+    if success not in {"registered", "confirmed"}:
+        await callback.answer(
+            "Сейчас регистрация на это мероприятие недоступна.",
+            show_alert=True,
         )
         return
 
@@ -261,8 +284,17 @@ async def register_event(
             if not EVENT_CONFIRMATIONS_ENABLED
             else (
                 "За 2 часа до начала мы попросим подтвердить участие. "
-                "Если вы зарегистрировались после начала мероприятия, "
-                "участие будет отмечено подтверждённым автоматически."
+                + (
+                    "После начала мероприятия подтверждение для события "
+                    "без лимита мест не отправляется."
+                    if success == "registered" and not event.get("max_participants")
+                    else (
+                        "Регистрация после начала мероприятия на событие "
+                        "с лимитом мест подтверждена автоматически."
+                        if success == "confirmed"
+                        else ""
+                    )
+                )
             )
         ),
         parse_mode="HTML"
@@ -272,6 +304,94 @@ async def register_event(
         callback.bot,
         callback.from_user.id
     )
+
+
+@router.callback_query(F.data.startswith("waitlist_join:"))
+async def join_waitlist(callback: CallbackQuery):
+    try:
+        _action, event_code = callback.data.split(":", maxsplit=1)
+    except ValueError:
+        await callback.answer("Не удалось определить мероприятие.", show_alert=True)
+        return
+
+    result = await join_event_waitlist(callback.from_user.id, event_code)
+    if result == "place_available":
+        await process_waitlist_offers(callback.bot)
+        result = await join_event_waitlist(callback.from_user.id, event_code)
+        if result == "place_available":
+            registration_result = await registration_service.create_registration(
+                user_id=callback.from_user.id,
+                event_id=event_code,
+            )
+            result = (
+                "registered_now"
+                if registration_result in {"registered", "confirmed"}
+                else registration_result
+            )
+
+    messages = {
+        "joined": "Вы добавлены в лист ожидания. Мы напишем, если освободится место.",
+        "already_waiting": "Вы уже в листе ожидания. Мы сообщим, если появится место.",
+        "already_registered": "Вы уже зарегистрированы на это мероприятие.",
+        "unlimited": "У мероприятия нет лимита мест — зарегистрируйтесь на него напрямую.",
+        "closed": "Регистрация на это мероприятие уже закрыта.",
+        "not_found": "Мероприятие не найдено.",
+        "user_not_found": "Сначала зарегистрируйтесь в боте.",
+        "place_available": "Место освободилось. Попробуйте зарегистрироваться ещё раз.",
+        "registered_now": "Место освободилось — вы зарегистрированы!",
+    }
+    await callback.answer()
+    await callback.message.edit_text(messages.get(result, "Не удалось встать в очередь."))
+
+
+async def handle_waitlist_response(
+    callback: CallbackQuery,
+    *,
+    accept: bool,
+) -> None:
+    try:
+        _action, entry_id_value, offered_timestamp_value = callback.data.split(":")
+        entry_id = int(entry_id_value)
+        offered_timestamp = int(offered_timestamp_value)
+    except (ValueError, IndexError):
+        await callback.answer("Не удалось определить предложение.", show_alert=True)
+        return
+
+    result = await respond_to_waitlist_offer(
+        entry_id=entry_id,
+        telegram_id=callback.from_user.id,
+        expected_offer_timestamp=offered_timestamp,
+        accept=accept,
+    )
+    if result in {"declined", "expired", "place_unavailable"}:
+        await process_waitlist_offers(callback.bot)
+
+    messages = {
+        "accepted": "Класс! Место за вами, регистрация подтверждена ❤️",
+        "declined": "Хорошо, мы предложим место следующему человеку в очереди.",
+        "already_registered": "Вы уже зарегистрированы на это мероприятие.",
+        "expired": "Время на ответ истекло. Предложение передано следующему.",
+        "closed": "Регистрация на мероприятие уже закрыта.",
+        "place_unavailable": "Место уже занято. Мы оставили вас в листе ожидания.",
+        "not_owner": "Это предложение предназначено другому пользователю.",
+        "not_found": "Предложение не найдено.",
+        "stale": "Это предложение уже неактуально.",
+    }
+    await callback.answer()
+    if callback.message:
+        await callback.message.edit_text(
+            messages.get(result, "Предложение больше неактуально.")
+        )
+
+
+@router.callback_query(F.data.startswith("waitlist_accept:"))
+async def accept_waitlist_offer(callback: CallbackQuery):
+    await handle_waitlist_response(callback, accept=True)
+
+
+@router.callback_query(F.data.startswith("waitlist_decline:"))
+async def decline_waitlist_offer(callback: CallbackQuery):
+    await handle_waitlist_response(callback, accept=False)
 
 
 @router.callback_query(F.data == "afisha_rate")

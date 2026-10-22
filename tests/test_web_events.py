@@ -52,6 +52,12 @@ def test_create_and_edit_event_no_longer_accept_criteria():
     assert removed_fields.isdisjoint(signature(edit_event).parameters)
 
 
+def test_create_and_edit_event_accept_capacity_settings():
+    for route in (create_event, edit_event):
+        assert "has_participant_limit" in signature(route).parameters
+        assert "max_participants" in signature(route).parameters
+
+
 def test_event_forms_and_details_do_not_show_removed_criteria():
     template_dir = Path(__file__).parents[1] / "web_admin" / "templates"
     templates = (
@@ -75,3 +81,12 @@ def test_event_forms_and_details_do_not_show_removed_criteria():
         assert 'name="organizer_type"' not in source
         assert 'name="company"' not in source
         assert 'name="activity_type"' not in source
+
+
+def test_event_forms_allow_optional_capacity_limits():
+    template_dir = Path(__file__).parents[1] / "web_admin" / "templates"
+    for template in ("event_create.html", "event_edit.html"):
+        source = (template_dir / template).read_text(encoding="utf-8")
+        assert "Лимит участников" in source
+        assert 'name="has_participant_limit"' in source
+        assert 'name="max_participants"' in source

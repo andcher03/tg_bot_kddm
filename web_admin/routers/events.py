@@ -11,18 +11,20 @@ from fastapi import (
 
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select, update
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
 from services.event_confirmation import local_now
 from services.models import (
     Event,
+    EventWaitlistEntry,
     Registration,
     User,
     EventReview,
 )
 from services.registration_status import confirmation_status_color
+from services.event_waitlist import reserve_available_waitlist_places
 
 
 router = APIRouter()
@@ -111,6 +113,8 @@ async def create_event(
     place: str = Form(...),
     is_multi_day: bool = Form(False),
     end_date: date | None = Form(None),
+    has_participant_limit: bool = Form(False),
+    max_participants: int | None = Form(None),
 ):
 
     if is_multi_day and end_date is None:
@@ -126,6 +130,11 @@ async def create_event(
         )
 
     resolved_end_date = end_date if is_multi_day else event_date
+    if has_participant_limit and (max_participants is None or max_participants < 1):
+        raise HTTPException(
+            status_code=422,
+            detail="Укажите лимит участников не меньше 1.",
+        )
 
     async with SessionLocal() as session:
 
@@ -138,6 +147,9 @@ async def create_event(
             start_time=start_time,
 
             place=place.strip(),
+            max_participants=(
+                max_participants if has_participant_limit else None
+            ),
             status="active",
         )
 
@@ -228,6 +240,22 @@ async def event_detail_page(
             registrations_result.all()
         )
 
+        waitlist_result = await session.execute(
+            select(EventWaitlistEntry, User)
+            .join(User, EventWaitlistEntry.user_id == User.id)
+            .where(
+                EventWaitlistEntry.event_id == event_id,
+                EventWaitlistEntry.status.in_(
+                    ("waiting", "offered", "delivery_failed")
+                ),
+            )
+            .order_by(
+                EventWaitlistEntry.created_at,
+                EventWaitlistEntry.id,
+            )
+        )
+        waitlist_rows = waitlist_result.all()
+
         participants = []
 
         for registration, user in registration_rows:
@@ -251,6 +279,9 @@ async def event_detail_page(
                     "confirmed": "Подтвердил участие",
                     "delivery_failed": "Запрос не доставлен",
                 }.get(confirmation_status, confirmation_status)
+
+            if confirmation_status == "admin_cancelled":
+                confirmation_label = "Снял администратор"
 
             participants.append({
                 "registration_id":
@@ -290,7 +321,26 @@ async def event_detail_page(
 
                 "university":
                     user.university,
+
+                "can_cancel":
+                    registration.status in {"registered", "confirmed"},
             })
+
+        waitlist = [
+            {
+                "user_code": user.user_code,
+                "full_name": user.full_name,
+                "university": user.university,
+                "created_at": entry.created_at,
+                "status": entry.status,
+                "status_label": {
+                    "waiting": "В очереди",
+                    "offered": "Получил предложение",
+                    "delivery_failed": "Не удалось связаться",
+                }.get(entry.status, entry.status),
+            }
+            for entry, user in waitlist_rows
+        ]
 
 
         # Отзывы
@@ -375,6 +425,9 @@ async def event_detail_page(
             "participants":
                 participants,
 
+            "waitlist":
+                waitlist,
+
             "reviews":
                 reviews,
 
@@ -411,6 +464,7 @@ async def archive_event(
         result = await session.execute(
             select(Event)
             .where(Event.id == event_id)
+            .with_for_update()
         )
 
         event = result.scalar_one_or_none()
@@ -520,6 +574,8 @@ async def edit_event(
     place: str = Form(...),
     is_multi_day: bool = Form(False),
     end_date: date | None = Form(None),
+    has_participant_limit: bool = Form(False),
+    max_participants: int | None = Form(None),
 ):
     if is_multi_day and end_date is None:
         raise HTTPException(
@@ -534,12 +590,18 @@ async def edit_event(
         )
 
     resolved_end_date = end_date if is_multi_day else event_date
+    if has_participant_limit and (max_participants is None or max_participants < 1):
+        raise HTTPException(
+            status_code=422,
+            detail="Укажите лимит участников не меньше 1.",
+        )
 
     async with SessionLocal() as session:
 
         result = await session.execute(
             select(Event)
             .where(Event.id == event_id)
+            .with_for_update()
         )
 
         event = result.scalar_one_or_none()
@@ -550,6 +612,31 @@ async def edit_event(
                 detail="Мероприятие не найдено"
             )
 
+        if has_participant_limit:
+            occupied_count = await session.scalar(
+                select(func.count(Registration.id)).where(
+                    Registration.event_id == event.id,
+                    Registration.status.in_(
+                        ("registered", "confirmed")
+                    ),
+                )
+            )
+            offered_count = await session.scalar(
+                select(func.count(EventWaitlistEntry.id)).where(
+                    EventWaitlistEntry.event_id == event.id,
+                    EventWaitlistEntry.status == "offered",
+                    EventWaitlistEntry.expires_at > local_now(),
+                )
+            )
+            if max_participants < (occupied_count or 0) + (offered_count or 0):
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "Лимит не может быть меньше числа зарегистрированных "
+                        "участников и зарезервированных мест."
+                    ),
+                )
+
 
         event.title = title.strip()
         event.description = description.strip()
@@ -559,10 +646,58 @@ async def edit_event(
         event.start_time = start_time
 
         event.place = place.strip()
+        event.max_participants = (
+            max_participants if has_participant_limit else None
+        )
+        if not has_participant_limit:
+            await session.execute(
+                update(EventWaitlistEntry)
+                .where(
+                    EventWaitlistEntry.event_id == event.id,
+                    EventWaitlistEntry.status.in_(("waiting", "offered")),
+                )
+                .values(
+                    status="cancelled",
+                    expires_at=None,
+                    responded_at=local_now(),
+                )
+            )
         await session.commit()
 
 
     return RedirectResponse(
         url=f"/events/{event_id}",
         status_code=303
+    )
+
+
+@router.post("/events/{event_id}/registrations/{registration_id}/cancel")
+async def cancel_event_registration(
+    event_id: int,
+    registration_id: int,
+):
+    async with SessionLocal() as session:
+        result = await session.execute(
+            select(Registration)
+            .where(
+                Registration.id == registration_id,
+                Registration.event_id == event_id,
+            )
+            .with_for_update()
+        )
+        registration = result.scalar_one_or_none()
+        if registration is None:
+            raise HTTPException(status_code=404, detail="Регистрация не найдена")
+        if registration.status in {"registered", "confirmed"}:
+            registration.status = "cancelled"
+            registration.confirmation_status = "admin_cancelled"
+            registration.confirmation_responded_at = local_now()
+            await session.commit()
+        else:
+            await session.rollback()
+
+    await reserve_available_waitlist_places(event_id)
+    return RedirectResponse(
+        url=f"/events/{event_id}",
+        status_code=303,
     )

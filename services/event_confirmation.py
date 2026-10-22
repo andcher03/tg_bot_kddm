@@ -12,6 +12,7 @@ from config import EVENT_CONFIRMATIONS_ENABLED
 
 from services.database import SessionLocal
 from services.models import Event, Registration, User
+from services.event_waitlist import process_waitlist_offers
 
 
 logger = logging.getLogger(__name__)
@@ -478,6 +479,7 @@ async def event_confirmation_loop(bot: Bot) -> None:
             now = local_now()
             await send_due_confirmation_requests(bot, now)
             await expire_unconfirmed_registrations(now)
+            await process_waitlist_offers(bot, now=now)
         except asyncio.CancelledError:
             raise
         except Exception:

@@ -4,10 +4,7 @@ from typing import Any
 
 from openpyxl import Workbook
 
-from web_admin.review_export import (
-    EXCEL_MEDIA_TYPE,
-    excel_safe_text,
-)
+from web_admin.review_export import excel_safe_text
 
 
 REGISTRATION_EXPORT_HEADERS = (

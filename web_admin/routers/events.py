@@ -25,8 +25,8 @@ from services.models import (
 )
 from services.registration_status import confirmation_status_color
 from services.event_waitlist import reserve_available_waitlist_places
+from web_admin.review_export import EXCEL_MEDIA_TYPE
 from web_admin.registration_export import (
-    EXCEL_MEDIA_TYPE,
     build_registrations_workbook,
     registrations_export_filename,
 )

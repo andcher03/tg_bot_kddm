@@ -101,6 +101,12 @@
             >
                 Редактировать
             </a>
+            <a
+                href="/events/{{ event.id }}/registrations/export"
+                class="edit-event-button"
+            >
+                Выгрузить регистрации в Excel
+            </a>
             {% if event.status == "active" %}
 
             <form

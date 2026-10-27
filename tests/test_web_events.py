@@ -7,7 +7,12 @@ from sqlalchemy import or_
 from services.event_lifecycle import finished_events_update
 from services.models import Event
 from web_admin.routers.events import archive_events_query
-from web_admin.routers.events import create_event, edit_event
+from web_admin.routers.events import (
+    create_event,
+    edit_event,
+    export_event_registrations,
+    router as events_router,
+)
 from web_admin.routers.reviews import event_display_status
 
 
@@ -90,3 +95,16 @@ def test_event_forms_allow_optional_capacity_limits():
         assert "Лимит участников" in source
         assert 'name="has_participant_limit"' in source
         assert 'name="max_participants"' in source
+
+
+def test_event_detail_has_registration_export_button_and_route():
+    template_dir = Path(__file__).parents[1] / "web_admin" / "templates"
+    source = (template_dir / "event_detail.html").read_text(encoding="utf-8")
+
+    assert 'href="/events/{{ event.id }}/registrations/export"' in source
+    assert "Выгрузить регистрации в Excel" in source
+    assert any(
+        route.path == "/events/{event_id}/registrations/export"
+        and route.endpoint is export_event_registrations
+        for route in events_router.routes
+    )

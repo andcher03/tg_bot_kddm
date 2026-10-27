@@ -9,7 +9,7 @@ from fastapi import (
 )
 
 
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, or_, select, update
 
@@ -25,6 +25,11 @@ from services.models import (
 )
 from services.registration_status import confirmation_status_color
 from services.event_waitlist import reserve_available_waitlist_places
+from web_admin.registration_export import (
+    EXCEL_MEDIA_TYPE,
+    build_registrations_workbook,
+    registrations_export_filename,
+)
 
 
 router = APIRouter()
@@ -449,6 +454,61 @@ async def event_detail_page(
             "confirmations_enabled":
                 EVENT_CONFIRMATIONS_ENABLED,
         }
+    )
+
+
+@router.get("/events/{event_id}/registrations/export")
+async def export_event_registrations(event_id: int):
+    async with SessionLocal() as session:
+        event_result = await session.execute(
+            select(Event).where(Event.id == event_id)
+        )
+        event = event_result.scalar_one_or_none()
+
+        if event is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Мероприятие не найдено",
+            )
+
+        registrations_result = await session.execute(
+            select(Registration, User)
+            .join(User, Registration.user_id == User.id)
+            .where(
+                Registration.event_id == event_id,
+                Registration.status.in_(("registered", "confirmed")),
+            )
+            .order_by(
+                Registration.registration_date,
+                Registration.id,
+            )
+        )
+        registrations = [
+            {
+                "user_code": user.user_code,
+                "full_name": user.full_name,
+                "username": user.username,
+                "university": user.university,
+                "registration_date": registration.registration_date,
+                "status": registration.status,
+                "confirmation_status": registration.confirmation_status,
+            }
+            for registration, user in registrations_result.all()
+        ]
+
+    workbook = build_registrations_workbook(
+        registrations,
+        confirmations_enabled=EVENT_CONFIRMATIONS_ENABLED,
+    )
+    return StreamingResponse(
+        workbook,
+        media_type=EXCEL_MEDIA_TYPE,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{registrations_export_filename(event)}"'
+            ),
+            "Cache-Control": "no-store",
+        },
     )
 
 # =========================================================

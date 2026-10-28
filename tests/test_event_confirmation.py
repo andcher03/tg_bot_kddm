@@ -5,6 +5,7 @@ from services.event_confirmation import (
     DECLINE_REASONS,
     decline_reason_keyboard,
     event_start_at,
+    manual_confirmation_text,
     reminder_keyboard,
     reminder_text,
 )
@@ -58,6 +59,22 @@ def test_reminder_text_escapes_event_title_and_includes_event_details():
     assert "☀️ Сегодня встреча" in text
     assert "Ждём тебя в 10:00 по адресу Кремлёвская, 1." in text
     assert "Подтверди участие" in text
+
+
+def test_manual_confirmation_text_includes_event_date_time_and_place():
+    event = Event(
+        title="Мастер-класс",
+        event_date=date(2026, 10, 28),
+        start_time=time(18, 0),
+        place="Кремлёвская, 1",
+    )
+
+    text = manual_confirmation_text(event)
+
+    assert "Подтверди участие в мероприятии" in text
+    assert "Дата: 28.10.2026" in text
+    assert "Время: 18:00" in text
+    assert "Место: Кремлёвская, 1" in text
 
 
 def test_decline_reason_keyboard_contains_all_requested_reasons():

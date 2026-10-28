@@ -15,7 +15,11 @@ from sqlalchemy import func, or_, select, update
 
 from config import EVENT_CONFIRMATIONS_ENABLED
 from services.database import SessionLocal
-from services.event_confirmation import local_now
+from services.event_confirmation import (
+    event_start_at,
+    local_now,
+    send_manual_confirmation_requests,
+)
 from services.models import (
     Event,
     EventWaitlistEntry,
@@ -25,6 +29,7 @@ from services.models import (
 )
 from services.registration_status import confirmation_status_color
 from services.event_waitlist import reserve_available_waitlist_places
+from services.telegram_bot import create_telegram_bot
 from web_admin.review_export import EXCEL_MEDIA_TYPE
 from web_admin.registration_export import (
     build_registrations_workbook,
@@ -205,6 +210,9 @@ async def events_archive_page(
 async def event_detail_page(
     request: Request,
     event_id: int,
+    confirmation_result: str | None = None,
+    sent: int = 0,
+    failed: int = 0,
 ):
     async with SessionLocal() as session:
 
@@ -406,6 +414,11 @@ async def event_detail_page(
             and participant["confirmation_status"] == "confirmed"
             for participant in participants
         )
+        confirmation_request_count = sum(
+            participant["status"] == "registered"
+            and participant["confirmation_status"] == "not_requested"
+            for participant in participants
+        )
         reviews_count = len(reviews)
 
         if reviews_count:
@@ -419,6 +432,38 @@ async def event_detail_page(
         else:
             average_rating = None
 
+
+    current_time = local_now()
+    event_start = event_start_at(event)
+    can_send_confirmation_requests = (
+        EVENT_CONFIRMATIONS_ENABLED
+        and event.status == "active"
+        and event_start is not None
+        and event_start > current_time
+        and confirmation_request_count > 0
+    )
+    confirmation_result_message = None
+    confirmation_result_class = "success-notice"
+    if confirmation_result == "sent":
+        if sent or failed:
+            confirmation_result_message = (
+                f"Отправлено запросов: {sent}. Не удалось доставить: {failed}."
+            )
+        else:
+            confirmation_result_message = (
+                "Нет участников, которым нужно отправить запрос."
+            )
+    elif confirmation_result == "unavailable":
+        confirmation_result_message = (
+            "Запросы можно отправить только для опубликованного мероприятия "
+            "до его начала."
+        )
+        confirmation_result_class = "error-notice"
+    elif confirmation_result == "disabled":
+        confirmation_result_message = (
+            "Подтверждение участия отключено в настройках сервиса."
+        )
+        confirmation_result_class = "error-notice"
 
     return templates.TemplateResponse(
         request=request,
@@ -453,6 +498,18 @@ async def event_detail_page(
 
             "confirmations_enabled":
                 EVENT_CONFIRMATIONS_ENABLED,
+
+            "confirmation_request_count":
+                confirmation_request_count,
+
+            "can_send_confirmation_requests":
+                can_send_confirmation_requests,
+
+            "confirmation_result_message":
+                confirmation_result_message,
+
+            "confirmation_result_class":
+                confirmation_result_class,
         }
     )
 
@@ -509,6 +566,33 @@ async def export_event_registrations(event_id: int):
             ),
             "Cache-Control": "no-store",
         },
+    )
+
+
+@router.post("/events/{event_id}/confirmations/send")
+async def send_event_confirmation_requests_route(event_id: int):
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        return RedirectResponse(
+            url=f"/events/{event_id}?confirmation_result=disabled#participants",
+            status_code=303,
+        )
+
+    bot = create_telegram_bot()
+    try:
+        result, sent_count, failed_count = (
+            await send_manual_confirmation_requests(bot, event_id)
+        )
+    finally:
+        await bot.session.close()
+
+    if result == "ok":
+        result = "sent"
+    return RedirectResponse(
+        url=(
+            f"/events/{event_id}?confirmation_result={result}"
+            f"&sent={sent_count}&failed={failed_count}#participants"
+        ),
+        status_code=303,
     )
 
 # =========================================================

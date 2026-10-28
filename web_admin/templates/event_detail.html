@@ -304,15 +304,37 @@
 
 <!-- УЧАСТНИКИ -->
 
-<div class="event-detail-section">
+<div class="event-detail-section" id="participants">
 
-    <h2>
-        Участники
+    {% if confirmation_result_message %}
+    <div class="{{ confirmation_result_class }}" role="status">
+        {{ confirmation_result_message }}
+    </div>
+    {% endif %}
 
-        <span class="section-count">
-            {{ registrations_count }}
-        </span>
-    </h2>
+    <div class="event-participants-heading">
+        <h2>
+            Участники
+
+            <span class="section-count">
+                {{ registrations_count }}
+            </span>
+        </h2>
+
+        <form
+            method="post"
+            action="/events/{{ event.id }}/confirmations/send"
+            onsubmit="return confirm('Отправить запрос подтверждения {{ confirmation_request_count }} участникам?')"
+        >
+            <button
+                type="submit"
+                class="edit-event-button"
+                {% if not can_send_confirmation_requests %}disabled{% endif %}
+            >
+                Отправить запросы подтверждения · {{ confirmation_request_count }}
+            </button>
+        </form>
+    </div>
 
 
     <div class="table-container">

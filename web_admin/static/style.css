@@ -1946,6 +1946,27 @@ tbody tr:hover{ background: var(--canvas); }
     margin-bottom: 14px;
 }
 
+.event-participants-heading{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.event-participants-heading h2{
+    margin: 0;
+}
+
+.event-participants-heading form{
+    margin: 0;
+}
+
+.event-participants-heading button:disabled{
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .section-count{
     padding: 2px 8px;
 
@@ -4700,6 +4721,16 @@ a.dashboard-activity-card:hover{
 
     .page-header{
         margin-bottom: 22px;
+    }
+
+    .event-participants-heading{
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .event-participants-heading form,
+    .event-participants-heading button{
+        width: 100%;
     }
 
     .page-actions > *,

@@ -121,7 +121,8 @@ async def _send_confirmation_request(
     event: Event,
     start_at: datetime,
     now: datetime,
-) -> None:
+    manual: bool = False,
+) -> str:
     # Persist the attempt before sending so that the callback is valid as soon
     # as Telegram delivers the message. A stale pending attempt is retried.
     async with SessionLocal() as session:
@@ -132,7 +133,7 @@ async def _send_confirmation_request(
         )
         registration = result.scalar_one_or_none()
         if registration is None or registration.status != "registered":
-            return
+            return "skipped"
 
         same_start = registration.confirmation_for_start_at == start_at
         retry_due = (
@@ -159,7 +160,7 @@ async def _send_confirmation_request(
             )
         )
         if not can_send:
-            return
+            return "skipped"
 
         registration.confirmation_status = "sending"
         registration.confirmation_requested_at = now
@@ -170,7 +171,11 @@ async def _send_confirmation_request(
     try:
         await bot.send_message(
             chat_id=telegram_id,
-            text=reminder_text(event, now),
+            text=(
+                manual_confirmation_text(event)
+                if manual
+                else reminder_text(event, now)
+            ),
             parse_mode="HTML",
             reply_markup=reminder_keyboard(
                 registration_id,
@@ -188,6 +193,7 @@ async def _send_confirmation_request(
             ):
                 registration.confirmation_status = "pending"
                 await session.commit()
+        return "sent"
     except Exception:
         logger.exception(
             "Не удалось отправить запрос подтверждения: registration_id=%s",
@@ -203,6 +209,75 @@ async def _send_confirmation_request(
             ):
                 registration.confirmation_status = "delivery_failed"
                 await session.commit()
+        return "failed"
+
+
+def manual_confirmation_text(event: Event) -> str:
+    start_at = event_start_at(event)
+    if start_at is None:
+        raise ValueError("У мероприятия не заданы дата и время начала")
+
+    return (
+        "📣 <b>Подтверди участие в мероприятии</b>\n\n"
+        f"🎯 <b>{escape(event.title)}</b>\n"
+        f"📅 Дата: {start_at.strftime('%d.%m.%Y')}\n"
+        f"⏰ Время: {start_at.strftime('%H:%M')}\n"
+        f"📍 Место: {escape(event.place or 'адрес уточняется')}\n\n"
+        "Пожалуйста, подтверди, придёшь ли ты."
+    )
+
+
+async def send_manual_confirmation_requests(
+    bot: Bot,
+    event_id: int,
+    now: datetime | None = None,
+) -> tuple[str, int, int]:
+    """Send requests to active registrations that have not been asked yet."""
+    if not EVENT_CONFIRMATIONS_ENABLED:
+        return "disabled", 0, 0
+
+    current_time = now or local_now()
+    async with SessionLocal() as session:
+        event = await session.scalar(
+            select(Event).where(Event.id == event_id)
+        )
+        if event is None or event.status != "active":
+            return "unavailable", 0, 0
+
+        start_at = event_start_at(event)
+        if start_at is None or start_at <= current_time:
+            return "unavailable", 0, 0
+
+        rows_result = await session.execute(
+            select(Registration, User)
+            .join(User, User.id == Registration.user_id)
+            .where(
+                Registration.event_id == event.id,
+                Registration.status == "registered",
+                Registration.confirmation_status == "not_requested",
+            )
+            .order_by(Registration.registration_date, Registration.id)
+        )
+        recipients = rows_result.all()
+
+    sent_count = 0
+    failed_count = 0
+    for registration, user in recipients:
+        result = await _send_confirmation_request(
+            bot,
+            registration_id=registration.id,
+            telegram_id=user.telegram_id,
+            event=event,
+            start_at=start_at,
+            now=current_time,
+            manual=True,
+        )
+        if result == "sent":
+            sent_count += 1
+        elif result == "failed":
+            failed_count += 1
+
+    return "ok", sent_count, failed_count
 
 
 async def send_due_confirmation_requests(
@@ -274,7 +349,7 @@ async def send_due_confirmation_requests(
             if not needs_request:
                 continue
 
-            await _send_confirmation_request(
+            result = await _send_confirmation_request(
                 bot,
                 registration_id=registration.id,
                 telegram_id=user.telegram_id,
@@ -282,7 +357,8 @@ async def send_due_confirmation_requests(
                 start_at=start_at,
                 now=current_time,
             )
-            sent_count += 1
+            if result == "sent":
+                sent_count += 1
 
     return sent_count
 
